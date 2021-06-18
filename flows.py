@@ -3,70 +3,127 @@ from __future__ import annotations
 from network import *
 from utilities import *
 
-# A partial feasible flow
+# A partial feasible flow with in-/outflow rates for every edges and commodity and queues for every edge
+# Feasibility is not checked automatically but a check can be initiated by calling .checkFeasibility
 class PartialFlow:
     network: Network
     upToAt: Dict[Node, ExtendedRational]
     fPlus: Dict[(Edge,int), PWConst]
     fMinus: Dict[(Edge,int), PWConst]
     queues: Dict[Edge, PWLin]
+    sources: List[Node]
+    sinks: List[Node]
+    u: List[PWConst]
     noOfCommodities: int
+
+    # TODO: Add a flag for terminating flow?
 
     def __init__(self, network: Network, numberOfCommodities: int):
         self.network = network
         self.noOfCommodities = numberOfCommodities
+
         # The zero-flow up to time zero
         self.upToAt = {}
         for v in network.nodes:
             self.upToAt[v] = ExtendedRational(0)
 
+        # Initialize functions f^+,f^- and q for every edge e
         self.fPlus = {}
         self.fMinus = {}
         self.queues = {}
-
         for e in network.edges:
             self.queues[e] = PWLin([ExtendedRational(0), ExtendedRational(0)], [ExtendedRational(0)], [ExtendedRational(0)])
             for i in range(numberOfCommodities):
                 self.fPlus[(e,i)] = PWConst([ExtendedRational(0),ExtendedRational(0)],[ExtendedRational(0)])
                 self.fMinus[(e,i)] = PWConst([ExtendedRational(0),e.tau],[ExtendedRational(0)])
 
+        # Currently every commodity has a network inflow rate of zero
+        self.u = [PWConst([ExtendedRational(0)],[],0) for _ in range(self.noOfCommodities)]
+        # Furthermore we do not know source and sink nodes yet
+        self.sources = [None for _ in range(self.noOfCommodities)]
+        self.sinks = [None for _ in range(self.noOfCommodities)]
+
+    def setSource(self,commodity:int,s:Node):
+        assert(commodity < self.noOfCommodities)
+        self.sources[commodity] = s
+
+    def setSink(self,commodity:int,t:Node):
+        assert(commodity < self.noOfCommodities)
+        self.sinks[commodity] = t
+
+    def setU(self,commodity:int,u:PWConst):
+        assert (commodity < self.noOfCommodities)
+        self.u[commodity] = u
+
+
+
+    # The travel time over an edge e at time theta
     def c(self, e:Edge, theta:ExtendedRational) -> ExtendedRational:
         # the queue on edge e has to be known up to at least time theta
         assert (self.queues[e].segmentBorders[-1] >= theta)
-        #print("Waiting time on ", e, "at ", theta, " is ", self.queues[e].getValueAt(theta)/e.nu)
         return self.queues[e].getValueAt(theta)/e.nu + e.tau
 
+    # The arrival time at the end of edge e if entering at time theta
     def T(self, e:Edge, theta:ExtendedRational) -> ExtendedRational:
         return theta + self.c(e, theta)
 
+    # Determines the arrival time at the end of path p when starting at time theta
     def pathArrivalTime(self,p:Path,theta:ExtendedRational)->ExtendedRational:
-        # Determines the arrival time at the end of path p when starting at time theta
         # TODO: check whether all necessary queues are available
-        firstEdge = p.edges[0]
-        # TODO: Sobald Path mit leeren Pfaden umgehen kann, hier ebenfalls anpassen
-        if len(p) == 1:
-            return self.T(firstEdge,theta)
+        if len(p) == 0:
+            return theta
         else:
-            return self.pathArrivalTime(Path(p.edges[1:]),self.T(firstEdge,theta))
+            firstEdge = p.edges[0]
+            return self.pathArrivalTime(Path(p.edges[1:],firstEdge.node_to),self.T(firstEdge,theta))
+
+
 
     def checkFlowConservation(self,v: Node,upTo: ExtendedRational,commodity: int) -> bool:
+        # Checks whether flow conservation holds at node v during the interval [0,upTo]
+        # i.e. \sum_{e \in \delta^-(v)}f_e,i^-(\theta) = \sum_{e \in \delta^+(v)}f_e,i^+(\theta)
+        # for all nodes except source and sink of commodity i
+        # For the source the same has to hold with the network inflow rate u of commodity i added on the left side
+        # For the sink the = is replaced by >=
         theta = ExtendedRational(0)
+        # Since all flow rates are assumed to be right-constant, it suffices to check the conditions
+        # at every stepping point (for at least one of the relevant flow rate functions)
         while theta < upTo:
             nextTheta = ExtendedRational(1, 0)
             flow = ExtendedRational(0)
+            # Add up node inflow rate (over all incoming edges)
             for e in v.incoming_edges:
                 flow += self.fMinus[e,commodity].getValueAt(theta)
                 nextTheta = min(nextTheta,self.fMinus[e,commodity].getNextStepFrom(theta))
+            # If node v is commodity i's source we also add the network inflow rate
+            if v == self.sources[commodity]:
+                flow += self.u[commodity].getValueAt(theta)
+                nextTheta = min(nextTheta, self.u[commodity].getNextStepFrom(theta))
+            # Subtract all node outflow (over all outgoing edges)
             for e in v.outgoing_edges:
                 flow -= self.fPlus[e, commodity].getValueAt(theta)
                 nextTheta = min(nextTheta, self.fPlus[e, commodity].getNextStepFrom(theta))
-            if flow != 0:
+
+            # Now check flow conservation at node v
+            # First, a special case for the sink node
+            if v == self.sinks[commodity]:
+                if flow < 0:
+                    # TODO: Fehlermeldung
+                    print("Flow conservation does not hold at node ", v, " (sink!) at time ", theta)
+                    return False
+
+            # Then the case for all other nodes:
+            elif flow != 0:
                 # TODO: Fehlermeldung
                 print("Flow conservation does not hold at node ",v," at time ",theta)
                 return False
+
+            # The next stepping point:
             theta = nextTheta
         return True
 
+    # Checks whether queues operate at capacity, i.e. whether the edge outflow rate is determined by
+    # f^-_e(\theta+\tau_e) = \nu_e,                     if q_e(\theta) > 0
+    # f^-_e(\theta+\tau_e) = \min{\nu_e,f^+_e(\theta)}, else
     def checkQueueAtCap(self, e: Edge, upTo: ExtendedRational) -> bool:
         theta = ExtendedRational(0)
 
@@ -92,6 +149,8 @@ class PartialFlow:
             theta = nextTheta
         return True
 
+    # Checks whether the queue-lengths are correct, i.e. determined by
+    # q_e(\theta) = F_e^+(\theta) - F_e^-(\theta+\tau_e)
     def checkQueue(self,e: Edge,upTo: ExtendedRational):
         # Assumes that f^-_e = 0 on [0,tau_e)
         theta = ExtendedRational(0)
@@ -116,32 +175,32 @@ class PartialFlow:
             theta = nextTheta
         return True
 
-
-    def checkFeasibility(self,upTo: ExtendedRational,sources: List[Node], sinks: List[Node]) -> bool:
-        # Check feasibility of the given flow up to the specified time horizon
-        # Does not check any conditions at source or sink nodes (TODO)
+    # Check feasibility of the given flow up to the specified time horizon
+    def checkFeasibility(self,upTo: ExtendedRational) -> bool:
         # Does not check FIFO (TODO)
         # Does not check non-negativity (TODO?)
         feasible = True
         for i in range(self.noOfCommodities):
             for v in self.network.nodes:
-                if not(v == sources[i] or v == sinks[i]):
-                    feasible = feasible and self.checkFlowConservation(v,upTo,i)
+                feasible = feasible and self.checkFlowConservation(v,upTo,i)
         for e in self.network.edges:
             feasible = feasible and self.checkQueueAtCap(e,upTo)
             feasible = feasible and self.checkQueue(e,upTo)
         return feasible
 
+    # Returns a string representing the queue length functions as well as the edge in and outflow rates
     def __str__(self):
-        q = ""
+        s = "Queues:\n"
+        for e in self.network.edges:
+            s += " q_" + str(e) + ": " + str(self.queues[e]) + "\n"
+        s += "----------------------------------------------------------\n"
         for i in range(self.noOfCommodities):
-            q += "Commodity " + str(i) + ":\n"
+            s += "Commodity " + str(i) + ":\n"
             for e in self.network.edges:
-                q += str(e) + "f+: " + str(self.fPlus[(e,i)]) + "\n"
-                q += str(e)+" q: "+str(self.queues[e])+"\n"
-                q += str(e) + "f-: " + str(self.fMinus[(e,i)]) + "\n"
-            q += "----------------------------------------------------------\n"
-        return q
+                s += "f_" + str(e) + ": " + str(self.fPlus[(e,i)]) + "\n"
+                s += "f_" + str(e) + ": " + str(self.fMinus[(e,i)]) + "\n"
+            s += "----------------------------------------------------------\n"
+        return s
 
 class PartialPathFlow:
     path: Path
@@ -153,5 +212,5 @@ class PartialPathFlow:
         self.fPlus = []
         self.fMinus = []
         for e in path.edges:
-            self.fPlus.append(PWConst([ExtendedRational(0), ExtendedRational(0)], [ExtendedRational(0)]))
-            self.fMinus.append(PWConst([ExtendedRational(0), e.tau], [ExtendedRational(0)]))
+            self.fPlus.append(PWConst([ExtendedRational(0), ExtendedRational(0)], [ExtendedRational(0)], ExtendedRational(0)))
+            self.fMinus.append(PWConst([ExtendedRational(0), e.tau], [ExtendedRational(0)], ExtendedRational(0)))

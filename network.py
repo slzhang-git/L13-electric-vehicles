@@ -79,16 +79,29 @@ class Path:
     edges: List[Edge]
     firstNode: Node
 
-    def __init__(self, edges: List[Edge]):
+    def __init__(self, edges: List[Edge], start: Node=None):
+        # For the empty path we explicitely have to specify the start node
+        assert(len(edges) > 0 or start is not None)
+        if start is None:
+            start = edges[0].node_from
+        self.firstNode = start
+
+        currentNode = start
         self.edges = []
         for e in edges:
-            if len(self.edges) > 0:
-                # Check whether edges do form a path:
-                assert(self.edges[-1].node_to == e.node_from)
+            # Check whether edges do form a path:
+            assert(currentNode == e.node_from)
             self.edges.append(e)
-        # TODO: Was machen bei leerem Weg?
-        assert(len(self.edges)>0)
-        self.firstNode = self.edges[0].node_from
+            currentNode = e.node_to
+
+    def getStart(self) -> Node:
+        return self.firstNode
+
+    def getEnd(self) -> Node:
+        if len(self.edges) == 0:
+            return self.firstNode
+        else:
+            return self.edges[-1].node_to
 
     def __len__(self):
         return len(self.edges)
