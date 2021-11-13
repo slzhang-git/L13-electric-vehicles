@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import random
-from typing import Union
+from typing import Union, List
 
 from utilities import *
 

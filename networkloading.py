@@ -160,7 +160,10 @@ def networkLoading(pathBasedFlows : PartialFlowPathBased, timeHorizon: ExtendedR
                         outflowRate = partialPathFlows[i].fPlus[j].getValueAt(theta) / flowTo[e] * min(flowTo[e], e.nu)
                     else:
                         outflowRate = 0
-                    partialPathFlows[i].fMinus[j].addSegment(flow.T(e, nextTheta), outflowRate)
+                    if nextTheta < ExtendedRational(1,0):
+                        partialPathFlows[i].fMinus[j].addSegment(flow.T(e, nextTheta), outflowRate)
+                    else:
+                        partialPathFlows[i].fMinus[j].addSegment(ExtendedRational(1,0), outflowRate)
 
             # Now we convert the path flows into the actual edge in- and outflow rates
             # i.e. if an edge occurs multiple times on a commodity's path we add up the corresponding rates from the path flow
@@ -172,7 +175,10 @@ def networkLoading(pathBasedFlows : PartialFlowPathBased, timeHorizon: ExtendedR
                         inflowRate += partialPathFlows[i].fPlus[j].getValueAt(theta)
                         outflowRate += partialPathFlows[i].fMinus[j].getValueAt(flow.T(e,theta))
                 flow.fPlus[(e,i)].addSegment(nextTheta,inflowRate)
-                flow.fMinus[(e, i)].addSegment(flow.T(e,nextTheta), outflowRate)
+                if nextTheta < ExtendedRational(1,0):
+                    flow.fMinus[(e, i)].addSegment(flow.T(e,nextTheta), outflowRate)
+                else:
+                    flow.fMinus[(e, i)].addSegment(ExtendedRational(1,0), outflowRate)
 
         # Now the extension at node v is done -> we have a flow up to time nextTheta at node v
         flow.upToAt[v] = nextTheta

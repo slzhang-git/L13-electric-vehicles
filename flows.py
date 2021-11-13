@@ -169,9 +169,10 @@ class PartialFlow:
                 inflow += self.fPlus[(e, i)].getValueAt(theta)
                 nextTheta = min(nextTheta,self.fPlus[(e,i)].getNextStepFrom(theta),self.fMinus[(e,i)].getNextStepFrom(theta+e.tau))
             currentQueue += (inflow-outflow)*(nextTheta-theta)
-            if currentQueue != self.queues[e].getValueAt(nextTheta):
+            if nextTheta < ExtendedRational(1,0) and currentQueue != self.queues[e].getValueAt(nextTheta):
                 # TODO: Fehlermeldung
-                print("Queue on edge ", e, " wrong at time ", theta)
+                print("Queue on edge ", e, " wrong at time ", nextTheta)
+                print("Should be ", currentQueue, " but is ", self.queues[e].getValueAt(nextTheta))
                 return False
             theta = nextTheta
         return True

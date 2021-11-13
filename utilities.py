@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import List
 
 from fractions import Fraction
 import heapq, math
@@ -101,6 +102,72 @@ class PWConst:
             for i in range(0,self.noOfSegments+1):
                 if x < self.segmentBorders[i]:
                     return self.segmentBorders[i]
+
+    def __add__(self, other : PWConst) -> PWConst:
+        # Add to piecewise constant functions
+
+        if self.default is None or other.default is None:
+            default = None
+            leftMost = max(self.segmentBorders[0],other.segmentBorders[0])
+            rightMost = min(self.segmentBorders[-1], other.segmentBorders[-1])
+        else:
+            default = self.default + other.default
+            leftMost = min(self.segmentBorders[0], other.segmentBorders[0])
+            rightMost = max(self.segmentBorders[-1], other.segmentBorders[-1])
+
+        sum = PWConst([leftMost],[],default,self.autoSimplify and other.autoSimplify)
+
+        x = leftMost
+        while x < rightMost:
+            val = self.getValueAt(x) + other.getValueAt(x)
+            x = min(self.getNextStepFrom(x),other.getNextStepFrom(x))
+            sum.addSegment(x,val)
+
+        return sum
+
+    def smul(self, mu: ExtendedRational) -> PWConst:
+        # Creates a new piecewise constant function by scaling the current one by mu
+
+        if self.default is None:
+            default = None
+        else:
+            default = mu * self.default
+        scaled = PWConst([self.segmentBorders[0]], [], default, self.autoSimplify)
+        for i in range(len(self.segmentValues)):
+            scaled.addSegment(self.segmentBorders[i+1],mu*self.segmentValues[i])
+
+        return scaled
+
+    def __abs__(self) -> PWConst:
+        # Creates a new piecewise constant functions |f|
+        if self.default is None:
+            default = None
+        else:
+            default = self.default.__abs__()
+        absf = PWConst([self.segmentBorders[0]], [], default, self.autoSimplify)
+        for i in range(len(self.segmentValues)):
+            absf.addSegment(self.segmentBorders[i + 1], self.segmentValues[i].__abs__())
+
+        return absf
+
+    def integrate(self, a : ExtendedRational, b : ExtendedRational) -> ExtendedRational:
+        # Determines the value of the integral of the given piecewise function from a to b
+        assert (self.default is not None or (a >= self.segmentBorders[0] and b <= self.segmentBorders[-1]))
+
+        integral = ExtendedRational(0)
+        x = a
+        while x < b:
+            y = min(self.getNextStepFrom(x), b)
+            integral += (y-x)*self.getValueAt(x)
+            x = y
+
+        return integral
+
+    def norm(self) -> ExtendedRational:
+        # Computes the L1-norm
+        assert (self.default is None or self.default == 0)
+        return self.__abs__().integrate(self.segmentBorders[0],self.segmentBorders[-1])
+
 
     def drawGraph(self,start:ExtendedRational, end:ExtendedRational):
         current = start
