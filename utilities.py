@@ -201,3 +201,5 @@ class PWLin:
                 +"|"+str(self.segmentBorders[i+1])+"|"
 
         return f
+
+

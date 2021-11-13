@@ -104,6 +104,13 @@ class Network:
     def duplicate(self, edge:Edge, nu: ExtendedRational, tau: ExtendedRational):
         self.addEdge(edge.node_from, edge.node_to, nu, tau)
 
+    def shortestSTpath(self, s : Node, t : Node) -> Path:
+        reachableNodes = {s : (0,None)}
+        queue = EventQueue()
+        queue.pushEvent(s,0)
+
+
+
     def __str__(self) -> str:
         s = "Graph with " + str(len(self.nodes)) + " nodes and " + str(len(self.edges)) + " edges:\n"
         for v in self.nodes:
@@ -136,6 +143,17 @@ class Path:
             assert(currentNode == e.node_from)
             self.edges.append(e)
             currentNode = e.node_to
+
+    def add_edge_at_start(self,e : Edge):
+        # Adds an edge at the beginning of a path
+        assert(e.node_to == self.getStart())
+        self.edges.insert(0,e)
+        self.firstNode = e.node_from
+
+    def add_edge_at_end(self,e : Edge):
+        # Adds an edge at the end of a path
+        assert (e.node_from == self.getEnd())
+        self.edges.append(e)
 
     def getStart(self) -> Node:
         return self.firstNode

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Dict, List
 from network import *
 from utilities import *
 
@@ -202,6 +203,53 @@ class PartialFlow:
             s += "----------------------------------------------------------\n"
         return s
 
+
+# A path based description of feasible flows:
+class PartialFlowPathBased:
+    network: Network
+    upToFor : List[ExtendedRational]
+    fPlus: List[Dict[Path, PWConst]]
+    sources: List[Node]
+    sinks: List[Node]
+    noOfCommodities: int
+
+    def __init__(self, network: Network, numberOfCommodities: int):
+        self.network = network
+        self.noOfCommodities = numberOfCommodities
+
+        # The zero-flow up to time zero
+        self.upToFor = [ExtendedRational(0) for _ in range(numberOfCommodities)]
+
+        # Initialize functions f^+
+        self.fPlus = [{} for _ in range(numberOfCommodities)]
+
+        # Currently every commodity has a network inflow rate of zero
+        self.u = [PWConst([ExtendedRational(0)],[],0) for _ in range(self.noOfCommodities)]
+        # Furthermore we do not know source and sink nodes yet
+        self.sources = [None for _ in range(self.noOfCommodities)]
+        self.sinks = [None for _ in range(self.noOfCommodities)]
+
+    def setPaths(self, commodity:int, paths:List[Path], pathinflows:List[PWConst]):
+        assert (commodity < self.noOfCommodities)
+        assert (len(paths) > 0)
+        self.sources[commodity] = paths[0].getStart()
+        self.sinks[commodity] = paths[0].getEnd()
+
+        assert (len(paths) == len(pathinflows))
+        for i in range(len(paths)):
+            p = paths[i]
+            assert (p.getStart() == self.sources[commodity])
+            assert (p.getEnd() == self.sinks[commodity])
+            fp = pathinflows[i]
+            assert (not p in self.fPlus[commodity])
+            self.fPlus[commodity][p] = fp
+
+
+    def getNoOfCommodities(self) -> int:
+        return self.noOfCommodities
+
+
+
 class PartialPathFlow:
     path: Path
     fPlus: List[PWConst]
@@ -214,3 +262,4 @@ class PartialPathFlow:
         for e in path.edges:
             self.fPlus.append(PWConst([ExtendedRational(0), ExtendedRational(0)], [ExtendedRational(0)], ExtendedRational(0)))
             self.fMinus.append(PWConst([ExtendedRational(0), e.tau], [ExtendedRational(0)], ExtendedRational(0)))
+
