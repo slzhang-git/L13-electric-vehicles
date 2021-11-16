@@ -106,7 +106,7 @@ class PWConst:
 
     def __add__(self, other: PWConst) -> PWConst:
         # Add to piecewise constant functions
-
+        # TODO: Depends on which function does not have default...
         if self.default is None or other.default is None:
             default = None
             leftMost = max(self.segmentBorders[0], other.segmentBorders[0])
@@ -148,7 +148,7 @@ class PWConst:
             x = min(self.getNextStepFrom(x), b)
             restrictedF.addSegment(x, val)
         if x < b and (not self.getValueAt(x) is None):
-            restrictedF.addSegment(self.getValueAt(x), b)
+            restrictedF.addSegment(b, self.getValueAt(x))
         return restrictedF
 
     def __abs__(self) -> PWConst:

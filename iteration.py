@@ -10,7 +10,7 @@ def findShortestSTpath(s: Node, t: Node, flow: PartialFlow, time: ExtendedRation
     while p.getStart() != s:
         v = p.getStart()
         for e in v.incoming_edges:
-            if arrivalTimes[e.node_from] + realizedTimes[e] == arrivalTimes[v]:
+            if e in realizedTimes and arrivalTimes[e.node_from] + realizedTimes[e] == arrivalTimes[v]:
                 p.add_edge_at_start(e)
                 break
 
@@ -21,18 +21,18 @@ def iterationStepNaive(oldPathInflows : PartialFlowPathBased, verbose : bool) ->
     currentFlow = networkLoading(oldPathInflows)
 
     # TODO: Adjust during algorithm?
-    timestepSize = ExtendedRational(1)
-    threshold = 0
+    timestepSize = ExtendedRational(1,4)
+    shiftAmount = ExtendedRational(3,4)
+    threshold = ExtendedRational(1,10)
 
     newPathInflows = PartialFlowPathBased(oldPathInflows.network, oldPathInflows.getNoOfCommodities())
 
     for i in range(oldPathInflows.getNoOfCommodities()):
         if verbose: print("Considering commodity ", i)
-        for P in oldPathInflows.fPlus[i]:
-            newPathInflows.fPlus[i][P] = PWConst([ExtendedRational(0)],[],ExtendedRational(0))
-        s = oldPathInflows.sources[i]
-        t = oldPathInflows.sinks[i]
-        theta = ExtendedRational(0)
+        newPathInflows.setPaths(i,[P for P in oldPathInflows.fPlus[i]],[PWConst([ExtendedRational(0,1)],[],ExtendedRational(0,1)) for P in oldPathInflows.fPlus[i]])
+        s = newPathInflows.sources[i]
+        t = newPathInflows.sinks[i]
+        theta = ExtendedRational(0,1)
         # We subdivide the time into intervals of length timestepSize
         while theta < oldPathInflows.getEndOfInflow(i):
             # For each such interval we determine the shortest path at the beginning of the interval
@@ -40,22 +40,21 @@ def iterationStepNaive(oldPathInflows : PartialFlowPathBased, verbose : bool) ->
             if verbose: print("timeinterval [", theta, ",", theta+timestepSize,"]")
             shortestPath = findShortestSTpath(s,t,currentFlow,theta)
             if shortestPath not in newPathInflows.fPlus[i]:
-                newPathInflows.fPlus[i][shortestPath] = PWConst([ExtendedRational(0)], [], ExtendedRational(0))
+                newPathInflows.fPlus[i][shortestPath] = PWConst([ExtendedRational(0)], [], ExtendedRational(0,1))
             shortestTravelTime = currentFlow.pathArrivalTime(shortestPath,theta)
             # We then go through all the paths used in the old flow distribution and check whether they are longer
             # then the currently shortest path (+ some threshold)
-            redistributedFlow = PWConst([theta, theta+timestepSize],[ExtendedRational(0)],default=ExtendedRational(0))
+            redistributedFlow = PWConst([theta, theta+timestepSize],[ExtendedRational(0)],ExtendedRational(0,1))
             for P in oldPathInflows.fPlus[i]:
                 fP = oldPathInflows.fPlus[i][P]
                 if currentFlow.pathArrivalTime(P,theta) > shortestTravelTime + threshold:
-                    # If so we will take all flow from this path away and redistribute it to the shortest path
-                    redistributedFlow += fP.restrictTo(theta,theta+timestepSize)
+                    # If so we will take some flow from this path away and redistribute it to the shortest path
+                    redistributedFlow += fP.restrictTo(theta,theta+timestepSize,ExtendedRational(0)).smul(shiftAmount)
+                    newPathInflows.fPlus[i][P] += fP.restrictTo(theta, theta + timestepSize, ExtendedRational(0)).smul(1-shiftAmount)
                     if verbose: print("redistributing flow from ", P, " to ", shortestPath)
-                    print(redistributedFlow)
                 else:
-                    newPathInflows.fPlus[i][P] += fP.restrictTo(theta,theta+timestepSize)
+                    newPathInflows.fPlus[i][P] += fP.restrictTo(theta,theta+timestepSize,ExtendedRational(0))
             newPathInflows.fPlus[i][shortestPath] += redistributedFlow
-            print(newPathInflows.fPlus[i][shortestPath])
             theta = theta+timestepSize
 
     return newPathInflows
@@ -102,7 +101,9 @@ def fixedPointIteration(N : Network, precision : float, commodities : List[Tuple
         if differenceBetweenPathInflows(pathInflows,newpathInflows) < precision:
             return newpathInflows
         if verbose: print("Changed amount is ", differenceBetweenPathInflows(pathInflows,newpathInflows))
+        if verbose: print("Current flow is\n", newpathInflows)
         pathInflows = newpathInflows
+        step += 1
 
     print("Maximum number of steps reached without attaining required precision!")
     return pathInflows

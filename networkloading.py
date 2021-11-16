@@ -72,11 +72,13 @@ def networkLoading(pathBasedFlows : PartialFlowPathBased, timeHorizon: ExtendedR
     flow = PartialFlow(network,noOfCommodities)
 
     # For all commodities (corresponding to one source-sink path each) set source, sink and network inflow rate
+    j = 0
     for i in range(pathBasedFlows.getNoOfCommodities()):
         for p in pathBasedFlows.fPlus[i]:
-            flow.setSource(i, pathBasedFlows.sources[i])
-            flow.setSink(i, pathBasedFlows.sinks[i])
-            flow.setU(i, pathBasedFlows.fPlus[i][p])
+            flow.setSource(j, pathBasedFlows.sources[i])
+            flow.setSink(j, pathBasedFlows.sinks[i])
+            flow.setU(j, pathBasedFlows.fPlus[i][p])
+            j += 1
 
     # A queue of node events:
     eventQueue = EventQueue()
