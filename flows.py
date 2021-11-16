@@ -208,7 +208,6 @@ class PartialFlow:
 # A path based description of feasible flows:
 class PartialFlowPathBased:
     network: Network
-    upToFor : List[ExtendedRational]
     fPlus: List[Dict[Path, PWConst]]
     sources: List[Node]
     sinks: List[Node]
@@ -217,9 +216,6 @@ class PartialFlowPathBased:
     def __init__(self, network: Network, numberOfCommodities: int):
         self.network = network
         self.noOfCommodities = numberOfCommodities
-
-        # The zero-flow up to time zero
-        self.upToFor = [ExtendedRational(0) for _ in range(numberOfCommodities)]
 
         # Initialize functions f^+
         self.fPlus = [{} for _ in range(numberOfCommodities)]
@@ -231,7 +227,7 @@ class PartialFlowPathBased:
         self.sinks = [None for _ in range(self.noOfCommodities)]
 
     def setPaths(self, commodity:int, paths:List[Path], pathinflows:List[PWConst]):
-        assert (commodity < self.noOfCommodities)
+        assert (0 <= commodity < self.noOfCommodities)
         assert (len(paths) > 0)
         self.sources[commodity] = paths[0].getStart()
         self.sinks[commodity] = paths[0].getEnd()
@@ -249,6 +245,22 @@ class PartialFlowPathBased:
     def getNoOfCommodities(self) -> int:
         return self.noOfCommodities
 
+    def getEndOfInflow(self, commodity:int) -> ExtendedRational:
+        assert (0 <= commodity < self.noOfCommodities)
+        endOfInflow = ExtendedRational(0)
+        for P in self.fPlus[commodity]:
+            fP = self.fPlus[commodity][P]
+            endOfInflow = max(endOfInflow, fP.segmentBorders[-1])
+        return endOfInflow
+
+    def __str__(self) -> str:
+        s = "Path inflow rates \n"
+        for i in range(self.noOfCommodities):
+            s += "  of commodity " + str(i) + "\n"
+            for P in self.fPlus[i]:
+                s += "    into path " + str(P) + ":\n"
+                s += str(self.fPlus[i][P]) + "\n"
+        return s
 
 
 class PartialPathFlow:

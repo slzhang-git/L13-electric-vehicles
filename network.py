@@ -104,10 +104,6 @@ class Network:
     def duplicate(self, edge:Edge, nu: ExtendedRational, tau: ExtendedRational):
         self.addEdge(edge.node_from, edge.node_to, nu, tau)
 
-    def shortestSTpath(self, s : Node, t : Node) -> Path:
-        reachableNodes = {s : (0,None)}
-        queue = EventQueue()
-        queue.pushEvent(s,0)
 
 
 
@@ -166,6 +162,29 @@ class Path:
 
     def __len__(self):
         return len(self.edges)
+
+    def __str__(self) -> str:
+        s = str(self.firstNode) + "-" + str(self.getEnd()) + " path: "
+        for e in self.edges:
+            s += str(e)
+        return s
+
+    def __eq__(self, other : Path) -> bool:
+        if not isinstance(other,Path):
+            return False
+        if len(self.edges) != len(other.edges):
+            return False
+        for i in range(len(self.edges)):
+            if self.edges[i] != other.edges[i]:
+                return False
+        return True
+
+    def __hash__(self):
+        # TODO: Remove!!
+        h = hash(self.firstNode)
+        for e in self.edges:
+            h += hash(e)
+        return h
 
 # Creates a random series parallel network with m edges
 # The source node will be named s, the sink node t. All other nodes are nameless
