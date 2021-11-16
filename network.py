@@ -180,10 +180,11 @@ class Path:
         return True
 
     def __hash__(self):
-        # TODO: Remove!!
+        # TODO: This is a very bad way of hashing
+        # If possible, this should be avoided at all as Path-objects are not immutable
         h = hash(self.firstNode)
         for e in self.edges:
-            h += hash(e)
+            h = 2*h + hash(e)
         return h
 
 # Creates a random series parallel network with m edges
