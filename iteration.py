@@ -22,8 +22,8 @@ def iterationStepNaive(oldPathInflows : PartialFlowPathBased, verbose : bool) ->
 
     # TODO: Adjust during algorithm?
     timestepSize = ExtendedRational(1,4)
-    shiftAmount = ExtendedRational(3,4)
-    threshold = ExtendedRational(1,10)
+    shiftAmount = ExtendedRational(1,2)
+    threshold = ExtendedRational(1,100)
 
     newPathInflows = PartialFlowPathBased(oldPathInflows.network, oldPathInflows.getNoOfCommodities())
 
@@ -38,16 +38,16 @@ def iterationStepNaive(oldPathInflows : PartialFlowPathBased, verbose : bool) ->
             # For each such interval we determine the shortest path at the beginning of the interval
             # (and basically assume it will stay the shortest one for the whole interval)
             if verbose: print("timeinterval [", theta, ",", theta+timestepSize,"]")
-            shortestPath = findShortestSTpath(s,t,currentFlow,theta)
+            shortestPath = findShortestSTpath(s,t,currentFlow,theta+timestepSize/2)
             if shortestPath not in newPathInflows.fPlus[i]:
                 newPathInflows.fPlus[i][shortestPath] = PWConst([ExtendedRational(0)], [], ExtendedRational(0,1))
-            shortestTravelTime = currentFlow.pathArrivalTime(shortestPath,theta)
+            shortestTravelTime = currentFlow.pathArrivalTime(shortestPath,theta+timestepSize/2)
             # We then go through all the paths used in the old flow distribution and check whether they are longer
             # then the currently shortest path (+ some threshold)
             redistributedFlow = PWConst([theta, theta+timestepSize],[ExtendedRational(0)],ExtendedRational(0,1))
             for P in oldPathInflows.fPlus[i]:
                 fP = oldPathInflows.fPlus[i][P]
-                if currentFlow.pathArrivalTime(P,theta) > shortestTravelTime + threshold:
+                if currentFlow.pathArrivalTime(P,theta+timestepSize/2) > shortestTravelTime + threshold:
                     # If so we will take some flow from this path away and redistribute it to the shortest path
                     redistributedFlow += fP.restrictTo(theta,theta+timestepSize,ExtendedRational(0)).smul(shiftAmount)
                     newPathInflows.fPlus[i][P] += fP.restrictTo(theta, theta + timestepSize, ExtendedRational(0)).smul(1-shiftAmount)
@@ -99,6 +99,7 @@ def fixedPointIteration(N : Network, precision : float, commodities : List[Tuple
         if verbose: print("Starting iteration #", step)
         newpathInflows = iterationStepNaive(pathInflows, verbose)
         if differenceBetweenPathInflows(pathInflows,newpathInflows) < precision:
+            print("Attained required precision!")
             return newpathInflows
         if verbose: print("Changed amount is ", differenceBetweenPathInflows(pathInflows,newpathInflows))
         if verbose: print("Current flow is\n", newpathInflows)
