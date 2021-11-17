@@ -36,7 +36,7 @@ def iterationStepNaive(oldPathInflows : PartialFlowPathBased, verbose : bool) ->
         # We subdivide the time into intervals of length timestepSize
         while theta < oldPathInflows.getEndOfInflow(i):
             # For each such interval we determine the shortest path at the beginning of the interval
-            # (and basically assume it will stay the shortest one for the whole interval)
+            # (and basically assume that it will stay the shortest one for the whole interval)
             if verbose: print("timeinterval [", theta, ",", theta+timestepSize,"]")
             shortestPath = findShortestSTpath(s,t,currentFlow,theta+timestepSize/2)
             if shortestPath not in newPathInflows.fPlus[i]:
