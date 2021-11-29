@@ -51,7 +51,7 @@ class EventQueue:
 # - pathBasedFlows: An object of class PartialFlowPathBased containing a set of commodities and for every commodity
 #   its source, sink, network inflow rate and a list of tuples (path p, inflow rate into path p)
 # - timeHorizon (optional): the flow will be determined for the time interval [0,timeHorizon]; default is infinity
-# - verbose: If true more information is printed during the network loading procedure; default is False
+# - verbose: If True, more information is printed during the network loading procedure; default is False
 def networkLoading(pathBasedFlows : PartialFlowPathBased, timeHorizon: ExtendedRational=math.inf, verbose:bool=False) -> PartialFlow:
     network = pathBasedFlows.network
 

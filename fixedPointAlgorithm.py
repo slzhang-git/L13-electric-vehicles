@@ -16,6 +16,29 @@ def findShortestSTpath(s: Node, t: Node, flow: PartialFlow, time: ExtendedRation
 
     return p
 
+def setInitialPathFlows(commodityId: int, G: Network, s: Node, t: Node,	u: PWConst, zeroflow: PartialFlow, pathInflows: PartialFlowPathBased) -> PartialFlowPathBased:
+    print("To be implemented! Passing hardcoded path inflows except for the shortest path.")
+    print("Setting up the shortest path and other paths.")
+    # p1 = Path([G.edges[0], G.edges[2], G.edges[4]])
+    p2 = Path([G.edges[1], G.edges[2], G.edges[3]])
+    p3 = Path([G.edges[1], G.edges[2], G.edges[4]])
+    pathInflows.setPaths(commodityId, [findShortestSTpath(s, t, zeroflow, ExtendedRational(0)),p2,p3], [u,0,0])
+    # print("Setting up path ", p2)
+    # pathInflows.setPaths(commodityId, p2, 0)
+    # print("Setting up path ", p3)
+    # pathInflows.setPaths(commodityId, p3, 0)
+    return pathInflows
+
+
+def getAllSTpaths(G: Network, s: Node, t: Node, flow: PartialFlow) -> List[Path]:
+    print("To be implemented: passing hardcoded paths for now.")
+    p1 = Path([G.edges[0], G.edges[2], G.edges[4]])
+    p2 = Path([G.edges[1], G.edges[2], G.edges[3]])
+    p3 = Path([G.edges[1], G.edges[2], G.edges[4]])
+    pathList = [p1,p2,p3]
+    print("Path list :", pathList)
+    return pathList
+
 
 def fixedPointUpdate(oldPathInflows : PartialFlowPathBased, verbose : bool) -> PartialFlowPathBased:
     currentFlow = networkLoading(oldPathInflows)
@@ -76,23 +99,29 @@ def differenceBetweenPathInflows(oldPathInflows : PartialFlowPathBased, newPathI
 
     return difference
 
-
-def fixedPointIteration(N : Network, precision : float, commodities : List[Tuple[Node, Node, PWConst]], timeHorizon: ExtendedRational=math.inf, maxSteps: int = None, verbose : bool = False) -> PartialFlowPathBased:
+# Function arguments: (network, precision, List[source node, sink node, ?], time
+# horizon, maximum allowed number of iterations, verbosity on/off)
+def fixedPointAlgo(N : Network, precision : float, commodities : List[Tuple[Node, Node, PWConst]], timeHorizon: ExtendedRational=math.inf, maxSteps: int = None, timeStep: int = None, verbose : bool = False) -> PartialFlowPathBased:
     step = 0
 
     ## Init:
-    # Create zero-flow
+    # Create zero-flow (PP: why?)
     pathInflows = PartialFlowPathBased(N,0)
     zeroflow = networkLoading(pathInflows,timeHorizon)
 
     i = 0
     pathInflows = PartialFlowPathBased(N, len(commodities))
-    # Initial flow: For every commodity select one source sink path and send all flow along this path
+    print("pathInflows ", pathInflows)
+    # Initial flow: For every commodity, select the shortest s-t path and send
+    # all flow along this path (and 0 flow along all other paths)
     for (s,t,u) in commodities:
-        pathInflows.setPaths(i, [findShortestSTpath(s, t, zeroflow, ExtendedRational(0))], [u])
+        # pathInflows.setPaths(i, [findShortestSTpath(s, t, zeroflow, ExtendedRational(0))], [u])
+        setInitialPathFlows(i, N, s, t, [u], zeroflow, pathInflows)
+        print("pathInflows ", pathInflows)
         i += 1
 
     if verbose: print("Starting with flow: \n", pathInflows)
+    exit(0)
 
     ## Iteration:
     while maxSteps is None or step < maxSteps:

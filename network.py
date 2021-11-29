@@ -211,3 +211,9 @@ def createRandomSPnetwork(m:int) -> Network:
             network.duplicate(e,1,1)
     return network
 
+# TODO: a function to get all energy feasbile s-t paths in a network N, given
+# nodes s and t
+def getPathList(self, network: Network, sourceNode: Node, sinkNode: Node):
+    print("To be implemented")
+
+

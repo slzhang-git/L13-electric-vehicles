@@ -226,6 +226,8 @@ class PartialFlowPathBased:
         self.sources = [None for _ in range(self.noOfCommodities)]
         self.sinks = [None for _ in range(self.noOfCommodities)]
 
+    # This function PP: does what?
+    # Arguments: commodity (id), paths:List[Path], pathinflows:List[PWConst]):
     def setPaths(self, commodity:int, paths:List[Path], pathinflows:List[PWConst]):
         assert (0 <= commodity < self.noOfCommodities)
         assert (len(paths) > 0)
@@ -235,9 +237,11 @@ class PartialFlowPathBased:
         assert (len(paths) == len(pathinflows))
         for i in range(len(paths)):
             p = paths[i]
+            print("Checking path: P", i, p)
             assert (p.getStart() == self.sources[commodity])
             assert (p.getEnd() == self.sinks[commodity])
             fp = pathinflows[i]
+            print("fp for path: P", i, p, fp)
             assert (not p in self.fPlus[commodity])
             self.fPlus[commodity][p] = fp
 
@@ -257,6 +261,7 @@ class PartialFlowPathBased:
         s = "Path inflow rates \n"
         for i in range(self.noOfCommodities):
             s += "  of commodity " + str(i) + "\n"
+            print("fplus ", self.fPlus)
             for P in self.fPlus[i]:
                 s += "    into path " + str(P) + ":\n"
                 s += str(self.fPlus[i][P]) + "\n"
