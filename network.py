@@ -29,6 +29,10 @@ class Edge:
     def __str__(self):
         return "("+str(self.node_from)+","+str(self.node_to)+")"
 
+    # Get edge (id) in network
+    def getIdInNetwork(self, G: Network):
+        return "Implement me."
+
 # A node (from https://github.com/Schedulaar/predicted-dynamic-flows/blob/main/predictor/src/core/graph.py )
 class Node:
     name: str
@@ -179,6 +183,7 @@ class Path:
                 return False
         return True
 
+    # PP: why do we need this?
     def __hash__(self):
         # TODO: This is a very bad way of hashing
         # If possible, this should be avoided at all as Path-objects are not immutable
@@ -210,6 +215,14 @@ def createRandomSPnetwork(m:int) -> Network:
         else:
             network.duplicate(e,1,1)
     return network
+
+# Print path p based on edge ids in the network G
+def printPathInNetwork(p: Path, G: Network):
+    s = str()
+    for e in p.edges:
+        s += str(G.edges.index(e))
+        s += str(e)
+    return s
 
 # TODO: a function to get all energy feasbile s-t paths in a network N, given
 # nodes s and t

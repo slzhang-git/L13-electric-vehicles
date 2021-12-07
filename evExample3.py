@@ -105,17 +105,19 @@ p3 = Path([G.edges[1], G.edges[2], G.edges[4]])
 
 ## INPUT PARAMETERS
 timeHorizon = 50    # discretization time step
-maxIter = 100	    # maximum iterations of fixed point algorithm
+maxIter = 2	    # maximum iterations of fixed point algorithm
 precision = 1	    # desired numerical threshold for convergence
-# PP: What is a good way to decide this based on the given network?
+# PP: What is a good way to decide timeStep based on the given network?
 timeStep = 1	    # discretization time step
+# alpha*travelTimes must be numerically comparable to pathflows [han2019]
+alpha = 1	    # step size parameter
 
-f = fixedPointAlgo(G,precision,[(G.getNode("s"),G.getNode("t"),PWConst([0,10],[3],0))],timeHorizon,maxIter,timeStep,True)
+f = fixedPointAlgo(G,precision,[(G.getNode("s"),G.getNode("t"),PWConst([0,10,50],[3,0],0))],timeHorizon,maxIter,timeStep,alpha,True)
 print(f)
-networkLoading(f).fPlus[G.edges[0],0].drawGraph(0,10).show()
-networkLoading(f).fPlus[G.edges[2],1].drawGraph(0,10).show()
-networkLoading(f).queues[G.edges[0]].drawGraph(0,10).show()
-networkLoading(f).queues[G.edges[4]].drawGraph(0,10).show()
+# networkLoading(f).fPlus[G.edges[0],0].drawGraph(0,10).show()
+# networkLoading(f).fPlus[G.edges[2],1].drawGraph(0,10).show()
+# networkLoading(f).queues[G.edges[0]].drawGraph(0,10).show()
+# networkLoading(f).queues[G.edges[4]].drawGraph(0,10).show()
 
 
 ## An adjusted example ##

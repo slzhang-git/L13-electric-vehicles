@@ -205,7 +205,7 @@ class PWConst:
         return f
 
 
-# A piecewise linear function
+# A piecewise linear function: f(x) = mx + t
 class PWLin:
     noOfSegments: int
     autoSimplify: bool

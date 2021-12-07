@@ -194,7 +194,7 @@ class PartialFlow:
     def __str__(self):
         s = "Queues:\n"
         for e in self.network.edges:
-            s += " q_" + str(e) + ": " + str(self.queues[e]) + "\n"
+            s += " q_" + str(self.network.edges.index(e)) + str(e) + ": " + str(self.queues[e]) + "\n"
         s += "----------------------------------------------------------\n"
         for i in range(self.noOfCommodities):
             s += "Commodity " + str(i) + ":\n"
@@ -237,13 +237,15 @@ class PartialFlowPathBased:
         assert (len(paths) == len(pathinflows))
         for i in range(len(paths)):
             p = paths[i]
-            print("Checking path: P", i, p)
+            # print("Checking path: P", i, printPathInNetwork(p,self.network))
             assert (p.getStart() == self.sources[commodity])
             assert (p.getEnd() == self.sinks[commodity])
             fp = pathinflows[i]
-            print("fp for path: P", i, p, fp)
+            print("fp for path: P", i, sep = '', end = ' ')
+            print(printPathInNetwork(p,self.network), fp)
             assert (not p in self.fPlus[commodity])
             self.fPlus[commodity][p] = fp
+        # exit(0)
 
 
     def getNoOfCommodities(self) -> int:
@@ -261,9 +263,10 @@ class PartialFlowPathBased:
         s = "Path inflow rates \n"
         for i in range(self.noOfCommodities):
             s += "  of commodity " + str(i) + "\n"
-            print("fplus ", self.fPlus)
-            for P in self.fPlus[i]:
-                s += "    into path " + str(P) + ":\n"
+            # print("fplus ", self.fPlus)
+            for j,P in enumerate(self.fPlus[i]):
+                # show edge ids with paths here
+                s += "    into path P" + str(j) + " " + str(P) + ":\n"
                 s += str(self.fPlus[i][P]) + "\n"
         return s
 
