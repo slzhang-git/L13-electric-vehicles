@@ -241,8 +241,8 @@ class PartialFlowPathBased:
             assert (p.getStart() == self.sources[commodity])
             assert (p.getEnd() == self.sinks[commodity])
             fp = pathinflows[i]
-            print("fp for path: P", i, sep = '', end = ' ')
-            print(printPathInNetwork(p,self.network), fp)
+            # print("fp for path: P", i, sep = '', end = ' ')
+            # print(printPathInNetwork(p,self.network), fp)
             assert (not p in self.fPlus[commodity])
             self.fPlus[commodity][p] = fp
         # exit(0)
