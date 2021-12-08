@@ -67,7 +67,8 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
         t = newPathInflows.sinks[i]
         theta = ExtendedRational(0,1)
         # We subdivide the time into intervals of length timestepSize
-        while theta < oldPathInflows.getEndOfInflow(i) and theta < 2:
+        while theta < oldPathInflows.getEndOfInflow(i):
+        # while theta < oldPathInflows.getEndOfInflow(i) and theta < 48:
             # For each subinterval i we determine the dual variable v_i
             # (and assume that it will stay the same for the whole interval)
             # if verbose: print("timeinterval [", theta, ",", theta+timestepSize,"]")
@@ -79,10 +80,11 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
             for j,P in enumerate(oldPathInflows.fPlus[i]):
                  fP = oldPathInflows.fPlus[i][P]
                  # converting to float (optimize.root does not work with fractions)
+                 print("theta arg ", theta)
                  travelTime[j] = float(currentFlow.pathArrivalTime(P, theta) - theta)
                  flowValue[j] = float(fP.getValueAt(theta))
                  print("Path: P",j, "flowValue: ", flowValue[j], "travelTime: ",\
-                         travelTime[j], "fp: ", fP)
+                         travelTime[j], "at theta =", theta, "fp: ", fP)
 
             # Find integral value, ubar, of (piecewise constant) function u in this
             # subinterval
@@ -91,14 +93,16 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
             if uval1==uval2:
                 ubar = uval1*timestepSize
             else:
-                print("Implement me: integral of u when u changes within the subinterval")
-                exit(0)
+                if not uval2 == 0:
+                    print("Implement me: find integral of u when it has different\
+                            positive values within a subinterval")
+                    exit(0)
 
             # TODO: Find a good starting point
-            # a guess: assume all terms are positive and solve for dual variable
+            # A trivial guess: assume all terms to be positive and solve for the dual variable
             x0 = ((-sum(flowValue) + alpha*sum(travelTime))*timestepSize +
                     ubar)/(len(flowValue)*timestepSize)
-            print("x0 ", x0)
+            print("x0 ", round(x0,2))
             # exit(0)
             sol = optimize.root(findDualVar, x0, (alpha, flowValue, travelTime,
                     timestepSize, ubar))
@@ -114,7 +118,7 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
                 # print("newFlowVal ", newFlowVal)
                 newPathInflows.fPlus[i][P].addSegment(ExtendedRational(theta +
                     timestepSize), ExtendedRational(newFlowVal))
-            print("newPathInflows ", newPathInflows)
+            print("newPathInflows: ", newPathInflows)
             theta = theta + timestepSize
     exit(0)
     return newPathInflows
@@ -185,9 +189,9 @@ def fixedPointAlgo(N : Network, precision : float, commodities :
         # print("newpathInflows ", newpathInflows)
         newpathInflows = fixedPointUpdate(pathInflows, timeHorizon, alpha,
                 timeStep, u, verbose)
-        if differenceBetweenPathInflows(pathInflows,newpathInflows) < precision:
-            print("Attained required precision!")
-            return newpathInflows
+        # if differenceBetweenPathInflows(pathInflows,newpathInflows) < precision:
+            # print("Attained required precision!")
+            # return newpathInflows
         if verbose: print("Changed amount is ", differenceBetweenPathInflows(pathInflows,newpathInflows))
         if verbose: print("Current flow is\n", newpathInflows)
         pathInflows = newpathInflows

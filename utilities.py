@@ -201,7 +201,8 @@ class PWConst:
     def __str__(self):
         f = "|" + str(self.segmentBorders[0]) + "|"
         for i in range(len(self.segmentValues)):
-            f += "-" + str(self.segmentValues[i]) + "-|" + str(self.segmentBorders[i + 1]) + "|"
+            # f += "-" + str(self.segmentValues[i]) + "-|" + str(self.segmentBorders[i + 1]) + "|"
+            f += " " + str(round(float(self.segmentValues[i]),2)) + " |" + str(self.segmentBorders[i + 1]) + "|"
         return f
 
 
