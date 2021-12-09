@@ -57,10 +57,10 @@ class PartialFlow:
         self.u[commodity] = u
 
 
-
     # The travel time over an edge e at time theta
     def c(self, e:Edge, theta:ExtendedRational) -> ExtendedRational:
         # the queue on edge e has to be known up to at least time theta
+        # print("segborder, theta: ", self.queues[e].segmentBorders[-1], theta)
         assert (self.queues[e].segmentBorders[-1] >= theta)
         return self.queues[e].getValueAt(theta)/e.nu + e.tau
 
@@ -75,9 +75,8 @@ class PartialFlow:
             return theta
         else:
             firstEdge = p.edges[0]
+            # print("theta ", theta)
             return self.pathArrivalTime(Path(p.edges[1:],firstEdge.node_to),self.T(firstEdge,theta))
-
-
 
     def checkFlowConservation(self,v: Node,upTo: ExtendedRational,commodity: int) -> bool:
         # Checks whether flow conservation holds at node v during the interval [0,upTo]
@@ -226,7 +225,6 @@ class PartialFlowPathBased:
         self.sources = [None for _ in range(self.noOfCommodities)]
         self.sinks = [None for _ in range(self.noOfCommodities)]
 
-    # This function PP: does what?
     # Arguments: commodity (id), paths:List[Path], pathinflows:List[PWConst]):
     def setPaths(self, commodity:int, paths:List[Path], pathinflows:List[PWConst]):
         assert (0 <= commodity < self.noOfCommodities)
@@ -245,8 +243,6 @@ class PartialFlowPathBased:
             # print(printPathInNetwork(p,self.network), fp)
             assert (not p in self.fPlus[commodity])
             self.fPlus[commodity][p] = fp
-        # exit(0)
-
 
     def getNoOfCommodities(self) -> int:
         return self.noOfCommodities

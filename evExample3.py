@@ -69,11 +69,12 @@ p3 = Path([G.edges[1], G.edges[2], G.edges[4]])
 #flow.fMinus[(G.edges[2],0)].drawGraph(0, 10).show()
 
 ## INPUT PARAMETERS
-timeHorizon = 50    # discretization time step
-maxIter = 2	    # maximum iterations of fixed point algorithm
-precision = 1	    # desired numerical threshold for convergence
+timeHorizon = 60    # discretization time step
+maxIter = 100	    # maximum iterations of fixed point algorithm
+precision = 1/2	    # desired numerical threshold for convergence
 # PP: What is a good way to decide timeStep based on the given network?
-timeStep = 1	    # discretization time step
+timeStep = ExtendedRational(1,4)	    # discretization time step
+# timeStep = ExtendedRational(1,1)	    # discretization time step
 # alpha*travelTimes must be numerically comparable to pathflows [han2019]
 alpha = 1	    # step size parameter
 

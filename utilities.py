@@ -276,12 +276,23 @@ class PWLin:
         plt.plot(x, y)
         return plt
 
+    # def __str__(self):
+        # f = "|" + str(self.segmentBorders[0]) + "|"
+        # for i in range(len(self.segmentMvalues)):
+            # f += str(self.segmentTvalues[i]) + "-" \
+                 # + str(
+                # self.segmentTvalues[i] + (self.segmentBorders[i + 1] - self.segmentBorders[i]) * self.segmentMvalues[i]) \
+                 # + "|" + str(self.segmentBorders[i + 1]) + "|"
+
+        # return f
+
     def __str__(self):
         f = "|" + str(self.segmentBorders[0]) + "|"
         for i in range(len(self.segmentMvalues)):
-            f += str(self.segmentTvalues[i]) + "-" \
+            f += str(round(float(self.segmentTvalues[i]),2)) + " " \
                  + str(
-                self.segmentTvalues[i] + (self.segmentBorders[i + 1] - self.segmentBorders[i]) * self.segmentMvalues[i]) \
+                round(float(self.segmentTvalues[i] + (self.segmentBorders[i + 1] -
+                    self.segmentBorders[i]) * self.segmentMvalues[i]),2)) \
                  + "|" + str(self.segmentBorders[i + 1]) + "|"
 
         return f

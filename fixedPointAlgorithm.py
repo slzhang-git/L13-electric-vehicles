@@ -21,14 +21,20 @@ def findShortestSTpath(s: Node, t: Node, flow: PartialFlow, time: ExtendedRation
 def setInitialPathFlows(commodityId: int, G: Network, s: Node, t: Node,	u: PWConst, zeroflow: PartialFlow, pathInflows: PartialFlowPathBased) -> PartialFlowPathBased:
     print("To be implemented! Passing hardcoded path inflows.")
     # print("Setting up the shortest path and other paths.")
-    p1 = Path([G.edges[0], G.edges[2], G.edges[4]])
-    p2 = Path([G.edges[1], G.edges[2], G.edges[3]])
+    # p1 = Path([G.edges[0], G.edges[2], G.edges[4]])
+    # p2 = Path([G.edges[1], G.edges[2], G.edges[3]])
+    # p3 = Path([G.edges[1], G.edges[2], G.edges[4]])
     # printPathInNetwork(p2,G)
-    p3 = Path([G.edges[1], G.edges[2], G.edges[4]])
     # printPathInNetwork(p3,G)
     # exit(0)
     # pathInflows.setPaths(commodityId, [findShortestSTpath(s, t, zeroflow,
 	    # ExtendedRational(0)),p2,p3], [u,PWConst([0,50],[0],0),PWConst([0,50],[0],0)])
+
+    # Leon's path
+    p1 = Path([G.edges[0], G.edges[1], G.edges[2]])
+    p2 = Path([G.edges[3], G.edges[4], G.edges[2]])
+    p3 = Path([G.edges[0], G.edges[5], G.edges[6]])
+
     pathInflows.setPaths(commodityId, [p1,p2,p3], [u,PWConst([0,50],[0],0),PWConst([0,50],[0],0)])
     # print("Setting up path ", p2)
     # pathInflows.setPaths(commodityId, p2, 0)
@@ -68,7 +74,7 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
         theta = ExtendedRational(0,1)
         # We subdivide the time into intervals of length timestepSize
         while theta < oldPathInflows.getEndOfInflow(i):
-        # while theta < oldPathInflows.getEndOfInflow(i) and theta < 48:
+        # while theta < oldPathInflows.getEndOfInflow(i) and theta < 1:
             # For each subinterval i we determine the dual variable v_i
             # (and assume that it will stay the same for the whole interval)
             # if verbose: print("timeinterval [", theta, ",", theta+timestepSize,"]")
@@ -80,11 +86,13 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
             for j,P in enumerate(oldPathInflows.fPlus[i]):
                  fP = oldPathInflows.fPlus[i][P]
                  # converting to float (optimize.root does not work with fractions)
-                 print("theta arg ", theta)
-                 travelTime[j] = float(currentFlow.pathArrivalTime(P, theta) - theta)
+                 # print("theta arg ", theta)
+                 travelTime[j] = float(currentFlow.pathArrivalTime(P,
+                     theta + timestepSize/2) - (theta + timestepSize/2))
                  flowValue[j] = float(fP.getValueAt(theta))
-                 print("Path: P",j, "flowValue: ", flowValue[j], "travelTime: ",\
-                         travelTime[j], "at theta =", theta, "fp: ", fP)
+                 # print("Path: P",j, "flowValue: ", flowValue[j], "travelTime: ",\
+                         # travelTime[j], "at theta =", theta, "fp: ", fP)
+                         # travelTime[j], "at theta =", theta)
 
             # Find integral value, ubar, of (piecewise constant) function u in this
             # subinterval
@@ -102,11 +110,16 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
             # A trivial guess: assume all terms to be positive and solve for the dual variable
             x0 = ((-sum(flowValue) + alpha*sum(travelTime))*timestepSize +
                     ubar)/(len(flowValue)*timestepSize)
-            print("x0 ", round(x0,2))
+            # print("x0 ", round(x0,2))
             # exit(0)
+            # optimize.show_options(solver=None, method=None, disp=True)
+            # optimize.show_options(disp=False)
             sol = optimize.root(findDualVar, x0, (alpha, flowValue, travelTime,
-                    timestepSize, ubar))
-                    # timestepSize, ubar), method='broyden1')
+                    # timestepSize, ubar))
+                    timestepSize, ubar), method='broyden1')
+            # sol = optimize.root_scalar(findDualVar, (alpha, flowValue, travelTime,
+                # timestepSize, ubar), method='newton', fprime='False', x0=x0)
+
             if not sol.success:
                 print(sol.message)
                 exit(0)
@@ -114,13 +127,17 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
                 print(sol)
             # print("currentFlow ", currentFlow)
             for j,P in enumerate(oldPathInflows.fPlus[i]):
-                newFlowVal = max(flowValue[j] - alpha*travelTime[j] + sol.x[0], 0)
+                # newFlowVal = max(flowValue[j] - alpha*travelTime[j] + sol.x[0], 0)
+                newFlowVal = max(flowValue[j] - alpha*travelTime[j] + sol.x, 0)
                 # print("newFlowVal ", newFlowVal)
                 newPathInflows.fPlus[i][P].addSegment(ExtendedRational(theta +
                     timestepSize), ExtendedRational(newFlowVal))
-            print("newPathInflows: ", newPathInflows)
+            # print("newPathInflows: ", newPathInflows)
             theta = theta + timestepSize
-    exit(0)
+    # exit(0)
+    for e in currentFlow.network.edges:
+        print("queues :", currentFlow.queues[e])
+    print("newPathInflows: ", newPathInflows)
     return newPathInflows
 
 def findDualVar(x, alpha, flowValue, travelTime, timestepSize, ubar):
@@ -189,13 +206,14 @@ def fixedPointAlgo(N : Network, precision : float, commodities :
         # print("newpathInflows ", newpathInflows)
         newpathInflows = fixedPointUpdate(pathInflows, timeHorizon, alpha,
                 timeStep, u, verbose)
-        # if differenceBetweenPathInflows(pathInflows,newpathInflows) < precision:
-            # print("Attained required precision!")
-            # return newpathInflows
+        if differenceBetweenPathInflows(pathInflows,newpathInflows) < precision:
+            print("Attained required precision!")
+            return newpathInflows
         if verbose: print("Changed amount is ", differenceBetweenPathInflows(pathInflows,newpathInflows))
         if verbose: print("Current flow is\n", newpathInflows)
         pathInflows = newpathInflows
         step += 1
+        print("\nSTEP ", step,"\n")
 
     print("Maximum number of steps reached without attaining required precision!")
     return pathInflows
