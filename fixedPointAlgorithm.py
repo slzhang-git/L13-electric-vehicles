@@ -21,6 +21,7 @@ def findShortestSTpath(s: Node, t: Node, flow: PartialFlow, time: ExtendedRation
 def setInitialPathFlows(commodityId: int, G: Network, s: Node, t: Node,	u: PWConst, zeroflow: PartialFlow, pathInflows: PartialFlowPathBased) -> PartialFlowPathBased:
     print("To be implemented! Passing hardcoded path inflows.")
     # print("Setting up the shortest path and other paths.")
+    # Paths for EVExample3 network
     # p1 = Path([G.edges[0], G.edges[2], G.edges[4]])
     # p2 = Path([G.edges[1], G.edges[2], G.edges[3]])
     # p3 = Path([G.edges[1], G.edges[2], G.edges[4]])
@@ -30,7 +31,7 @@ def setInitialPathFlows(commodityId: int, G: Network, s: Node, t: Node,	u: PWCon
     # pathInflows.setPaths(commodityId, [findShortestSTpath(s, t, zeroflow,
 	    # ExtendedRational(0)),p2,p3], [u,PWConst([0,50],[0],0),PWConst([0,50],[0],0)])
 
-    # Leon's path
+    # Paths for the example in Leon's thesis
     p1 = Path([G.edges[0], G.edges[1], G.edges[2]])
     p2 = Path([G.edges[3], G.edges[4], G.edges[2]])
     p3 = Path([G.edges[0], G.edges[5], G.edges[6]])
@@ -111,20 +112,21 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
             x0 = ((-sum(flowValue) + alpha*sum(travelTime))*timestepSize +
                     ubar)/(len(flowValue)*timestepSize)
             # print("x0 ", round(x0,2))
-            # exit(0)
-            # optimize.show_options(solver=None, method=None, disp=True)
-            # optimize.show_options(disp=False)
+            # optimize.show_options(solver='root', method='broyden1', disp=True)
+            # TODO: Find a way to run optimize.root quietly
             sol = optimize.root(findDualVar, x0, (alpha, flowValue, travelTime,
                     # timestepSize, ubar))
-                    timestepSize, ubar), method='broyden1')
+                    timestepSize, ubar), method='broyden1', options={'disp':False})
+            # TODO: For root_scalar methods, either gradient function or the bracket for
+            # root is essential
             # sol = optimize.root_scalar(findDualVar, (alpha, flowValue, travelTime,
-                # timestepSize, ubar), method='newton', fprime='False', x0=x0)
+                # timestepSize, ubar), method='newton', x0=0)
 
             if not sol.success:
                 print(sol.message)
                 exit(0)
-            else:
-                print(sol)
+            # else:
+                # print(sol)
             # print("currentFlow ", currentFlow)
             for j,P in enumerate(oldPathInflows.fPlus[i]):
                 # newFlowVal = max(flowValue[j] - alpha*travelTime[j] + sol.x[0], 0)
@@ -135,13 +137,13 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
             # print("newPathInflows: ", newPathInflows)
             theta = theta + timestepSize
     # exit(0)
-    for e in currentFlow.network.edges:
-        print("queues :", currentFlow.queues[e])
+    # for e in currentFlow.network.edges:
+        # print("queues :", currentFlow.queues[e])
     print("newPathInflows: ", newPathInflows)
     return newPathInflows
 
 def findDualVar(x, alpha, flowValue, travelTime, timestepSize, ubar):
-    # print("printing args ", x,alpha,flowValue,travelTime,timestepSize,ubar)
+    # print("printing args ", round(x,2),alpha,flowValue,travelTime,timestepSize,ubar)
     termSum = 0
     # print("termSum ", termSum)
     for j,fv in enumerate(flowValue):
@@ -150,8 +152,8 @@ def findDualVar(x, alpha, flowValue, travelTime, timestepSize, ubar):
         termSum += max(flowValue[j] - alpha*travelTime[j] + x, 0)*timestepSize
         # print("termSum in loop ", termSum)
     # print("result ", termSum - ubar)
-    # exit(0)
-    return termSum - ubar
+    # return termSum - ubar
+    return float(termSum - ubar)
 
 
 def differenceBetweenPathInflows(oldPathInflows : PartialFlowPathBased, newPathInflows : PartialFlowPathBased) -> ExtendedRational:
@@ -209,7 +211,8 @@ def fixedPointAlgo(N : Network, precision : float, commodities :
         if differenceBetweenPathInflows(pathInflows,newpathInflows) < precision:
             print("Attained required precision!")
             return newpathInflows
-        if verbose: print("Changed amount is ", differenceBetweenPathInflows(pathInflows,newpathInflows))
+        if verbose: print("Changed amount is ",
+                round(float(differenceBetweenPathInflows(pathInflows,newpathInflows)),2))
         if verbose: print("Current flow is\n", newpathInflows)
         pathInflows = newpathInflows
         step += 1
