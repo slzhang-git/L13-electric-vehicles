@@ -164,6 +164,13 @@ class Path:
         else:
             return self.edges[-1].node_to
 
+    def getFreeFlowTravelTime(self):
+        # TODO: put in checks
+        fftt = 0
+        for e in self.edges:
+            fftt += e.tau
+        return fftt
+
     def __len__(self):
         return len(self.edges)
 

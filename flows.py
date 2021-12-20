@@ -263,7 +263,9 @@ class PartialFlowPathBased:
             # print("fplus ", self.fPlus)
             for j,P in enumerate(self.fPlus[i]):
                 # show edge ids with paths here
-                s += "    into path P" + str(j) + " " + str(P) + ":\n"
+                s += "    into path P" + str(j) + " " + str(P) +\
+                        ": free flow travel time: " +\
+                        str(P.getFreeFlowTravelTime()) + ": \n"
                 s += str(self.fPlus[i][P]) + "\n"
         return s
 

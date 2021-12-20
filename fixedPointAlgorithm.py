@@ -229,12 +229,13 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
                     timestepSize), ExtendedRational(newFlowVal))
             # print("newPathInflows: ", newPathInflows)
             theta = theta + timestepSize
+        tmpVar = max(timestepSize,1/timestepSize)
         print("Mean # of root.scalar() iterations ",\
-                float(round(meanIter/oldPathInflows.getEndOfInflow(i),2)),\
-                " for ", max(timestepSize,1/timestepSize)*oldPathInflows.getEndOfInflow(i), " subintervals")
-    # for e in currentFlow.network.edges:
-        # print("queues :", currentFlow.queues[e])
-    # print("newPathInflows: ", newPathInflows)
+                float(round(meanIter/(tmpVar*oldPathInflows.getEndOfInflow(i)),2)),\
+                " for ", tmpVar*oldPathInflows.getEndOfInflow(i), " subintervals")
+    for e in currentFlow.network.edges:
+        print("queues :", currentFlow.queues[e])
+    print("newPathInflows: ", newPathInflows)
     return newPathInflows
 
 def dualVarRootFunc(x, alpha, flowValue, travelTime, timestepSize, ubar):
