@@ -140,9 +140,9 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
         s = newPathInflows.sources[i]
         t = newPathInflows.sinks[i]
         theta = ExtendedRational(0,1)
+        meanIter = 0
         # We subdivide the time into intervals of length timestepSize
         while theta < oldPathInflows.getEndOfInflow(i):
-        # while theta < oldPathInflows.getEndOfInflow(i) and theta < 1:
             # For each subinterval i we determine the dual variable v_i
             # (and assume that it will stay the same for the whole interval)
             # if verbose: print("timeinterval [", theta, ",", theta+timestepSize,"]")
@@ -154,7 +154,6 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
             for j,P in enumerate(oldPathInflows.fPlus[i]):
                  fP = oldPathInflows.fPlus[i][P]
                  # converting to float (optimize.root does not work with fractions)
-                 # print("theta arg ", theta)
                  travelTime[j] = float(currentFlow.pathArrivalTime(P,
                      theta + timestepSize/2) - (theta + timestepSize/2))
                  flowValue[j] = float(fP.getValueAt(theta))
@@ -216,7 +215,8 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
                         to the following reason:")
                 print("\"", sol.flag, "\"")
                 exit(0)
-            # else:
+            else:
+                meanIter += sol.iterations
                 # print(sol)
             # print("currentFlow ", currentFlow)
             for j,P in enumerate(oldPathInflows.fPlus[i]):
@@ -229,6 +229,9 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
                     timestepSize), ExtendedRational(newFlowVal))
             # print("newPathInflows: ", newPathInflows)
             theta = theta + timestepSize
+        print("Mean # of root.scalar() iterations ",\
+                float(round(meanIter/oldPathInflows.getEndOfInflow(i),2)),\
+                " for ", max(timestepSize,1/timestepSize)*oldPathInflows.getEndOfInflow(i), " subintervals")
     # for e in currentFlow.network.edges:
         # print("queues :", currentFlow.queues[e])
     # print("newPathInflows: ", newPathInflows)
