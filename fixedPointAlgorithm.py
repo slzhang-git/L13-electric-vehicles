@@ -89,8 +89,8 @@ def setInitialPathFlows(G: Network, commodities : List[Tuple[Node, Node, PWConst
     for i,(s,t,u) in enumerate(commodities):
         # Get pathlist
         # pathlist = getEVExamplePaths(G, s, t)
-        pathlist = getLeonsPaths(G, s, t)
-        # pathlist = getNguyenPaths(G, s, t)
+        # pathlist = getLeonsPaths(G, s, t)
+        pathlist = getNguyenPaths(G, s, t)
 
         # Get flowlist
         # flowlist = [u,PWConst([0,50],[0],0),PWConst([0,50],[0],0)]
@@ -185,34 +185,32 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
             # TODO: Find a way to run optimize.root quietly
             # sol = optimize.root(dualVarRootFunc, x0, (alpha, flowValue, travelTime,
                     # timestepSize, ubar), method='broyden1', options={'disp':False})
-            # TODO: For root_scalar methods, either gradient function or the bracket for
-            # Root is required to be passed as arguments to the algorithms
             # bracketLeft = -max(list(map(float.__sub__, list(map(lambda x: alpha*x,
                 # travelTime)), flowValue)))
             bracketLeft = 0
             bracketRight = abs(max(list(map(float.__sub__, list(map(lambda x: alpha*x,
                 travelTime)), flowValue)))) + ubar + 1
-            # print(bracketUp,travelTime)
-            # exit(0)
+
+            # Default (brentq) method using bracket
             # sol = optimize.root_scalar(dualVarRootFunc, (alpha, flowValue, travelTime,
                 # timestepSize, ubar), x0=x0, bracket=[bracketLeft, bracketRight])
 
-            # Newton's method with derivative
+            # Newton's method using separate routines for value and derivative
             # sol = optimize.root_scalar(dualVarRootFunc, (alpha, flowValue, travelTime,
                 # timestepSize, ubar), x0=x0, bracket=[bracketLeft, bracketRight],
                 # fprime=dualVarRootFuncGrad, method='newton')
 
-            # Newton's method with derivative
+            # Newton's method using a routine that return value and derivative
             sol = optimize.root_scalar(dualVarRootFuncComb, (alpha, flowValue, travelTime,
                 timestepSize, ubar), x0=x0, bracket=[bracketLeft, bracketRight],
                 fprime=True, method='newton')
 
-            # This is for optimize.root() function
+            # Uncomment below when using (multivariate) optimize.root() function
             # if not sol.success:
                 # print("The optimize.root() method has failed with the message:")
                 # print("\"", sol.message, "\"")
                 # exit(0)
-            # This is for optimize.root.scalar() function
+            # Uncomment below when using (scalar) optimize.root.scalar() function
             if not sol.converged:
                 print("The optimize.root_scalar() method has failed to converge due\
                         to the following reason:")
@@ -220,22 +218,20 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
                 exit(0)
             # else:
                 # print(sol)
-                # exit(0)
             # print("currentFlow ", currentFlow)
             for j,P in enumerate(oldPathInflows.fPlus[i]):
-                # For optimize.root() function
+                # Uncomment below when using (multivariate) optimize.root() function
                 # newFlowVal = max(flowValue[j] - alpha*travelTime[j] + sol.x, 0)
-                # For optimize.root_scalar() function
+                # Uncomment below when using optimize.root_scalar() function
                 newFlowVal = max(flowValue[j] - alpha*travelTime[j] + sol.root, 0)
                 # print("newFlowVal ", newFlowVal)
                 newPathInflows.fPlus[i][P].addSegment(ExtendedRational(theta +
                     timestepSize), ExtendedRational(newFlowVal))
             # print("newPathInflows: ", newPathInflows)
             theta = theta + timestepSize
-    # exit(0)
     # for e in currentFlow.network.edges:
         # print("queues :", currentFlow.queues[e])
-    print("newPathInflows: ", newPathInflows)
+    # print("newPathInflows: ", newPathInflows)
     return newPathInflows
 
 def dualVarRootFunc(x, alpha, flowValue, travelTime, timestepSize, ubar):
@@ -251,7 +247,6 @@ def dualVarRootFunc(x, alpha, flowValue, travelTime, timestepSize, ubar):
 
 
 def dualVarRootFuncGrad(x, alpha, flowValue, travelTime, timestepSize, ubar):
-    # print("printing args ", round(x,2),alpha,flowValue,travelTime,timestepSize)
     termSum = 0
     for j,fv in enumerate(flowValue):
         if (flowValue[j] - alpha*travelTime[j] + x) > 0:
@@ -260,17 +255,13 @@ def dualVarRootFuncGrad(x, alpha, flowValue, travelTime, timestepSize, ubar):
 
 
 def dualVarRootFuncComb(x, alpha, flowValue, travelTime, timestepSize, ubar):
-    # print("printing args ", round(x,2),alpha,flowValue,travelTime,timestepSize,ubar)
     termSum = 0
     gradTermSum = 0
     for j,fv in enumerate(flowValue):
-        # print("print terms for j", j, " : ", flowValue[j],alpha,travelTime[j],x,timestepSize)
-        # termSum += max(flowValue[j] - alpha*travelTime[j] + x[0], 0)*timestepSize
         tmp = flowValue[j] - alpha*travelTime[j] + x
         if tmp > 0:
             termSum += tmp*timestepSize
             gradTermSum += timestepSize
-    # print("result ", termSum, ubar, termSum - ubar)
     return float(termSum - ubar), float(gradTermSum)
 
 
@@ -330,7 +321,7 @@ def fixedPointAlgo(N : Network, precision : float, commodities :
             return newpathInflows
         if verbose: print("Changed amount is ",
                 round(float(differenceBetweenPathInflows(pathInflows,newpathInflows)),2))
-        if verbose: print("Current flow is\n", newpathInflows)
+        # if verbose: print("Current flow is\n", newpathInflows)
         pathInflows = newpathInflows
         step += 1
         print("\nSTEP ", step,"\n")
