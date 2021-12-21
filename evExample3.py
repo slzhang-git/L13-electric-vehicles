@@ -1,5 +1,8 @@
 from networkloading import *
 from fixedPointAlgorithm import *
+import os, gzip
+import numpy
+import time
 
 ## Our standard example ##
 G = Network()
@@ -78,8 +81,22 @@ timeStep = ExtendedRational(1,4)	    # discretization time step
 # alpha*travelTimes must be numerically comparable to pathflows [han2019]
 alpha = 1	    # step size parameter
 
-f = fixedPointAlgo(G,precision,[(G.getNode("s"),G.getNode("t"),PWConst([0,10,50],[3,0],0))],timeHorizon,maxIter,timeStep,alpha,True)
-print(f)
+
+for alpha in [ExtendedRational(1/2), ExtendedRational(1,4), ExtendedRational(1,8)]:
+    for maxIter in [1000]:
+        for precision in [ExtendedRational(1,100)]:
+            for timeStep in [ExtendedRational(1,16), ExtendedRational(1,32)]:
+                tStart = time.time()
+                filename = 'alpha=%.2f'%alpha + '_maxIter=%d'%maxIter +\
+                '_timeStep=%.2f'%timeStep + '_precision=%.2f'%precision + '.npz'
+                print("------------------------------------------------\n",filename,\
+                        "\n------------------------------------------------")
+                # f = fixedPointAlgo(G,precision,[(G.getNode("s"),G.getNode("t"),\
+                        # PWConst([0,10,50],[3,0],0))],timeHorizon,maxIter,timeStep,alpha,True)
+                tEnd = time.time()
+                # print(f)
+                print("Elasped wall time: ", round(tEnd-tStart,4))
+                # numpy.savez(filename, f=f,time=tEnd-tStart)
 # networkLoading(f).fPlus[G.edges[0],0].drawGraph(0,10).show()
 # networkLoading(f).fPlus[G.edges[2],1].drawGraph(0,10).show()
 # networkLoading(f).queues[G.edges[0]].drawGraph(0,10).show()

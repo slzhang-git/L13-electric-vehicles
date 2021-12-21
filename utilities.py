@@ -199,10 +199,11 @@ class PWConst:
         return plt
 
     def __str__(self):
-        f = "|" + str(self.segmentBorders[0]) + "|"
+        f = "|" + str(round(float(self.segmentBorders[0]),2)) + "|"
         for i in range(len(self.segmentValues)):
             # f += "-" + str(self.segmentValues[i]) + "-|" + str(self.segmentBorders[i + 1]) + "|"
-            f += " " + str(round(float(self.segmentValues[i]),2)) + " |" + str(self.segmentBorders[i + 1]) + "|"
+            f += " " + str(round(float(self.segmentValues[i]),2)) + " |" +\
+            str(round(float(self.segmentBorders[i + 1]),2)) + "|"
         return f
 
 
@@ -287,12 +288,11 @@ class PWLin:
         # return f
 
     def __str__(self):
-        f = "|" + str(self.segmentBorders[0]) + "|"
+        f = "|" + str(round(float(self.segmentBorders[0]),2)) + "|"
         for i in range(len(self.segmentMvalues)):
             f += str(round(float(self.segmentTvalues[i]),2)) + " " \
-                 + str(
-                round(float(self.segmentTvalues[i] + (self.segmentBorders[i + 1] -
-                    self.segmentBorders[i]) * self.segmentMvalues[i]),2)) \
-                 + "|" + str(self.segmentBorders[i + 1]) + "|"
+                 + str(round(float(self.segmentTvalues[i] +\
+                 (self.segmentBorders[i + 1] - self.segmentBorders[i]) * self.segmentMvalues[i]),2)) \
+                 + "|" + str(round(float(self.segmentBorders[i + 1]),2)) + "|"
 
         return f
