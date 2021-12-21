@@ -82,7 +82,8 @@ def getNguyenPaths(G: Network, s: Node, t: Node) -> List[Path]:
 
 # def setInitialPathFlows(commodityId: int, G: Network, s: Node, t: Node,	u: PWConst,\
         # zeroflow: PartialFlow, pathInflows: PartialFlowPathBased) -> PartialFlowPathBased:
-def setInitialPathFlows(G: Network, commodities : List[Tuple[Node, Node, PWConst]],\
+def setInitialPathFlows(G: Network, pathList : List[Path],\
+        commodities : List[Tuple[Node, Node, PWConst]],\
         zeroflow: PartialFlow, pathInflows: PartialFlowPathBased) -> PartialFlowPathBased:
     print("To be implemented! Passing hardcoded path inflows.")
 
@@ -90,18 +91,18 @@ def setInitialPathFlows(G: Network, commodities : List[Tuple[Node, Node, PWConst
         # Get pathlist
         # pathlist = getEVExamplePaths(G, s, t)
         # pathlist = getLeonsPaths(G, s, t)
-        pathlist = getNguyenPaths(G, s, t)
+        # pathlist = getNguyenPaths(G, s, t)
 
         # Get flowlist
         # flowlist = [u,PWConst([0,50],[0],0),PWConst([0,50],[0],0)]
-        flowlist = [PWConst([0,50],[0],0)]*(len(pathlist)-1)
+        flowlist = [PWConst([0,50],[0],0)]*(len(pathList)-1)
         flowlist.insert(0,u)
         # print("len ", len(pathlist), len(flowlist))
         # exit(0)
 
         # pathInflows.setPaths(commodityId, [p1,p2,p3], [u,PWConst([0,50],[0],0),PWConst([0,50],[0],0)])
         print("Setting paths up for s-t commodity: ", s, "-", t)
-        pathInflows.setPaths(i, pathlist, flowlist)
+        pathInflows.setPaths(i, pathList, flowlist)
         # print(pathlist, flowlist)
         # print("Setting up path ", p2)
         # pathInflows.setPaths(commodityId, p2, 0)
@@ -233,8 +234,8 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
         print("Mean # of root.scalar() iterations ",\
                 float(round(meanIter/(tmpVar*oldPathInflows.getEndOfInflow(i)),2)),\
                 " for ", tmpVar*oldPathInflows.getEndOfInflow(i), " subintervals")
-    for e in currentFlow.network.edges:
-        print("queues :", currentFlow.queues[e])
+    # for id, e in enumerate(currentFlow.network.edges):
+        # print("queue at edge %d: "%id, e, currentFlow.queues[e])
     print("newPathInflows: ", newPathInflows)
     return newPathInflows
 
@@ -289,7 +290,7 @@ def differenceBetweenPathInflows(oldPathInflows : PartialFlowPathBased, newPathI
 
 # Function arguments: (network, precision, List[source node, sink node, ?], time
 # horizon, maximum allowed number of iterations, verbosity on/off)
-def fixedPointAlgo(N : Network, precision : float, commodities :
+def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commodities :
         List[Tuple[Node, Node, PWConst]], timeHorizon:
         ExtendedRational=math.inf, maxSteps: int = None, timeStep: int = None,
         alpha : float = None, verbose : bool = False) -> PartialFlowPathBased:
@@ -309,7 +310,7 @@ def fixedPointAlgo(N : Network, precision : float, commodities :
         # setInitialPathFlows(i, N, s, t, u, zeroflow, pathInflows)
         # print(pathInflows)
 
-    setInitialPathFlows(N, commodities, zeroflow, pathInflows)
+    setInitialPathFlows(N, pathList, commodities, zeroflow, pathInflows)
 
     if verbose: print("Starting with flow: \n", pathInflows)
 
