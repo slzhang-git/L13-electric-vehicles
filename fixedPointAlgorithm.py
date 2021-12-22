@@ -290,6 +290,7 @@ def differenceBetweenPathInflows(oldPathInflows : PartialFlowPathBased, newPathI
 
 # Function arguments: (network, precision, List[source node, sink node, ?], time
 # horizon, maximum allowed number of iterations, verbosity on/off)
+# TODO: make provision to warm-start the script given path flow
 def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commodities :
         List[Tuple[Node, Node, PWConst]], timeHorizon:
         ExtendedRational=math.inf, maxSteps: int = None, timeStep: int = None,
@@ -329,7 +330,7 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
         # if verbose: print("Current flow is\n", newpathInflows)
         pathInflows = newpathInflows
         step += 1
-        print("\nSTEP ", step,"\n")
+        print("\nEND OF STEP ", step,"\n")
 
     print("Maximum number of steps reached without attaining required precision!")
     return pathInflows
