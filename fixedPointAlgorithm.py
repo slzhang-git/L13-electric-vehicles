@@ -90,6 +90,7 @@ def setInitialPathFlows(G: Network, pathList : List[Path],\
         commodities : List[Tuple[Node, Node, PWConst]],\
         zeroflow: PartialFlow, pathInflows: PartialFlowPathBased) -> PartialFlowPathBased:
     print("To be implemented! Passing hardcoded path inflows.")
+    genPaths = False
     if not pathList:
         genPaths = True
 
