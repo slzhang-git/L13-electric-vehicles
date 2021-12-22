@@ -5,7 +5,7 @@ import sys, time, numpy
 from networkloading import *
 from fixedPointAlgorithm import *
 
-## EVEexample3 ##
+## EVEexample3 Network ##
 def genEVExample3Network():
     G = Network()
     G.addNode("s")
@@ -53,6 +53,7 @@ def getLeonsPaths(G: Network, s: Node, t: Node) -> List[Path]:
     return [p1, p2, p3]
 
 
+## Nguyen network ##
 def genNguyenNetwork():
     G = Network()
     # Nodes
@@ -89,6 +90,7 @@ def genNguyenNetwork():
     G.addEdge("9", "13", ExtendedRational(5,6), ExtendedRational(225))
     G.addEdge("11", "3", ExtendedRational(5,6), ExtendedRational(75 ))
     G.addEdge("13", "3", ExtendedRational(5,6), ExtendedRational(150))
+    return G
 
 def getNguyenPaths(G: Network, s: Node, t: Node) -> List[Path]:
     # Paths for Nguyen network
@@ -183,7 +185,7 @@ if __name__ == "__main__":
         pathList = getEVExample3Paths(G,G.getNode("s"),G.getNode("t"))
     elif insName == "nguyen":
         G = genNguyenNetwork()
-        pathList = getNguyenPaths(G,G.getNode("s"),G.getNode("t"))
+        pathList = []
     else:
         print("Unknown network name. Exiting.")
         exit(0)
@@ -194,8 +196,16 @@ if __name__ == "__main__":
     # '_timeStep=%.2f'%timeStep + '_precision=%.2f'%precision + '.npz'
     # print("------------------------------------------------\n",filename,\
             # "\n------------------------------------------------")
-    f = fixedPointAlgo(G, pathList, precision, [(G.getNode("s"),G.getNode("t"),\
-            PWConst([0,10,50],[3,0],0))], timeHorizon, maxIter, timeStep, alpha, True)
+    if insName == "nguyen":
+        f = fixedPointAlgo(G, pathList, precision, [\
+                (G.getNode("1"), G.getNode("2"),PWConst([0,10,50],[3,0],0)),\
+                (G.getNode("1"), G.getNode("3"),PWConst([0,10,50],[3,0],0)),\
+                (G.getNode("4"), G.getNode("2"),PWConst([0,10,50],[3,0],0)),\
+                (G.getNode("4"), G.getNode("3"),PWConst([0,10,50],[3,0],0))],\
+                timeHorizon,maxIter,timeStep,alpha,True)
+    else:
+        f = fixedPointAlgo(G, pathList, precision, [(G.getNode("s"),G.getNode("t"),\
+                PWConst([0,10,50],[3,0],0))], timeHorizon, maxIter, timeStep, alpha, True)
     tEnd = time.time()
     eventualFlow = networkLoading(f, timeHorizon)
     print(eventualFlow)

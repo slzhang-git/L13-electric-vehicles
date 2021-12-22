@@ -93,6 +93,10 @@ def setInitialPathFlows(G: Network, pathList : List[Path],\
         # pathlist = getLeonsPaths(G, s, t)
         # pathlist = getNguyenPaths(G, s, t)
 
+        # TODO: get rid of this temporary hack asap
+        if not pathList:
+            pathList = getNguyenPaths(G, s, t)
+
         # Get flowlist
         # flowlist = [u,PWConst([0,50],[0],0),PWConst([0,50],[0],0)]
         flowlist = [PWConst([0,50],[0],0)]*(len(pathList)-1)
