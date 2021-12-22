@@ -77,6 +77,10 @@ def getNguyenPaths(G: Network, s: Node, t: Node) -> List[Path]:
             pathlist.append(Path([G.edges[9-1], G.edges[14-1], G.edges[15-1], G.edges[18-1]]))
             pathlist.append(Path([G.edges[9-1], G.edges[17-1], G.edges[19-1]]))
 
+    # print("pathlist: ")
+    # for i in range(len(pathlist)):
+        # print(pathlist[i])
+
     return pathlist
 
 
@@ -86,15 +90,15 @@ def setInitialPathFlows(G: Network, pathList : List[Path],\
         commodities : List[Tuple[Node, Node, PWConst]],\
         zeroflow: PartialFlow, pathInflows: PartialFlowPathBased) -> PartialFlowPathBased:
     print("To be implemented! Passing hardcoded path inflows.")
+    if not pathList:
+        genPaths = True
 
     for i,(s,t,u) in enumerate(commodities):
-        # Get pathlist
-        # pathlist = getEVExamplePaths(G, s, t)
-        # pathlist = getLeonsPaths(G, s, t)
-        # pathlist = getNguyenPaths(G, s, t)
-
         # TODO: get rid of this temporary hack asap
-        if not pathList:
+        # Get pathlist if empty
+        if genPaths:
+            # pathList = getEVExamplePaths(G, s, t)
+            # pathList = getLeonsPaths(G, s, t)
             pathList = getNguyenPaths(G, s, t)
 
         # Get flowlist
