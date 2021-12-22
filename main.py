@@ -181,7 +181,7 @@ if __name__ == "__main__":
     elif insName == "evExample3":
         G = genEVExample3Network()
         pathList = getEVExample3Paths(G,G.getNode("s"),G.getNode("t"))
-    elif insName == "Nguyen":
+    elif insName == "nguyen":
         G = genNguyenNetwork()
         pathList = getNguyenPaths(G,G.getNode("s"),G.getNode("t"))
     else:
