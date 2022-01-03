@@ -8,23 +8,28 @@ from utilities import *
 # A directed edge (from https://github.com/Schedulaar/predicted-dynamic-flows/blob/main/predictor/src/core/graph.py )
 # with capacity nu and travel time tau
 class Edge:
-    # TODO: Add support for battery consumption
     node_from: Node
     node_to: Node
     tau: ExtendedRational
     nu: ExtendedRational
+    ec: ExtendedRational
 
-    def __init__(self, node_from: Node, node_to: Node, capacity: ExtendedRational=1, traveltime: ExtendedRational=1):
+    def __init__(self, node_from: Node, node_to: Node, capacity: ExtendedRational=1,\
+            traveltime: ExtendedRational=1, energyCons: ExtendedRational=0 ):
         # Creating an edge from node_from to node_to
         self.node_from = node_from
         self.node_to = node_to
 
+        # Free flow travel time over this edge
         assert(traveltime >= 0)
         self.tau = traveltime
 
+        # Capacity of this edge
         assert(capacity >= 0)
         self.nu = capacity
 
+        # Energy consumption over this edge (can be negative)
+        self.ec = energyCons
 
     def __str__(self):
         return "("+str(self.node_from)+","+str(self.node_to)+")"
@@ -36,6 +41,7 @@ class Edge:
 # A node (from https://github.com/Schedulaar/predicted-dynamic-flows/blob/main/predictor/src/core/graph.py )
 class Node:
     name: str
+    # TODO: rename the parameter name id
     id: int
     incoming_edges: List[Edge]
     outgoing_edges: List[Edge]
@@ -170,6 +176,19 @@ class Path:
         for e in self.edges:
             fftt += e.tau
         return fftt
+
+    def getEnergyConsump(self):
+        # TODO: put in checks
+        ec = 0
+        for e in self.edges:
+            ec += e.tau
+        return ec
+
+    def getNodesInPath(self) -> List[Node]:
+        nodeList = [self.firstNode]
+        for e in self.edges:
+            nodeList.append(e.node_to)
+        return nodeList
 
     def __len__(self):
         return len(self.edges)

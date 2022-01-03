@@ -8,6 +8,10 @@ from scipy import optimize
 
 def findShortestSTpath(s: Node, t: Node, flow: PartialFlow, time: ExtendedRational) -> Path:
     (arrivalTimes, realizedTimes) = dynamic_dijkstra(time, s, t, flow)
+    for i in enumerate(arrivalTimes):
+        print("times ", i, i[0], i[1])
+    for i in enumerate(realizedTimes):
+        print("times ", i, i[0], i[1])
     p = Path([], t)
     while p.getStart() != s:
         v = p.getStart()
@@ -16,6 +20,26 @@ def findShortestSTpath(s: Node, t: Node, flow: PartialFlow, time: ExtendedRation
                 p.add_edge_at_start(e)
                 break
 
+    print("shortest ST path ", printPathInNetwork(p, flow.network))
+    return p
+
+
+def findShortestFeasibleSTpath(time: ExtendedRational, s: Node, t: Node, flow:
+        PartialFlow, budget: ExtendedRational) -> Path:
+    (arrivalTimes, realizedTimes) = dynamicFeasDijkstra(time, s, t, flow, budget)
+    for i in enumerate(arrivalTimes):
+        print("times ", i, i[0], i[1])
+    for i in enumerate(realizedTimes):
+        print("times ", i, i[0], i[1])
+    p = Path([], t)
+    while p.getStart() != s:
+        v = p.getStart()
+        for e in v.incoming_edges:
+            if e in realizedTimes and arrivalTimes[e.node_from] + realizedTimes[e] == arrivalTimes[v]:
+                p.add_edge_at_start(e)
+                break
+
+    print("shortest ST path ", printPathInNetwork(p, flow.network))
     return p
 
 
@@ -136,6 +160,12 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
 
     newPathInflows = PartialFlowPathBased(oldPathInflows.network, oldPathInflows.getNoOfCommodities())
 
+    # record the difference of derived times and shortest path times
+    timeDiff = [[0 for i in range(int(timeHorizon/timestepSize))] for j in
+            range(oldPathInflows.getNoOfCommodities())]
+    print("timeDiff ", len(timeDiff),
+            range(oldPathInflows.getNoOfCommodities()),range(int(timeHorizon/timestepSize)),timeDiff)
+    # exit(0)
     # for i in range(oldPathInflows.getNoOfCommodities()):
     for i,comd in enumerate(commodities):
         flowValue = [None]*len(oldPathInflows.fPlus[i])
@@ -147,7 +177,9 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
         theta = ExtendedRational(0,1)
         meanIter = 0
         # We subdivide the time into intervals of length timestepSize
+        k = -1
         while theta < oldPathInflows.getEndOfInflow(i):
+            k += 1
             # For each subinterval i we determine the dual variable v_i
             # (and assume that it will stay the same for the whole interval)
             # if verbose: print("timeinterval [", theta, ",", theta+timestepSize,"]")
@@ -155,16 +187,31 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
 	    # Set up the update problem for each subinterval
             # print("\nSetting up the update problem for subinterval [", theta,
                     # ",", theta+timestepSize,"]\n")
-	    # Get path travel times for this subinterval
+            maxTravelTime = 0
+            # Get path travel times for this subinterval
             for j,P in enumerate(oldPathInflows.fPlus[i]):
                  fP = oldPathInflows.fPlus[i][P]
                  # converting to float (optimize.root does not work with fractions)
                  travelTime[j] = float(currentFlow.pathArrivalTime(P,
                      theta + timestepSize/2) - (theta + timestepSize/2))
                  flowValue[j] = float(fP.getValueAt(theta))
-                 # print("Path: P",j, "flowValue: ", flowValue[j], "travelTime: ",\
-                         # travelTime[j], "at theta =", theta, "fp: ", fP)
-                         # travelTime[j], "at theta =", theta)
+                 maxTravelTime = max(maxTravelTime, travelTime[j])
+                 print("Path: ",printPathInNetwork(P,currentFlow.network), "flowValue: ", flowValue[j], "travelTime: ",\
+                         travelTime[j], "at theta =",\
+                         round(float(theta + timestepSize/2),2), "fp: ", fP)
+
+            # Compare with the shortest path travel time
+            shortestPath = findShortestSTpath(s,t,currentFlow,theta + timestepSize/2)
+            shortestTravelTime = currentFlow.pathArrivalTime(shortestPath,\
+                    theta+timestepSize/2)- (theta + timestepSize/2)
+            print("shortest path ", shortestPath.getFreeFlowTravelTime(), round(float(theta +\
+                             timestepSize/2),2), printPathInNetwork(shortestPath,currentFlow.network), shortestTravelTime)
+            timeDiff[i][k] = maxTravelTime - shortestTravelTime
+            print("check ", i,k,len(timeDiff),timeDiff[0][0])
+            if timeDiff[i][k] < 0:
+                print("maxTravelTime %.2f less than shortestTravelTime %.2f!"\
+                        % (float(maxTravelTime),float(shortestTravelTime)))
+                # exit(0)
 
             # TODO: Find integral value, ubar, of (piecewise constant) function u in this
             # subinterval
@@ -240,6 +287,8 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
                 " for ", tmpVar*oldPathInflows.getEndOfInflow(i), " subintervals")
     # for id, e in enumerate(currentFlow.network.edges):
         # print("queue at edge %d: "%id, e, currentFlow.queues[e])
+    print("timeDiff ", timeDiff)
+    # exit(0)
     print("newPathInflows: ", newPathInflows)
     return newPathInflows
 
@@ -283,7 +332,12 @@ def differenceBetweenPathInflows(oldPathInflows : PartialFlowPathBased, newPathI
     for i in range(oldPathInflows.getNoOfCommodities()):
         for path in oldPathInflows.fPlus[i]:
             if path in newPathInflows.fPlus[i]:
+                # print("difference ", round(float(difference),2))
+                # print("oldvals ", oldPathInflows.fPlus[i][path])
+                # print("newvals ", newPathInflows.fPlus[i][path])
+                # print("diff ", oldPathInflows.fPlus[i][path] + newPathInflows.fPlus[i][path].smul(ExtendedRational(-1,1)))
                 difference += (oldPathInflows.fPlus[i][path] + newPathInflows.fPlus[i][path].smul(ExtendedRational(-1,1))).norm()
+                # print("difference ", round(float(difference),2))
             else:
                 difference += oldPathInflows.fPlus[i][path].norm()
         for path in newPathInflows.fPlus[i]:

@@ -105,7 +105,7 @@ class PWConst:
                     return self.segmentBorders[i]
 
     def __add__(self, other: PWConst) -> PWConst:
-        # Add to piecewise constant functions
+        # Add two piecewise constant functions
         # TODO: Depends on which function does not have default...
         if self.default is None or other.default is None:
             default = None
@@ -172,6 +172,10 @@ class PWConst:
         while x < b:
             y = min(self.getNextStepFrom(x), b)
             integral += (y - x) * self.getValueAt(x)
+            # print("integ + ", round(float((y - x)),2),\
+                    # round(float(self.getValueAt(x)),2),\
+                    # round(float((y - x) * self.getValueAt(x)),2),\
+                    # round(float(integral),2))
             x = y
 
         return integral
