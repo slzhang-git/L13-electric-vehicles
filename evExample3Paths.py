@@ -18,7 +18,7 @@ def isNotVisited(x: Node, path: Path) -> bool:
         return True
 
 # Utility function for finding paths in graph from source to destination
-def findpaths(G: Network, src, dest, numNodes) -> None:
+def findpaths(G: Network, src, dest, numNodes, EB) -> None:
     # Queue to store (partial) paths
     q = deque()
 
@@ -72,8 +72,9 @@ def findpaths(G: Network, src, dest, numNodes) -> None:
         print("edgeListCurrNode ", len(edgeListCurrNode), edgeListCurrNode)
         for e in edgeListCurrNode:
             print("edge %d" %G.edges.index(e), e,\
-                    printPathInNetwork(path, G), isNotVisited(e.node_to, path))
-            if (isNotVisited(e.node_to, path)):
+                    printPathInNetwork(path, G), isNotVisited(e.node_to, path),\
+                    path.getEnergyConsump(), e.ec, (path.getEnergyConsump() + e.ec <= EB))
+            if isNotVisited(e.node_to, path) and (path.getEnergyConsump() + e.ec <= EB):
                 newpath = Path(path.edges)
                 print("newpath before append ", printPathInNetwork(newpath,G))
                 newpath.add_edge_at_end(e)
@@ -93,16 +94,17 @@ if __name__ == "__main__":
     G.addNode("u")
     G.addNode("v")
     G.addNode("t")
-    G.addEdge("s", "u", ExtendedRational(2), ExtendedRational(1))
-    G.addEdge("s", "u", ExtendedRational(2), ExtendedRational(2))
-    G.addEdge("u", "v", ExtendedRational(1), ExtendedRational(1))
-    G.addEdge("v", "t", ExtendedRational(2), ExtendedRational(1))
-    G.addEdge("v", "t", ExtendedRational(2), ExtendedRational(2))
+    G.addEdge("s", "u", ExtendedRational(2), ExtendedRational(1), ExtendedRational(2))
+    G.addEdge("s", "u", ExtendedRational(2), ExtendedRational(2), ExtendedRational(1))
+    G.addEdge("u", "v", ExtendedRational(1), ExtendedRational(1), ExtendedRational(0))
+    G.addEdge("v", "t", ExtendedRational(2), ExtendedRational(1), ExtendedRational(2))
+    G.addEdge("v", "t", ExtendedRational(2), ExtendedRational(2), ExtendedRational(1))
     # Number of vertices
-    v = len(G.nodes)
+    numNodes = len(G.nodes)
     src = G.getNode("s")
     dest = G.getNode("t")
+    energyBudget = 3
 
     # Function for finding the paths
-    findpaths(G, src, dest, v)
+    findpaths(G, src, dest, numNodes, energyBudget)
 

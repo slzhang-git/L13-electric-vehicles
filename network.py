@@ -92,10 +92,11 @@ class Network:
         self.idCounter += 1
         return self.nodes[-1]
 
-    def addEdge(self,node_from: Union[str,int,Node], node_to: Union[str,int,Node], nu: ExtendedRational, tau: ExtendedRational):
+    def addEdge(self,node_from: Union[str,int,Node], node_to: Union[str,int,Node],\
+            nu: ExtendedRational, tau: ExtendedRational, ec: ExtendedRational):
         v = self.getNode(node_from)
         w = self.getNode(node_to)
-        e = Edge(v, w, nu, tau)
+        e = Edge(v, w, nu, tau, ec)
         v.outgoing_edges.append(e)
         w.incoming_edges.append(e)
         self.edges.append(e)
@@ -105,14 +106,16 @@ class Network:
         edge.node_from.outgoing_edges.remove(edge)
         self.edges.remove(edge)
 
-    def subdivide(self,edge:Edge, nu: ExtendedRational, tau: ExtendedRational):
+    def subdivide(self,edge:Edge, nu: ExtendedRational, tau: ExtendedRational,\
+            ec: ExtendedRational):
         self.edges.remove(edge)
         v = self.addNode()
-        self.addEdge(edge.node_from,v,nu,tau)
-        self.addEdge(v, edge.node_to, nu, tau)
+        self.addEdge(edge.node_from, v, nu, tau, ec)
+        self.addEdge(v, edge.node_to, nu, tau, ec)
 
-    def duplicate(self, edge:Edge, nu: ExtendedRational, tau: ExtendedRational):
-        self.addEdge(edge.node_from, edge.node_to, nu, tau)
+    def duplicate(self, edge:Edge, nu: ExtendedRational, tau: ExtendedRational,\
+            ec: ExtendedRational):
+        self.addEdge(edge.node_from, edge.node_to, nu, tau, ec)
 
 
 
@@ -181,7 +184,7 @@ class Path:
         # TODO: put in checks
         ec = 0
         for e in self.edges:
-            ec += e.tau
+            ec += e.ec
         return ec
 
     def getNodesInPath(self) -> List[Node]:
