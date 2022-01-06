@@ -7,6 +7,10 @@ import time
 from typing import List
 from collections import deque
 
+# For reading graphs
+import networkx as nx
+import matplotlib.pyplot as plt
+
 # Utility function to check if current vertex is already present in path
 def isNotVisited(x: Node, path: Path) -> bool:
     # print("nodes in path ", str(path.getNodesInPath()))
@@ -88,17 +92,34 @@ def findpaths(G: Network, src, dest, numNodes, EB) -> None:
 
 
 if __name__ == "__main__":
+    Gn = nx.MultiDiGraph()
+    # edges = nx.read_edgelist('edges.txt')
+    Gn = nx.read_edgelist('edges.txt', comments='#', nodetype=str,\
+            create_using=nx.MultiDiGraph, data=(("nu", ExtendedRational),\
+            ("tau", ExtendedRational), ("ec", ExtendedRational),))
+    # nodes = nx.read_adjlist("nodes.txt")
+    print(list(Gn.edges(data=True)))
+    print(list(Gn.nodes()))
+    # G.add_edges_from(edges.edges())
+    # G.add_nodes_from(nodes)
+
+    # print("Drawing graph")
+    # nx.draw(my_graph, with_labels=True, font_weight='bold')
+    # pos = nx.spring_layout(G)
+    # nx.draw(G, pos, with_labels=True, connectionstyle='arc3, rad = 1')
+    # edge_labels=dict([((u,v,),d['length']) for u,v,d in G.edges(data=True)])
+    # plt.show()
+
     ## Our standard example ##
     G = Network()
-    G.addNode("s")
-    G.addNode("u")
-    G.addNode("v")
-    G.addNode("t")
-    G.addEdge("s", "u", ExtendedRational(2), ExtendedRational(1), ExtendedRational(2))
-    G.addEdge("s", "u", ExtendedRational(2), ExtendedRational(2), ExtendedRational(1))
-    G.addEdge("u", "v", ExtendedRational(1), ExtendedRational(1), ExtendedRational(0))
-    G.addEdge("v", "t", ExtendedRational(2), ExtendedRational(1), ExtendedRational(2))
-    G.addEdge("v", "t", ExtendedRational(2), ExtendedRational(2), ExtendedRational(1))
+
+    for node in Gn.nodes():
+        G.addNode(node)
+
+    for u,v,data in Gn.edges(data=True):
+        # print(u,v,data)
+        G.addEdge(u,v,data['nu'],data['tau'],data['ec'])
+
     # Number of vertices
     numNodes = len(G.nodes)
     src = G.getNode("s")
