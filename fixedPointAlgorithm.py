@@ -157,7 +157,7 @@ def getAllSTpaths(G: Network, s: Node, t: Node, flow: PartialFlow) -> List[Path]
 
 def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
         ExtendedRational, alpha: float, timestepSize, commodities, verbose: bool) -> PartialFlowPathBased:
-    currentFlow = networkLoading(oldPathInflows, timeHorizon)
+    currentFlow = networkLoading(oldPathInflows)
 
     # TODO: Adjust during algorithm?
     # timestepSize = ExtendedRational(1,1)
@@ -363,7 +363,7 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
     ## Init:
     # Create zero-flow (PP: why?)
     pathInflows = PartialFlowPathBased(N,0)
-    zeroflow = networkLoading(pathInflows,timeHorizon)
+    zeroflow = networkLoading(pathInflows)
 
     pathInflows = PartialFlowPathBased(N, len(commodities))
     # Initial flow: For every commodity, select the shortest s-t path and send
