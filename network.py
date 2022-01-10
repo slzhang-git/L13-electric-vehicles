@@ -93,7 +93,7 @@ class Network:
         return self.nodes[-1]
 
     def addEdge(self,node_from: Union[str,int,Node], node_to: Union[str,int,Node],\
-            nu: ExtendedRational, tau: ExtendedRational, ec: ExtendedRational):
+            nu: ExtendedRational, tau: ExtendedRational, ec: ExtendedRational=0):
         v = self.getNode(node_from)
         w = self.getNode(node_to)
         e = Edge(v, w, nu, tau, ec)
