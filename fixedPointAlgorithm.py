@@ -8,10 +8,10 @@ from scipy import optimize
 
 def findShortestSTpath(s: Node, t: Node, flow: PartialFlow, time: ExtendedRational) -> Path:
     (arrivalTimes, realizedTimes) = dynamic_dijkstra(time, s, t, flow)
-    for i in enumerate(arrivalTimes):
-        print("times ", i, i[0], i[1])
-    for i in enumerate(realizedTimes):
-        print("times ", i, i[0], i[1])
+    # for i in enumerate(arrivalTimes):
+        # print("times ", i, i[0], i[1])
+    # for i in enumerate(realizedTimes):
+        # print("times ", i, i[0], i[1])
     p = Path([], t)
     while p.getStart() != s:
         v = p.getStart()
@@ -20,7 +20,7 @@ def findShortestSTpath(s: Node, t: Node, flow: PartialFlow, time: ExtendedRation
                 p.add_edge_at_start(e)
                 break
 
-    print("shortest ST path ", printPathInNetwork(p, flow.network))
+    # print("shortest ST path ", printPathInNetwork(p, flow.network))
     return p
 
 
@@ -122,9 +122,9 @@ def setInitialPathFlows(G: Network, pathList : List[Path],\
         # TODO: get rid of this temporary hack asap
         # Get pathlist if empty
         if genPaths:
-            # pathList = getEVExamplePaths(G, s, t)
+            pathList = getEVExamplePaths(G, s, t)
             # pathList = getLeonsPaths(G, s, t)
-            pathList = getNguyenPaths(G, s, t)
+            # pathList = getNguyenPaths(G, s, t)
 
         # Get flowlist
         # flowlist = [u,PWConst([0,50],[0],0),PWConst([0,50],[0],0)]
@@ -166,11 +166,10 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
     newPathInflows = PartialFlowPathBased(oldPathInflows.network, oldPathInflows.getNoOfCommodities())
 
     # record the difference of derived times and shortest path times
-    timeDiff = [[0 for i in range(int(timeHorizon/timestepSize))] for j in
-            range(oldPathInflows.getNoOfCommodities())]
-    print("timeDiff ", len(timeDiff),
-            range(oldPathInflows.getNoOfCommodities()),range(int(timeHorizon/timestepSize)),timeDiff)
-    # exit(0)
+    # timeDiff = [[0 for i in range(int(timeHorizon/timestepSize))] for j in
+            # range(oldPathInflows.getNoOfCommodities())]
+    # print("timeDiff ", len(timeDiff),
+            # range(oldPathInflows.getNoOfCommodities()),range(int(timeHorizon/timestepSize)),timeDiff)
     # for i in range(oldPathInflows.getNoOfCommodities()):
     for i,comd in enumerate(commodities):
         flowValue = [None]*len(oldPathInflows.fPlus[i])
@@ -192,7 +191,7 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
 	    # Set up the update problem for each subinterval
             # print("\nSetting up the update problem for subinterval [", theta,
                     # ",", theta+timestepSize,"]\n")
-            maxTravelTime = 0
+            # maxTravelTime = 0
             # Get path travel times for this subinterval
             for j,P in enumerate(oldPathInflows.fPlus[i]):
                  fP = oldPathInflows.fPlus[i][P]
@@ -200,22 +199,24 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
                  travelTime[j] = float(currentFlow.pathArrivalTime(P,
                      theta + timestepSize/2) - (theta + timestepSize/2))
                  flowValue[j] = float(fP.getValueAt(theta))
-                 maxTravelTime = max(maxTravelTime, travelTime[j])
-                 print("Path: ",printPathInNetwork(P,currentFlow.network), "flowValue: ", flowValue[j], "travelTime: ",\
-                         travelTime[j], "at theta =",\
-                         round(float(theta + timestepSize/2),2), "fp: ", fP)
+                 # maxTravelTime = max(maxTravelTime, travelTime[j])
+                 # print("Path: ",printPathInNetwork(P,currentFlow.network),
+                         # "flowValue: ", round(float(flowValue[j]),2), "travelTime: ",\
+                         # travelTime[j], "at theta =",\
+                         # round(float(theta + timestepSize/2),2), "fp: ", fP)
 
             # Compare with the shortest path travel time
-            shortestPath = findShortestSTpath(s,t,currentFlow,theta + timestepSize/2)
-            shortestTravelTime = currentFlow.pathArrivalTime(shortestPath,\
-                    theta+timestepSize/2)- (theta + timestepSize/2)
-            print("shortest path ", shortestPath.getFreeFlowTravelTime(), round(float(theta +\
-                             timestepSize/2),2), printPathInNetwork(shortestPath,currentFlow.network), shortestTravelTime)
-            timeDiff[i][k] = maxTravelTime - shortestTravelTime
-            print("check ", i,k,len(timeDiff),timeDiff[0][0])
-            if timeDiff[i][k] < 0:
-                print("maxTravelTime %.2f less than shortestTravelTime %.2f!"\
-                        % (float(maxTravelTime),float(shortestTravelTime)))
+            # shortestPath = findShortestSTpath(s,t,currentFlow,theta + timestepSize/2)
+            # shortestTravelTime = currentFlow.pathArrivalTime(shortestPath,\
+                    # theta+timestepSize/2)- (theta + timestepSize/2)
+            # print("shortest path ", shortestPath.getFreeFlowTravelTime(), round(float(theta +\
+                             # timestepSize/2),2), printPathInNetwork(shortestPath,\
+                             # currentFlow.network), round(float(shortestTravelTime)))
+            # timeDiff[i][k] = maxTravelTime - shortestTravelTime
+            # print("check ", i,k,len(timeDiff),timeDiff[0][0])
+            # if timeDiff[i][k] < 0:
+                # print("maxTravelTime %.2f less than shortestTravelTime %.2f!"\
+                        # % (float(maxTravelTime),float(shortestTravelTime)))
                 # exit(0)
 
             # TODO: Find integral value, ubar, of (piecewise constant) function u in this
@@ -292,7 +293,7 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
                 " for ", tmpVar*oldPathInflows.getEndOfInflow(i), " subintervals")
     # for id, e in enumerate(currentFlow.network.edges):
         # print("queue at edge %d: "%id, e, currentFlow.queues[e])
-    print("timeDiff ", timeDiff)
+    # print("timeDiff ", timeDiff)
     # exit(0)
     print("newPathInflows: ", newPathInflows)
     return newPathInflows
@@ -353,7 +354,7 @@ def differenceBetweenPathInflows(oldPathInflows : PartialFlowPathBased, newPathI
 
 # Function arguments: (network, precision, List[source node, sink node, ?], time
 # horizon, maximum allowed number of iterations, verbosity on/off)
-# TODO: make provision to warm-start the script given path flow
+# TODO: make provision to warm-start the script given a path flow
 def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commodities :
         List[Tuple[Node, Node, PWConst]], timeHorizon:
         ExtendedRational=math.inf, maxSteps: int = None, timeStep: int = None,
@@ -378,6 +379,8 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
 
     if verbose: print("Starting with flow: \n", pathInflows)
 
+    oldDiffBwFlows = math.inf
+
     ## Iteration:
     while maxSteps is None or step < maxSteps:
         if verbose: print("Starting iteration #", step)
@@ -385,13 +388,25 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
         # print("newpathInflows ", newpathInflows)
         newpathInflows = fixedPointUpdate(pathInflows, timeHorizon, alpha,
                 timeStep, commodities, verbose)
-        if differenceBetweenPathInflows(pathInflows,newpathInflows) < precision:
+        newDiffBwFlows = differenceBetweenPathInflows(pathInflows,newpathInflows)
+        if newDiffBwFlows < precision:
             print("Attained required precision!")
             return newpathInflows
-        if verbose: print("Changed amount is ",
-                round(float(differenceBetweenPathInflows(pathInflows,newpathInflows)),2))
+
+        # update alpha
+        if newDiffBwFlows == 0:
+            alpha = 0
+        else:
+            if step > 0: alpha = 1 - abs(newDiffBwFlows - oldDiffBwFlows)/(newDiffBwFlows +
+                    oldDiffBwFlows)
+
+        if verbose: print("Norm of change in flow ", round(float(newDiffBwFlows),2),\
+                " previous change ", round(float(oldDiffBwFlows),2), " alpha ",\
+                round(float(alpha),2))
         # if verbose: print("Current flow is\n", newpathInflows)
         pathInflows = newpathInflows
+        oldDiffBwFlows = newDiffBwFlows
+
         step += 1
         print("\nEND OF STEP ", step,"\n")
 
