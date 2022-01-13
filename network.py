@@ -15,7 +15,7 @@ class Edge:
     ec: ExtendedRational
 
     def __init__(self, node_from: Node, node_to: Node, capacity: ExtendedRational=1,\
-            traveltime: ExtendedRational=1, energyCons: ExtendedRational=0 ):
+            traveltime: ExtendedRational=1, energyCons: ExtendedRational=0):
         # Creating an edge from node_from to node_to
         self.node_from = node_from
         self.node_to = node_to
@@ -116,9 +116,6 @@ class Network:
     def duplicate(self, edge:Edge, nu: ExtendedRational, tau: ExtendedRational,\
             ec: ExtendedRational):
         self.addEdge(edge.node_from, edge.node_to, nu, tau, ec)
-
-
-
 
     def __str__(self) -> str:
         s = "Graph with " + str(len(self.nodes)) + " nodes and " + str(len(self.edges)) + " edges:\n"
