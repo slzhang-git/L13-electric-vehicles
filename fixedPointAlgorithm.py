@@ -380,6 +380,8 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
     if verbose: print("Starting with flow: \n", pathInflows)
 
     oldDiffBwFlows = math.inf
+    alphaIter = []
+    diffBwFlowsIter = []
 
     ## Iteration:
     while maxSteps is None or step < maxSteps:
@@ -391,7 +393,7 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
         newDiffBwFlows = differenceBetweenPathInflows(pathInflows,newpathInflows)
         if newDiffBwFlows < precision:
             print("Attained required precision!")
-            return newpathInflows
+            return newpathInflows, alphaIter, diffBwFlowsIter
 
         # update alpha
         if newDiffBwFlows == 0:
@@ -403,6 +405,10 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
         if verbose: print("Norm of change in flow ", round(float(newDiffBwFlows),2),\
                 " previous change ", round(float(oldDiffBwFlows),2), " alpha ",\
                 round(float(alpha),2))
+
+        alphaIter.append(alpha)
+        diffBwFlowsIter.append(newDiffBwFlows)
+
         # if verbose: print("Current flow is\n", newpathInflows)
         pathInflows = newpathInflows
         oldDiffBwFlows = newDiffBwFlows
@@ -411,5 +417,5 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
         print("\nEND OF STEP ", step,"\n")
 
     print("Maximum number of steps reached without attaining required precision!")
-    return pathInflows
+    return pathInflows, alphaIter, diffBwFlowsIter
 
