@@ -208,7 +208,7 @@ if __name__ == "__main__":
                 PWConst([0,10,50],[3,0],0))], timeHorizon, maxIter, timeStep, alpha, True)
 
     tEnd = time.time()
-    eventualFlow = networkLoading(f, timeHorizon)
+    eventualFlow = networkLoading(f)
     print(eventualFlow)
     print(f)
     print("queue at: ")
