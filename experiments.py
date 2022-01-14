@@ -197,15 +197,16 @@ if __name__ == "__main__":
     # print("------------------------------------------------\n",filename,\
             # "\n------------------------------------------------")
     if insName == "nguyen":
-        f = fixedPointAlgo(G, pathList, precision, [\
+        f, alphaIter, diffBwFlowsIter = fixedPointAlgo(G, pathList, precision, [\
                 (G.getNode("1"), G.getNode("2"),PWConst([0,10,50],[3,0],0)),\
                 (G.getNode("1"), G.getNode("3"),PWConst([0,10,50],[3,0],0)),\
                 (G.getNode("4"), G.getNode("2"),PWConst([0,10,50],[3,0],0)),\
                 (G.getNode("4"), G.getNode("3"),PWConst([0,10,50],[3,0],0))],\
                 timeHorizon,maxIter,timeStep,alpha,True)
     else:
-        f = fixedPointAlgo(G, pathList, precision, [(G.getNode("s"),G.getNode("t"),\
+        f, alphaIter, diffBwFlowsIter = fixedPointAlgo(G, pathList, precision, [(G.getNode("s"),G.getNode("t"),\
                 PWConst([0,10,50],[3,0],0))], timeHorizon, maxIter, timeStep, alpha, True)
+
     tEnd = time.time()
     eventualFlow = networkLoading(f, timeHorizon)
     print(eventualFlow)
@@ -213,6 +214,15 @@ if __name__ == "__main__":
     print("queue at: ")
     for id, e in enumerate(eventualFlow.network.edges):
         print("edge %d: "%id, e, eventualFlow.queues[e])
+
+    # alpha and flow diff
+    ralphaIter = [round(float(b),3) for b in alphaIter]
+    rdiffBwFlowsIter = [round(float(b),3) for b in diffBwFlowsIter]
+    print("alpha ", ralphaIter)
+    print("diffBwFlowsIter ", rdiffBwFlowsIter)
+
     print("\nElasped wall time: ", round(tEnd-tStart,4))
-    numpy.savez(fname, G=G,f=f,eventualFlow=eventualFlow,time=tEnd-tStart)
+
+    numpy.savez(fname,G=G,f=f,eventualFlow=eventualFlow,time=tEnd-tStart,\
+            alphaIter=alphaIter,diffBwFlowsIter=diffBwFlowsIter)
 
