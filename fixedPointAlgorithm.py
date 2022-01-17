@@ -5,6 +5,7 @@ from dynamic_dijkstra import dynamic_dijkstra
 
 # For the root finding problem
 from scipy import optimize
+import numpy as np
 
 def findShortestSTpath(s: Node, t: Node, flow: PartialFlow, time: ExtendedRational) -> Path:
     (arrivalTimes, realizedTimes) = dynamic_dijkstra(time, s, t, flow)
@@ -128,7 +129,8 @@ def setInitialPathFlows(G: Network, pathList : List[Path],\
 
         # Get flowlist
         # flowlist = [u,PWConst([0,50],[0],0),PWConst([0,50],[0],0)]
-        flowlist = [PWConst([0,50],[0],0)]*(len(pathList)-1)
+        # flowlist = [PWConst([0,50],[0],0)]*(len(pathList)-1)
+        flowlist = [PWConst([0,u.segmentBorders[-1]],[0],0)]*(len(pathList)-1)
         flowlist.insert(0,u)
         # print("len ", len(pathlist), len(flowlist))
         # exit(0)
@@ -196,7 +198,7 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
             for j,P in enumerate(oldPathInflows.fPlus[i]):
                  fP = oldPathInflows.fPlus[i][P]
                  # converting to float (optimize.root does not work with fractions)
-                 travelTime[j] = float(currentFlow.pathArrivalTime(P,
+                 travelTime[j] = float(currentFlow.pathArrivalTime(P,\
                      theta + timestepSize/2) - (theta + timestepSize/2))
                  flowValue[j] = float(fP.getValueAt(theta))
                  # maxTravelTime = max(maxTravelTime, travelTime[j])
@@ -382,6 +384,7 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
     oldDiffBwFlows = math.inf
     alphaIter = []
     diffBwFlowsIter = []
+    travelTime = []
 
     ## Iteration:
     while maxSteps is None or step < maxSteps:
@@ -393,7 +396,29 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
         newDiffBwFlows = differenceBetweenPathInflows(pathInflows,newpathInflows)
         if newDiffBwFlows < precision:
             print("Attained required precision!")
-            return newpathInflows, alphaIter, diffBwFlowsIter
+
+            # Find path travel times for the final flow
+            finalFlow = networkLoading(pathInflows)
+            for i,comd in enumerate(commodities):
+                ttravelTime = np.empty([len(pathInflows.fPlus[i]),\
+                        math.ceil(pathInflows.getEndOfInflow(i)/timeStep)])
+                print("ttravelTime ", np.shape(ttravelTime), ttravelTime)
+                theta = ExtendedRational(0,1)
+                k = -1
+                theta = ExtendedRational(0,1)
+                while theta < pathInflows.getEndOfInflow(i):
+                    k += 1
+                    for j,P in enumerate(pathInflows.fPlus[i]):
+                         fP = pathInflows.fPlus[i][P]
+                         ttravelTime[j][k] = finalFlow.pathArrivalTime(P,\
+                             theta + timeStep/2) - (theta + timeStep/2)
+                    theta = theta + timeStep
+                # print("ttravelTime", np.shape(ttravelTime), ttravelTime)
+                travelTime.append(ttravelTime)
+            # print("travelTime", travelTime)
+            # exit(0)
+
+            return newpathInflows, alphaIter, diffBwFlowsIter, travelTime
 
         # update alpha
         if newDiffBwFlows == 0:
@@ -417,5 +442,25 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
         print("\nEND OF STEP ", step,"\n")
 
     print("Maximum number of steps reached without attaining required precision!")
-    return pathInflows, alphaIter, diffBwFlowsIter
+
+    # Find path travel times for the final flow
+    finalFlow = networkLoading(pathInflows)
+    for i,comd in enumerate(commodities):
+        ttravelTime = np.empty([len(pathInflows.fPlus[i]),\
+                math.ceil(pathInflows.getEndOfInflow(i)/timeStep)])
+        print("ttravelTime ", np.shape(ttravelTime), ttravelTime)
+        theta = ExtendedRational(0,1)
+        k = -1
+        theta = ExtendedRational(0,1)
+        while theta < pathInflows.getEndOfInflow(i):
+            k += 1
+            for j,P in enumerate(pathInflows.fPlus[i]):
+                 fP = pathInflows.fPlus[i][P]
+                 ttravelTime[j][k] = finalFlow.pathArrivalTime(P,\
+                     theta + timeStep/2) - (theta + timeStep/2)
+            theta = theta + timeStep
+        # print("ttravelTime", np.shape(ttravelTime), ttravelTime)
+        travelTime.append(ttravelTime)
+    # print("travelTime", travelTime)
+    return pathInflows, alphaIter, diffBwFlowsIter, travelTime
 

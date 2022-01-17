@@ -202,6 +202,22 @@ class PWConst:
         plt.plot(x, y)
         return plt
 
+    def getXandY(self, start: ExtendedRational, end: ExtendedRational):
+        current = start
+        x = []
+        y = []
+        while self.getNextStepFrom(current) < end:
+            x.append(current)
+            x.append(self.getNextStepFrom(current))
+            y.append(self.getValueAt(current))
+            y.append(self.getValueAt(current))
+            current = self.getNextStepFrom(current)
+        x.append(current)
+        x.append(end)
+        y.append(self.getValueAt(current))
+        y.append(self.getValueAt(current))
+        return x,y
+
     def __str__(self):
         f = "|" + str(round(float(self.segmentBorders[0]),2)) + "|"
         for i in range(len(self.segmentValues)):
