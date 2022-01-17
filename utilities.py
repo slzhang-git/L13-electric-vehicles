@@ -222,8 +222,11 @@ class PWConst:
         f = "|" + str(round(float(self.segmentBorders[0]),2)) + "|"
         for i in range(len(self.segmentValues)):
             # f += "-" + str(self.segmentValues[i]) + "-|" + str(self.segmentBorders[i + 1]) + "|"
-            f += " " + str(round(float(self.segmentValues[i]),2)) + " |" +\
-            str(round(float(self.segmentBorders[i + 1]),2)) + "|"
+            f += " " + str(round(float(self.segmentValues[i]),2)) + " |"
+            if self.segmentBorders[i+1] < math.inf:
+                f += str(round(float(self.segmentBorders[i + 1]),2)) + "|"
+            else:
+                f += str(self.segmentBorders[i + 1]) + "|"
         return f
 
 

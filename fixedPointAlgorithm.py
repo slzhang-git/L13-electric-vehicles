@@ -402,7 +402,7 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
             for i,comd in enumerate(commodities):
                 ttravelTime = np.empty([len(pathInflows.fPlus[i]),\
                         math.ceil(pathInflows.getEndOfInflow(i)/timeStep)])
-                print("ttravelTime ", np.shape(ttravelTime), ttravelTime)
+                # print("ttravelTime ", np.shape(ttravelTime), ttravelTime)
                 theta = ExtendedRational(0,1)
                 k = -1
                 theta = ExtendedRational(0,1)

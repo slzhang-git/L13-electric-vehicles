@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 # TODO: Use getopt or argparse to read command line arguments
-import sys, time, numpy
+import sys, time, os, numpy
 from networkloading import *
 from fixedPointAlgorithm import *
 
@@ -204,13 +204,16 @@ if __name__ == "__main__":
                 (G.getNode("4"), G.getNode("3"),PWConst([0,10,50],[3,0],0))],\
                 timeHorizon,maxIter,timeStep,alpha,True)
     else:
-        f, alphaIter, diffBwFlowsIter = fixedPointAlgo(G, pathList, precision, [(G.getNode("s"),G.getNode("t"),\
-                PWConst([0,10,50],[3,0],0))], timeHorizon, maxIter, timeStep, alpha, True)
+        f, alphaIter, diffBwFlowsIter, travelTime = fixedPointAlgo(G, pathList,\
+                precision,[(G.getNode("s"),G.getNode("t"), PWConst([0,10,50],[3,0],0))],\
+                # precision,[(G.getNode("s"),G.getNode("t"), PWConst([0,10],[3],0))],\
+                timeHorizon, maxIter, timeStep, alpha, True)
 
     tEnd = time.time()
+    print("travelTimes: ", travelTime)
     eventualFlow = networkLoading(f)
-    print(eventualFlow)
-    print(f)
+    print("eventualFlow: ", eventualFlow)
+    print("f: ", f)
     print("queue at: ")
     for id, e in enumerate(eventualFlow.network.edges):
         print("edge %d: "%id, e, eventualFlow.queues[e])
@@ -223,6 +226,8 @@ if __name__ == "__main__":
 
     print("\nElasped wall time: ", round(tEnd-tStart,4))
 
-    numpy.savez(fname,G=G,f=f,eventualFlow=eventualFlow,time=tEnd-tStart,\
-            alphaIter=alphaIter,diffBwFlowsIter=diffBwFlowsIter)
+    # Save the results to files
+    dirname = os.path.expanduser('./npzfiles')
+    numpy.savez(os.path.join(dirname, fname),G=G,f=f,eventualFlow=eventualFlow,time=tEnd-tStart,\
+            alphaIter=alphaIter,diffBwFlowsIter=diffBwFlowsIter,travelTime=travelTime)
 
