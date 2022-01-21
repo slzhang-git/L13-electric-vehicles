@@ -197,16 +197,16 @@ if __name__ == "__main__":
     # print("------------------------------------------------\n",filename,\
             # "\n------------------------------------------------")
     if insName == "nguyen":
-        f, alphaIter, diffBwFlowsIter = fixedPointAlgo(G, pathList, precision, [\
-                (G.getNode("1"), G.getNode("2"),PWConst([0,10,50],[3,0],0)),\
-                (G.getNode("1"), G.getNode("3"),PWConst([0,10,50],[3,0],0)),\
-                (G.getNode("4"), G.getNode("2"),PWConst([0,10,50],[3,0],0)),\
-                (G.getNode("4"), G.getNode("3"),PWConst([0,10,50],[3,0],0))],\
+        f, alphaIter, diffBwFlowsIter, travelTime, stopStr, alphaStr = fixedPointAlgo(G, pathList, precision, [\
+                (G.getNode("1"), G.getNode("2"),PWConst([0,10,20],[3,0],0)),\
+                (G.getNode("1"), G.getNode("3"),PWConst([0,10,20],[3,0],0)),\
+                (G.getNode("4"), G.getNode("2"),PWConst([0,10,20],[3,0],0)),\
+                (G.getNode("4"), G.getNode("3"),PWConst([0,10,20],[3,0],0))],\
                 timeHorizon,maxIter,timeStep,alpha,True)
     else:
-        f, alphaIter, diffBwFlowsIter, travelTime = fixedPointAlgo(G, pathList,\
-                precision,[(G.getNode("s"),G.getNode("t"), PWConst([0,10,50],[3,0],0))],\
-                # precision,[(G.getNode("s"),G.getNode("t"), PWConst([0,10],[3],0))],\
+        f, alphaIter, diffBwFlowsIter, travelTime, stopStr, alphaStr = fixedPointAlgo(G, pathList,\
+                # precision,[(G.getNode("s"),G.getNode("t"), PWConst([0,10,50],[3,0],0))],\
+                precision,[(G.getNode("s"),G.getNode("t"), PWConst([0,10,20],[3,0],0))],\
                 timeHorizon, maxIter, timeStep, alpha, True)
 
     tEnd = time.time()
@@ -224,10 +224,14 @@ if __name__ == "__main__":
     print("alpha ", ralphaIter)
     print("diffBwFlowsIter ", rdiffBwFlowsIter)
 
+    print("Termination message: ", stopStr)
     print("\nElasped wall time: ", round(tEnd-tStart,4))
 
     # Save the results to files
-    dirname = os.path.expanduser('./npzfiles')
+    # dirname = os.path.expanduser('./npzfiles')
+    dirname = os.path.expanduser('./miscfiles')
+    fname += '_' + alphaStr.replace('/','By')
     numpy.savez(os.path.join(dirname, fname),G=G,f=f,eventualFlow=eventualFlow,time=tEnd-tStart,\
-            alphaIter=alphaIter,diffBwFlowsIter=diffBwFlowsIter,travelTime=travelTime)
+            alphaIter=alphaIter,diffBwFlowsIter=diffBwFlowsIter,travelTime=travelTime,\
+            stopStr=stopStr,alphaStr=alphaStr)
 

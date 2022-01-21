@@ -109,8 +109,6 @@ def getNguyenPaths(G: Network, s: Node, t: Node) -> List[Path]:
     return pathlist
 
 
-# def setInitialPathFlows(commodityId: int, G: Network, s: Node, t: Node,	u: PWConst,\
-        # zeroflow: PartialFlow, pathInflows: PartialFlowPathBased) -> PartialFlowPathBased:
 def setInitialPathFlows(G: Network, pathList : List[Path],\
         commodities : List[Tuple[Node, Node, PWConst]],\
         zeroflow: PartialFlow, pathInflows: PartialFlowPathBased) -> PartialFlowPathBased:
@@ -123,9 +121,9 @@ def setInitialPathFlows(G: Network, pathList : List[Path],\
         # TODO: get rid of this temporary hack asap
         # Get pathlist if empty
         if genPaths:
-            pathList = getEVExamplePaths(G, s, t)
+            # pathList = getEVExamplePaths(G, s, t)
             # pathList = getLeonsPaths(G, s, t)
-            # pathList = getNguyenPaths(G, s, t)
+            pathList = getNguyenPaths(G, s, t)
 
         # Get flowlist
         # flowlist = [u,PWConst([0,50],[0],0),PWConst([0,50],[0],0)]
@@ -382,9 +380,16 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
     if verbose: print("Starting with flow: \n", pathInflows)
 
     oldDiffBwFlows = math.inf
+    gamma = 1
     alphaIter = []
     diffBwFlowsIter = []
     travelTime = []
+
+    alphaStr = ''
+    # alphaStr = r'($\gamma$)'
+    # alphaStr = r'($\gamma\alpha$)'
+    # alphaStr = r'expoSmooth($\gamma$)'
+    # alphaStr = r'expoSmooth($\gamma/2$)'
 
     ## Iteration:
     while maxSteps is None or step < maxSteps:
@@ -395,7 +400,8 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
                 timeStep, commodities, verbose)
         newDiffBwFlows = differenceBetweenPathInflows(pathInflows,newpathInflows)
         if newDiffBwFlows < precision:
-            print("Attained required precision!")
+            stopStr = "Attained required precision!"
+            print(stopStr)
 
             # Find path travel times for the final flow
             finalFlow = networkLoading(pathInflows)
@@ -418,14 +424,19 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
             # print("travelTime", travelTime)
             # exit(0)
 
-            return newpathInflows, alphaIter, diffBwFlowsIter, travelTime
+            return newpathInflows, alphaIter, diffBwFlowsIter, travelTime, stopStr, alphaStr
 
         # update alpha
         if newDiffBwFlows == 0:
-            alpha = 0
+            gamma = 0
         else:
-            if step > 0: alpha = 1 - abs(newDiffBwFlows - oldDiffBwFlows)/(newDiffBwFlows +
+            if step > 0: gamma = 1 - abs(newDiffBwFlows - oldDiffBwFlows)/(newDiffBwFlows +
                     oldDiffBwFlows)
+        # update rule
+        # alpha = gamma # equal to factor
+        # alpha = gamma*alpha # multiplied by factor
+        # alpha = (gamma)*(gamma*alpha) + (1-gamma)*alpha # expo smooth using gamma
+        # alpha = (0.5*gamma)*(0.5*gamma*alpha) + (1-0.5*gamma)*alpha # expo smooth using gamma/2
 
         if verbose: print("Norm of change in flow ", round(float(newDiffBwFlows),2),\
                 " previous change ", round(float(oldDiffBwFlows),2), " alpha ",\
@@ -441,7 +452,8 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
         step += 1
         print("\nEND OF STEP ", step,"\n")
 
-    print("Maximum number of steps reached without attaining required precision!")
+    stopStr = "Maximum number of steps reached without attaining required precision!"
+    print(stopStr)
 
     # Find path travel times for the final flow
     finalFlow = networkLoading(pathInflows)
@@ -462,5 +474,5 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
         # print("ttravelTime", np.shape(ttravelTime), ttravelTime)
         travelTime.append(ttravelTime)
     # print("travelTime", travelTime)
-    return pathInflows, alphaIter, diffBwFlowsIter, travelTime
+    return pathInflows, alphaIter, diffBwFlowsIter, travelTime, stopStr, alphaStr
 
