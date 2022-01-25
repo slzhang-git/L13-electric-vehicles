@@ -352,6 +352,16 @@ def differenceBetweenPathInflows(oldPathInflows : PartialFlowPathBased, newPathI
 
     return difference
 
+# Find the sum of norm (integration) of path inflow fPlus functions
+def sumNormOfPathInflows(pathInflows : PartialFlowPathBased) -> ExtendedRational:
+    sumNorm = ExtendedRational(0)
+    for i in range(pathInflows.getNoOfCommodities()):
+        for path in pathInflows.fPlus[i]:
+            sumNorm += (pathInflows.fPlus[i][path]).norm()
+    # print("sumNorm: ", sumNorm)
+    # TODO: This should be equal to the integration of u (if required, put an assert)
+    return sumNorm
+
 # Function arguments: (network, precision, List[source node, sink node, ?], time
 # horizon, maximum allowed number of iterations, verbosity on/off)
 # TODO: make provision to warm-start the script given a path flow
@@ -379,17 +389,21 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
 
     if verbose: print("Starting with flow: \n", pathInflows)
 
-    oldDiffBwFlows = math.inf
+    oldAbsDiffBwFlows = math.inf
+    oldRelDiffBwFlows = math.inf
     gamma = 1
     alphaIter = []
-    diffBwFlowsIter = []
+    absDiffBwFlowsIter = []
+    relDiffBwFlowsIter = []
     travelTime = []
 
-    alphaStr = ''
+    # alphaStr = ''
     # alphaStr = r'($\gamma$)'
     # alphaStr = r'($\gamma\alpha$)'
     # alphaStr = r'expoSmooth($\gamma$)'
     # alphaStr = r'expoSmooth($\gamma/2$)'
+    alphaStr = r'relExpoSmooth($\gamma/2$)'
+    # alphaStr = r'min2ExpoSmooth($\gamma/2$)'
 
     ## Iteration:
     while maxSteps is None or step < maxSteps:
@@ -398,9 +412,12 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
         # print("newpathInflows ", newpathInflows)
         newpathInflows = fixedPointUpdate(pathInflows, timeHorizon, alpha,
                 timeStep, commodities, verbose)
-        newDiffBwFlows = differenceBetweenPathInflows(pathInflows,newpathInflows)
-        if newDiffBwFlows < precision:
-            stopStr = "Attained required precision!"
+        newAbsDiffBwFlows = differenceBetweenPathInflows(pathInflows,newpathInflows)
+        newRelDiffBwFlows = newAbsDiffBwFlows/sumNormOfPathInflows(pathInflows)
+
+        # Absolute flowDiff criterion
+        if newAbsDiffBwFlows < precision:
+            stopStr = "Attained required (absolute) precision!"
             print(stopStr)
 
             # Find path travel times for the final flow
@@ -422,32 +439,64 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
                 # print("ttravelTime", np.shape(ttravelTime), ttravelTime)
                 travelTime.append(ttravelTime)
             # print("travelTime", travelTime)
-            # exit(0)
 
-            return newpathInflows, alphaIter, diffBwFlowsIter, travelTime, stopStr, alphaStr
+            return newpathInflows, alphaIter, absDiffBwFlowsIter, relDiffBwFlowsIter, travelTime, stopStr, alphaStr
 
-        # update alpha
-        if newDiffBwFlows == 0:
+        # Relative flowDiff criterion
+        elif newRelDiffBwFlows < precision:
+            stopStr = "Attained required (relative) precision!"
+            print(stopStr)
+
+            # Find path travel times for the final flow
+            finalFlow = networkLoading(pathInflows)
+            for i,comd in enumerate(commodities):
+                ttravelTime = np.empty([len(pathInflows.fPlus[i]),\
+                        math.ceil(pathInflows.getEndOfInflow(i)/timeStep)])
+                # print("ttravelTime ", np.shape(ttravelTime), ttravelTime)
+                theta = ExtendedRational(0,1)
+                k = -1
+                theta = ExtendedRational(0,1)
+                while theta < pathInflows.getEndOfInflow(i):
+                    k += 1
+                    for j,P in enumerate(pathInflows.fPlus[i]):
+                         fP = pathInflows.fPlus[i][P]
+                         ttravelTime[j][k] = finalFlow.pathArrivalTime(P,\
+                             theta + timeStep/2) - (theta + timeStep/2)
+                    theta = theta + timeStep
+                # print("ttravelTime", np.shape(ttravelTime), ttravelTime)
+                travelTime.append(ttravelTime)
+            # print("travelTime", travelTime)
+
+            return newpathInflows, alphaIter, absDiffBwFlowsIter, relDiffBwFlowsIter, travelTime, stopStr, alphaStr
+
+        # Update Alpha
+        if newAbsDiffBwFlows == 0:
             gamma = 0
         else:
-            if step > 0: gamma = 1 - abs(newDiffBwFlows - oldDiffBwFlows)/(newDiffBwFlows +
-                    oldDiffBwFlows)
-        # update rule
+            if step > 0: gamma = 1 - abs(newAbsDiffBwFlows - oldAbsDiffBwFlows)/(newAbsDiffBwFlows +
+                    oldAbsDiffBwFlows)
+
+        # Alpha Update Rule
         # alpha = gamma # equal to factor
         # alpha = gamma*alpha # multiplied by factor
         # alpha = (gamma)*(gamma*alpha) + (1-gamma)*alpha # expo smooth using gamma
-        # alpha = (0.5*gamma)*(0.5*gamma*alpha) + (1-0.5*gamma)*alpha # expo smooth using gamma/2
+        alpha = (0.5*gamma)*(0.5*gamma*alpha) + (1-0.5*gamma)*alpha # expo smooth using gamma/2
+        # alpha = max(0.2, (0.5*gamma)*(0.5*gamma*alpha) + (1-0.5*gamma)*alpha) # expo smooth using gamma/2
 
-        if verbose: print("Norm of change in flow ", round(float(newDiffBwFlows),2),\
-                " previous change ", round(float(oldDiffBwFlows),2), " alpha ",\
+        if verbose: print("Norm of change in flow (abs.) ", round(float(newAbsDiffBwFlows),2),\
+                " previous change ", round(float(oldAbsDiffBwFlows),2), " alpha ",\
                 round(float(alpha),2))
+        if verbose: print("Norm of change in flow (rel.) ", round(float(newRelDiffBwFlows),2),\
+                " previous change ", round(float(oldRelDiffBwFlows),2))
 
         alphaIter.append(alpha)
-        diffBwFlowsIter.append(newDiffBwFlows)
+        absDiffBwFlowsIter.append(newAbsDiffBwFlows)
+        relDiffBwFlowsIter.append(newRelDiffBwFlows)
 
         # if verbose: print("Current flow is\n", newpathInflows)
         pathInflows = newpathInflows
-        oldDiffBwFlows = newDiffBwFlows
+        oldAbsDiffBwFlows = newAbsDiffBwFlows
+        oldRelDiffBwFlows = newRelDiffBwFlows
 
         step += 1
         print("\nEND OF STEP ", step,"\n")
@@ -474,5 +523,5 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
         # print("ttravelTime", np.shape(ttravelTime), ttravelTime)
         travelTime.append(ttravelTime)
     # print("travelTime", travelTime)
-    return pathInflows, alphaIter, diffBwFlowsIter, travelTime, stopStr, alphaStr
+    return pathInflows, alphaIter, absDiffBwFlowsIter, relDiffBwFlowsIter, travelTime, stopStr, alphaStr
 
