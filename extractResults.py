@@ -45,9 +45,10 @@ f = data['f']
 # TODO: Find the number of paths that have positive inflows etc. to find the exact
 # number of subplots (if required)
 # fig, axs = plt.subplots(len(f[np.newaxis][0].fPlus[0]) + 1)
-# print(f[()].fPlus)
+print(f[()].fPlus)
 for c,p in enumerate(f[()].fPlus):
-    # print('comm:%d'%c, f[()].fPlus[c])
+    # print('comm:%d'%c, f[()].fPlus[c], f[()].getEndOfInflow(c))
+    # exit(0)
     print('Commodity: %d'%c)
 
     # Making figures for each commodity
@@ -80,7 +81,9 @@ for c,p in enumerate(f[()].fPlus):
     k += 1
     for i,p in enumerate(f[()].fPlus[0]):
         # k += 1
-        x,y = f[()].fPlus[0][p].getXandY(0,20)
+        #TODO: Determine the right end of x-axis for plots
+        # x,y = f[()].fPlus[0][p].getXandY(0,20)
+        x,y = f[()].fPlus[0][p].getXandY(0,f[()].getEndOfInflow(c))
         # a,b = [int(c) for c in x],[int(c) for c in y]
         # print("i: ", i,a,b)
         # if max(y)>0:
@@ -118,6 +121,7 @@ for c,p in enumerate(f[()].fPlus):
     alphaIter = data['alphaIter']
     absDiffBwFlowsIter = data['absDiffBwFlowsIter']
     relDiffBwFlowsIter = data['relDiffBwFlowsIter']
+    qopiIter = data['qopiIter']
     # a,b = [round(float(c),2) for c in alphaIter],[round(float(c),2) for c in diffBwFlowsIter]
     # print(a,b)
     x = [x+1 for x in range(len(alphaIter))]
@@ -127,6 +131,7 @@ for c,p in enumerate(f[()].fPlus):
     axs2 = axs[k].twinx()
     axs2.plot(x,absDiffBwFlowsIter,label=r'$\Delta$ f', color=colors[1], linestyle=linestyles[1])
     axs2.plot(x,relDiffBwFlowsIter,label=r'($\Delta$ f / f)', color=colors[2], linestyle=linestyles[1])
+    axs2.plot(x,qopiIter,label='qopi', color=colors[3], linestyle=linestyles[1])
     axs2.plot([1,len(alphaIter)], [float(precision), float(precision)],label=r'$\epsilon$',\
             color=colors[2], linestyle=linestyles[2])
     axs2.legend(loc=locs[3], fontsize='x-large')

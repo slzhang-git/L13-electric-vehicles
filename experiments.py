@@ -197,16 +197,19 @@ if __name__ == "__main__":
     # print("------------------------------------------------\n",filename,\
             # "\n------------------------------------------------")
     if insName == "nguyen":
-        f, alphaIter, absDiffBwFlowsIter, relDiffBwFlowsIter, travelTime, stopStr, alphaStr = fixedPointAlgo(G, pathList, precision, [\
+        f, alphaIter, absDiffBwFlowsIter, relDiffBwFlowsIter, travelTime, stopStr,\
+        alphaStr, qopiIter = fixedPointAlgo(G, pathList, precision, [\
                 (G.getNode("1"), G.getNode("2"),PWConst([0,10,20],[3,0],0)),\
                 (G.getNode("1"), G.getNode("3"),PWConst([0,10,20],[3,0],0)),\
                 (G.getNode("4"), G.getNode("2"),PWConst([0,10,20],[3,0],0)),\
                 (G.getNode("4"), G.getNode("3"),PWConst([0,10,20],[3,0],0))],\
                 timeHorizon,maxIter,timeStep,alpha,True)
     else:
-        f, alphaIter, absDiffBwFlowsIter, relDiffBwFlowsIter, travelTime, stopStr, alphaStr = fixedPointAlgo(G, pathList,\
+        f, alphaIter, absDiffBwFlowsIter, relDiffBwFlowsIter, travelTime, stopStr,\
+        alphaStr, qopiIter = fixedPointAlgo(G, pathList,\
                 # precision,[(G.getNode("s"),G.getNode("t"), PWConst([0,10,50],[3,0],0))],\
-                precision,[(G.getNode("s"),G.getNode("t"), PWConst([0,10,20],[3,0],0))],\
+                # precision,[(G.getNode("s"),G.getNode("t"), PWConst([0,10,20],[3,0],0))],\
+                precision,[(G.getNode("s"),G.getNode("t"), PWConst([0,10],[3],0))],\
                 timeHorizon, maxIter, timeStep, alpha, True)
 
     tEnd = time.time()
@@ -222,9 +225,11 @@ if __name__ == "__main__":
     ralphaIter = [round(float(b),3) for b in alphaIter]
     rAbsDiffBwFlowsIter = [round(float(b),3) for b in absDiffBwFlowsIter]
     rRelDiffBwFlowsIter = [round(float(b),3) for b in relDiffBwFlowsIter]
+    rqopiIter = [round(float(b),3) for b in qopiIter]
     print("alpha ", ralphaIter)
     print("absDiffBwFlowsIter ", rAbsDiffBwFlowsIter)
     print("relDiffBwFlowsIter ", rRelDiffBwFlowsIter)
+    print("qopiIter ", rqopiIter)
 
     print("Termination message: ", stopStr)
     print("\nElasped wall time: ", round(tEnd-tStart,4))
@@ -236,5 +241,5 @@ if __name__ == "__main__":
     numpy.savez(os.path.join(dirname, fname),G=G,f=f,eventualFlow=eventualFlow,time=tEnd-tStart,\
             alphaIter=alphaIter,absDiffBwFlowsIter=absDiffBwFlowsIter,\
             relDiffBwFlowsIter=relDiffBwFlowsIter,travelTime=travelTime,\
-            stopStr=stopStr,alphaStr=alphaStr)
+            stopStr=stopStr,alphaStr=alphaStr,rqopiIter=rqopiIter)
 

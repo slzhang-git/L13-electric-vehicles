@@ -185,7 +185,7 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
         while theta < oldPathInflows.getEndOfInflow(i):
             k += 1
             # For each subinterval i we determine the dual variable v_i
-            # (and assume that it will stay the same for the whole interval)
+            # (and assume that it will stay constant for the whole interval)
             # if verbose: print("timeinterval [", theta, ",", theta+timestepSize,"]")
 
 	    # Set up the update problem for each subinterval
@@ -396,17 +396,20 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
     absDiffBwFlowsIter = []
     relDiffBwFlowsIter = []
     travelTime = []
+    qopiIter = []  # qualityOfPathInflows
+    shouldStop = not (maxSteps is None or step < maxSteps)
+
 
     # alphaStr = ''
-    # alphaStr = r'($\gamma$)'
+    alphaStr = r'($\gamma$)'
     # alphaStr = r'($\gamma\alpha$)'
     # alphaStr = r'expoSmooth($\gamma$)'
     # alphaStr = r'expoSmooth($\gamma/2$)'
-    alphaStr = r'relExpoSmooth($\gamma/2$)'
+    # alphaStr = r'relExpoSmooth($\gamma/2$)'
     # alphaStr = r'min2ExpoSmooth($\gamma/2$)'
 
     ## Iteration:
-    while maxSteps is None or step < maxSteps:
+    while not shouldStop:
         if verbose: print("Starting iteration #", step)
         # newpathInflows = networkLoading(pathInflows,timeHorizon)
         # print("newpathInflows ", newpathInflows)
@@ -415,113 +418,86 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
         newAbsDiffBwFlows = differenceBetweenPathInflows(pathInflows,newpathInflows)
         newRelDiffBwFlows = newAbsDiffBwFlows/sumNormOfPathInflows(pathInflows)
 
-        # Absolute flowDiff criterion
+        # Check Stopping Conditions
         if newAbsDiffBwFlows < precision:
             stopStr = "Attained required (absolute) precision!"
-            print(stopStr)
+            shouldStop = True
+        # elif newRelDiffBwFlows < precision:
+            # stopStr = "Attained required (relative) precision!"
+            # shouldStop = True
+        elif not (maxSteps is None or step < maxSteps):
+            stopStr = "Maximum number of steps reached!"
 
-            # Find path travel times for the final flow
-            finalFlow = networkLoading(pathInflows)
+        if not shouldStop:
+            # Update Alpha
+            if newAbsDiffBwFlows == 0:
+                gamma = 0
+            else:
+                if step > 0: gamma = 1 - abs(newAbsDiffBwFlows - oldAbsDiffBwFlows)/(newAbsDiffBwFlows +
+                        oldAbsDiffBwFlows)
+
+            # Alpha Update Rule
+            alpha = gamma # equal to factor
+            # alpha = gamma*alpha # multiplied by factor
+            # alpha = (gamma)*(gamma*alpha) + (1-gamma)*alpha # expo smooth using gamma
+            # alpha = (0.5*gamma)*(0.5*gamma*alpha) + (1-0.5*gamma)*alpha # expo smooth using gamma/2
+            # alpha = max(0.2, (0.5*gamma)*(0.5*gamma*alpha) + (1-0.5*gamma)*alpha) # expo smooth using gamma/2
+
+            # Measure quality of the path inflows
+            iterFlow = networkLoading(newpathInflows)
+            qopi = 0
             for i,comd in enumerate(commodities):
-                ttravelTime = np.empty([len(pathInflows.fPlus[i]),\
-                        math.ceil(pathInflows.getEndOfInflow(i)/timeStep)])
-                # print("ttravelTime ", np.shape(ttravelTime), ttravelTime)
+                fP = newpathInflows.fPlus[i]
                 theta = ExtendedRational(0,1)
-                k = -1
-                theta = ExtendedRational(0,1)
-                while theta < pathInflows.getEndOfInflow(i):
-                    k += 1
-                    for j,P in enumerate(pathInflows.fPlus[i]):
-                         fP = pathInflows.fPlus[i][P]
-                         ttravelTime[j][k] = finalFlow.pathArrivalTime(P,\
-                             theta + timeStep/2) - (theta + timeStep/2)
+                while theta < newpathInflows.getEndOfInflow(i):
+                    tt = np.empty(len(newpathInflows.fPlus[i]))
+                    for j,P in enumerate(newpathInflows.fPlus[i]):
+                        tt[j] = iterFlow.pathArrivalTime(P,theta + timeStep/2) - (theta + timeStep/2)
+                    tmin = min(tt)
+                    for j,P in enumerate(newpathInflows.fPlus[i]):
+                        qopi += (tt[j] - tmin)*fP[P].getValueAt(theta + timeStep/2)
+
                     theta = theta + timeStep
-                # print("ttravelTime", np.shape(ttravelTime), ttravelTime)
-                travelTime.append(ttravelTime)
-            # print("travelTime", travelTime)
+            if verbose: print("Norm of change in flow (abs.) ", round(float(newAbsDiffBwFlows),2),\
+                    " previous change ", round(float(oldAbsDiffBwFlows),2), " alpha ",\
+                    round(float(alpha),2), ' qopi ', round(qopi,2))
+            if verbose: print("Norm of change in flow (rel.) ", round(float(newRelDiffBwFlows),2),\
+                    " previous change ", round(float(oldRelDiffBwFlows),2))
 
-            return newpathInflows, alphaIter, absDiffBwFlowsIter, relDiffBwFlowsIter, travelTime, stopStr, alphaStr
+            qopiIter.append(qopi)
+            alphaIter.append(alpha)
+            absDiffBwFlowsIter.append(newAbsDiffBwFlows)
+            relDiffBwFlowsIter.append(newRelDiffBwFlows)
 
-        # Relative flowDiff criterion
-        elif newRelDiffBwFlows < precision:
-            stopStr = "Attained required (relative) precision!"
-            print(stopStr)
+            # if verbose: print("Current flow is\n", newpathInflows)
+            # update iteration variables
+            pathInflows = newpathInflows
+            oldAbsDiffBwFlows = newAbsDiffBwFlows
+            oldRelDiffBwFlows = newRelDiffBwFlows
 
-            # Find path travel times for the final flow
-            finalFlow = networkLoading(pathInflows)
-            for i,comd in enumerate(commodities):
-                ttravelTime = np.empty([len(pathInflows.fPlus[i]),\
-                        math.ceil(pathInflows.getEndOfInflow(i)/timeStep)])
-                # print("ttravelTime ", np.shape(ttravelTime), ttravelTime)
-                theta = ExtendedRational(0,1)
-                k = -1
-                theta = ExtendedRational(0,1)
-                while theta < pathInflows.getEndOfInflow(i):
-                    k += 1
-                    for j,P in enumerate(pathInflows.fPlus[i]):
-                         fP = pathInflows.fPlus[i][P]
-                         ttravelTime[j][k] = finalFlow.pathArrivalTime(P,\
-                             theta + timeStep/2) - (theta + timeStep/2)
-                    theta = theta + timeStep
-                # print("ttravelTime", np.shape(ttravelTime), ttravelTime)
-                travelTime.append(ttravelTime)
-            # print("travelTime", travelTime)
+            step += 1
+            print("\nEND OF STEP ", step,"\n")
 
-            return newpathInflows, alphaIter, absDiffBwFlowsIter, relDiffBwFlowsIter, travelTime, stopStr, alphaStr
-
-        # Update Alpha
-        if newAbsDiffBwFlows == 0:
-            gamma = 0
-        else:
-            if step > 0: gamma = 1 - abs(newAbsDiffBwFlows - oldAbsDiffBwFlows)/(newAbsDiffBwFlows +
-                    oldAbsDiffBwFlows)
-
-        # Alpha Update Rule
-        # alpha = gamma # equal to factor
-        # alpha = gamma*alpha # multiplied by factor
-        # alpha = (gamma)*(gamma*alpha) + (1-gamma)*alpha # expo smooth using gamma
-        alpha = (0.5*gamma)*(0.5*gamma*alpha) + (1-0.5*gamma)*alpha # expo smooth using gamma/2
-        # alpha = max(0.2, (0.5*gamma)*(0.5*gamma*alpha) + (1-0.5*gamma)*alpha) # expo smooth using gamma/2
-
-        if verbose: print("Norm of change in flow (abs.) ", round(float(newAbsDiffBwFlows),2),\
-                " previous change ", round(float(oldAbsDiffBwFlows),2), " alpha ",\
-                round(float(alpha),2))
-        if verbose: print("Norm of change in flow (rel.) ", round(float(newRelDiffBwFlows),2),\
-                " previous change ", round(float(oldRelDiffBwFlows),2))
-
-        alphaIter.append(alpha)
-        absDiffBwFlowsIter.append(newAbsDiffBwFlows)
-        relDiffBwFlowsIter.append(newRelDiffBwFlows)
-
-        # if verbose: print("Current flow is\n", newpathInflows)
-        pathInflows = newpathInflows
-        oldAbsDiffBwFlows = newAbsDiffBwFlows
-        oldRelDiffBwFlows = newRelDiffBwFlows
-
-        step += 1
-        print("\nEND OF STEP ", step,"\n")
-
-    stopStr = "Maximum number of steps reached without attaining required precision!"
     print(stopStr)
-
     # Find path travel times for the final flow
     finalFlow = networkLoading(pathInflows)
     for i,comd in enumerate(commodities):
         ttravelTime = np.empty([len(pathInflows.fPlus[i]),\
                 math.ceil(pathInflows.getEndOfInflow(i)/timeStep)])
-        print("ttravelTime ", np.shape(ttravelTime), ttravelTime)
+        # print("ttravelTime ", np.shape(ttravelTime), ttravelTime)
         theta = ExtendedRational(0,1)
         k = -1
-        theta = ExtendedRational(0,1)
         while theta < pathInflows.getEndOfInflow(i):
             k += 1
             for j,P in enumerate(pathInflows.fPlus[i]):
-                 fP = pathInflows.fPlus[i][P]
+                 # fP = pathInflows.fPlus[i][P]
                  ttravelTime[j][k] = finalFlow.pathArrivalTime(P,\
                      theta + timeStep/2) - (theta + timeStep/2)
             theta = theta + timeStep
         # print("ttravelTime", np.shape(ttravelTime), ttravelTime)
         travelTime.append(ttravelTime)
     # print("travelTime", travelTime)
-    return pathInflows, alphaIter, absDiffBwFlowsIter, relDiffBwFlowsIter, travelTime, stopStr, alphaStr
+    # print("qopiIter ", qopiIter)
+    return pathInflows, alphaIter, absDiffBwFlowsIter, relDiffBwFlowsIter,\
+            travelTime, stopStr, alphaStr, qopiIter
 
