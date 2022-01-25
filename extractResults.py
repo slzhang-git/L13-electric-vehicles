@@ -52,7 +52,7 @@ for c,p in enumerate(f[()].fPlus):
     print('Commodity: %d'%c)
 
     # Making figures for each commodity
-    fig, axs = plt.subplots(3)
+    fig, axs = plt.subplots(4)
 
     # Set fontsize
     params = {'legend.fontsize': 'x-large',
@@ -110,7 +110,7 @@ for c,p in enumerate(f[()].fPlus):
     for p in range(len(tt[c])):
         y = tt[c][p]
         axs[k].plot(x,y,label='path%d'%p, color=colors[p], linestyle=linestyles[p])
-        axs[k].legend()
+    axs[k].legend()
     axs[k].set_xlabel('time', fontsize='xx-large')
     axs[k].set_title('Travel Times', fontsize='xx-large')
     # plt.show()
@@ -131,23 +131,26 @@ for c,p in enumerate(f[()].fPlus):
     axs2 = axs[k].twinx()
     axs2.plot(x,absDiffBwFlowsIter,label=r'$\Delta$ f', color=colors[1], linestyle=linestyles[1])
     axs2.plot(x,relDiffBwFlowsIter,label=r'($\Delta$ f / f)', color=colors[2], linestyle=linestyles[1])
-    axs2.plot(x,qopiIter,label='qopi', color=colors[3], linestyle=linestyles[1])
     axs2.plot([1,len(alphaIter)], [float(precision), float(precision)],label=r'$\epsilon$',\
             color=colors[2], linestyle=linestyles[2])
     axs2.legend(loc=locs[3], fontsize='x-large')
-    axs[k].set_xlabel('iteration', fontsize='xx-large')
-    axs[k].set_title(r'$\alpha$ and $\Delta f^{k}$', fontsize='xx-large')
+    # axs[k].set_xlabel('iteration', fontsize='xx-large')
+    # axs[k].set_title(r'$\alpha$ and $\Delta f^{k}$', fontsize='xx-large')
     # plt.show()
+   # TODO: Avoid this hardcoding
+    # axs[2].legend(loc=locs[2])
+    axs[k].legend(loc=locs[1], fontsize='x-large')
+
+    k += 1
+    axs[k].plot(x,qopiIter,label='qopi', color=colors[3], linestyle=linestyles[1])
+    axs[k].set_xlabel('iteration', fontsize='xx-large')
+    axs[k].legend(fontsize='x-large')
 
     # Set label and xtick sizes for axes
     for i in range(len(axs)):
-        axs[i].legend(fontsize='x-large')
+        # axs[i].legend(fontsize='x-large')
         plt.setp(axs[i].get_xticklabels(), fontsize='x-large')
         plt.setp(axs[i].get_yticklabels(), fontsize='x-large')
-
-    # TODO: Avoid this hardcoding
-    # axs[2].legend(loc=locs[2])
-    axs[k].legend(loc=locs[2])
 
     plt.ylim(bottom=0)
 
@@ -160,7 +163,7 @@ for c,p in enumerate(f[()].fPlus):
 
     # Save figure
     dirname = os.path.expanduser('./figures')
-    fname1 = fname + 'comm%d'%c
+    fname1 = fname + '_comm%d'%c
     print(fname)
     figname = os.path.join(dirname, fname1)
     fig.savefig(figname, format='png', dpi=fig.dpi, bbox_inches='tight')

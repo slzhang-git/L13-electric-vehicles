@@ -401,10 +401,10 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
 
 
     # alphaStr = ''
-    alphaStr = r'($\gamma$)'
+    # alphaStr = r'($\gamma$)'
     # alphaStr = r'($\gamma\alpha$)'
     # alphaStr = r'expoSmooth($\gamma$)'
-    # alphaStr = r'expoSmooth($\gamma/2$)'
+    alphaStr = r'expoSmooth($\gamma/2$)'
     # alphaStr = r'relExpoSmooth($\gamma/2$)'
     # alphaStr = r'min2ExpoSmooth($\gamma/2$)'
 
@@ -438,10 +438,10 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
                         oldAbsDiffBwFlows)
 
             # Alpha Update Rule
-            alpha = gamma # equal to factor
+            # alpha = gamma # equal to factor
             # alpha = gamma*alpha # multiplied by factor
             # alpha = (gamma)*(gamma*alpha) + (1-gamma)*alpha # expo smooth using gamma
-            # alpha = (0.5*gamma)*(0.5*gamma*alpha) + (1-0.5*gamma)*alpha # expo smooth using gamma/2
+            alpha = (0.5*gamma)*(0.5*gamma*alpha) + (1-0.5*gamma)*alpha # expo smooth using gamma/2
             # alpha = max(0.2, (0.5*gamma)*(0.5*gamma*alpha) + (1-0.5*gamma)*alpha) # expo smooth using gamma/2
 
             # Measure quality of the path inflows
