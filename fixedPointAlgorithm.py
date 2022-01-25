@@ -420,12 +420,13 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
 
         # Check Stopping Conditions
         if newAbsDiffBwFlows < precision:
-            stopStr = "Attained required (absolute) precision!"
             shouldStop = True
+            stopStr = "Attained required (absolute) precision!"
         # elif newRelDiffBwFlows < precision:
-            # stopStr = "Attained required (relative) precision!"
             # shouldStop = True
+            # stopStr = "Attained required (relative) precision!"
         elif not (maxSteps is None or step < maxSteps):
+            shouldStop = True
             stopStr = "Maximum number of steps reached!"
 
         if not shouldStop:
