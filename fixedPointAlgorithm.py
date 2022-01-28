@@ -159,10 +159,6 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
         ExtendedRational, alpha: float, timestepSize, commodities, verbose: bool) -> PartialFlowPathBased:
     currentFlow = networkLoading(oldPathInflows)
 
-    # TODO: Adjust during algorithm?
-    # timestepSize = ExtendedRational(1,1)
-    threshold = ExtendedRational(1,100)
-
     newPathInflows = PartialFlowPathBased(oldPathInflows.network, oldPathInflows.getNoOfCommodities())
 
     # record the difference of derived times and shortest path times
@@ -379,13 +375,16 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
     pathInflows = PartialFlowPathBased(N, len(commodities))
     # Initial flow: For every commodity, select the shortest s-t path and send
     # all flow along this path (and 0 flow along all other paths)
-    # for i,(s,t,u) in enumerate(commodities):
-        # pathInflows.setPaths(i, [findShortestSTpath(s, t, zeroflow, ExtendedRational(0))], [u])
+    for i,(s,t,u) in enumerate(commodities):
+        flowlist = [PWConst([0,u.segmentBorders[-1]],[0],0)]*(len(pathList[i])-1)
+        flowlist.insert(0,u)
+        print("set ", u, flowlist, pathList[i], pathInflows)
+        pathInflows.setPaths(i, pathList[i], flowlist)
         # print("u ", u)
         # setInitialPathFlows(i, N, s, t, u, zeroflow, pathInflows)
-        # print(pathInflows)
 
-    setInitialPathFlows(N, pathList, commodities, zeroflow, pathInflows)
+    # setInitialPathFlows(N, pathList, commodities, zeroflow, pathInflows)
+    # setInitialPathFlows(N, pathList[0], commodities, zeroflow, pathInflows)
 
     if verbose: print("Starting with flow: \n", pathInflows)
 

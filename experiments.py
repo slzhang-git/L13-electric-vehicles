@@ -5,6 +5,9 @@ import sys, time, os, numpy
 from networkloading import *
 from fixedPointAlgorithm import *
 
+# For reading graphs
+import networkx as nx
+
 ## EVEexample3 Network ##
 def genEVExample3Network():
     G = Network()
@@ -12,11 +15,11 @@ def genEVExample3Network():
     G.addNode("u")
     G.addNode("v")
     G.addNode("t")
-    G.addEdge("s", "u", ExtendedRational(2), ExtendedRational(1))
-    G.addEdge("s", "u", ExtendedRational(2), ExtendedRational(2))
-    G.addEdge("u", "v", ExtendedRational(1), ExtendedRational(1))
-    G.addEdge("v", "t", ExtendedRational(2), ExtendedRational(1))
-    G.addEdge("v", "t", ExtendedRational(2), ExtendedRational(2))
+    G.addEdge("s", "u", ExtendedRational(2), ExtendedRational(1), ExtendedRational(2))
+    G.addEdge("s", "u", ExtendedRational(2), ExtendedRational(2), ExtendedRational(1))
+    G.addEdge("u", "v", ExtendedRational(1), ExtendedRational(1), ExtendedRational(0))
+    G.addEdge("v", "t", ExtendedRational(2), ExtendedRational(1), ExtendedRational(2))
+    G.addEdge("v", "t", ExtendedRational(2), ExtendedRational(2), ExtendedRational(1))
     return G
 
 def getEVExample3Paths(G: Network, s: Node, t: Node) -> List[Path]:
@@ -160,35 +163,95 @@ def readArgs(argv):
             # print(i,arglist[i])
     return argList
 
-         
+
+def readNetwork(edgeList, verbose: bool=False) -> Network:
+    #TODO: put checks for a valid network
+    # First read as a MultiDiGraph
+    Gn = nx.MultiDiGraph()
+    Gn = nx.read_edgelist(edgeList, comments='#', nodetype=str,\
+            create_using=nx.MultiDiGraph, data=(("nu", ExtendedRational),\
+            ("tau", ExtendedRational), ("ec", ExtendedRational),))
+    if verbose: print('edges: ', list(Gn.edges(data=True)))
+    if verbose: print('nodes: ', list(Gn.nodes()))
+
+    # Convert to a Network object for our purposes
+    G = Network()
+    for node in Gn.nodes():
+        G.addNode(node)
+    for u,v,data in Gn.edges(data=True):
+        G.addEdge(u,v,data['nu'],data['tau'],data['ec'])
+
+    #TODO: Plot the graph using nx
+    return G
+
+
+def readCommodities(commList) -> List[Tuple[Node, Node, PWConst]]:
+    commodities = []
+    with open(commList, 'r') as fobj:
+        for line in fobj:
+            # print(line)
+            data = [entry for entry in line.split()]
+            # print(data, len(data)-2, data[2:len(data)-1])
+            # Create the PWConst function for this commodity
+            times = [ExtendedRational(i) for i in data[2:2+math.ceil(len(data)/2 -1)]]
+            vals = [ExtendedRational(i) for i in data[2+len(times):len(data)]]
+            # pwcList = [ExtendedRational()]
+            # TODO: Autosimplify=0 has to be passed otherwise error occurs in
+            # networkloaading()
+            pwcf = PWConst(times, vals, 0)
+            print(pwcf)
+            commodities.append((G.getNode(data[0]), G.getNode(data[1]), pwcf))
+    print('comm: ', commodities)
+    return commodities
+
+
 if __name__ == "__main__":
+
+    # TODO: Read as part of arglist
+    energyBudget = 3
+
     argList = readArgs(sys.argv)
+
+    G = readNetwork(argList[0])
+
+    commodities = readCommodities(argList[1])
+
     fname = ""
     for i in range(len(argList)-1):
         fname += argList[i] + "_"
     fname += argList[-1]
 
     # Read arguments into required variables
-    [insName,timeHorizon,maxIter,precision,alpha,timeStep] = argList
-    print("read as: insName,timeHorizon,maxIter,precision,alpha,timeStep")
+    [insName,timeHorizon,maxIter,precision,alpha,timeStep] = argList[2:len(argList)]
+    # print("read as: insName,timeHorizon,maxIter,precision,alpha,timeStep")
     [insName,timeHorizon,maxIter,precision,alpha,timeStep] = [str(insName),\
             ExtendedRational(timeHorizon),int(maxIter),float(precision),\
             ExtendedRational(alpha),ExtendedRational(timeStep)]
     print("check args: ",insName,timeHorizon,maxIter,precision,alpha,timeStep)
-    print("output file: %s.npz"%fname)
 
-    if insName == "leon":
-        G = genLeonNetwork()
-        pathList = getLeonsPaths(G,G.getNode("s"),G.getNode("t"))
-    elif insName == "evExample3":
-        G = genEVExample3Network()
-        pathList = getEVExample3Paths(G,G.getNode("s"),G.getNode("t"))
-    elif insName == "nguyen":
-        G = genNguyenNetwork()
-        pathList = []
-    else:
-        print("Unknown network name. Exiting.")
-        exit(0)
+    # if insName == "leon":
+        # G = genLeonNetwork()
+        # # pathList = getLeonsPaths(G,G.getNode("s"),G.getNode("t"))
+        # pathList = G.findPaths(G.getNode("s"),G.getNode("t"))
+    # elif insName == "evExample3":
+        # # G = genEVExample3Network()
+        # # pathList = getEVExample3Paths(G,G.getNode("s"),G.getNode("t"))
+        # pathList = G.findPaths(G.getNode("s"),G.getNode("t"), energyBudget)
+    # elif insName == "nguyen":
+        # G = genNguyenNetwork()
+        # pathList = []
+    # else:
+        # print("Unknown network name. Exiting.")
+        # exit(0)
+
+    # Find list of paths for each commodity
+    # TODO: put data checks
+    pathList = []
+    for i,(s,t,u) in enumerate(commodities):
+        print("i ", i,s,t,u)
+        pathList.append(G.findPaths(s, t, energyBudget))
+        # for p in pathList[i]:
+            # print(p)
 
     # Start
     tStart = time.time()
@@ -196,21 +259,26 @@ if __name__ == "__main__":
     # '_timeStep=%.2f'%timeStep + '_precision=%.2f'%precision + '.npz'
     # print("------------------------------------------------\n",filename,\
             # "\n------------------------------------------------")
-    if insName == "nguyen":
-        f, alphaIter, absDiffBwFlowsIter, relDiffBwFlowsIter, travelTime, stopStr,\
-        alphaStr, qopiIter = fixedPointAlgo(G, pathList, precision, [\
-                (G.getNode("1"), G.getNode("2"),PWConst([0,10,20],[3,0],0)),\
-                (G.getNode("1"), G.getNode("3"),PWConst([0,10,20],[3,0],0)),\
-                (G.getNode("4"), G.getNode("2"),PWConst([0,10,20],[3,0],0)),\
-                (G.getNode("4"), G.getNode("3"),PWConst([0,10,20],[3,0],0))],\
-                timeHorizon,maxIter,timeStep,alpha,True)
-    else:
-        f, alphaIter, absDiffBwFlowsIter, relDiffBwFlowsIter, travelTime, stopStr,\
-        alphaStr, qopiIter = fixedPointAlgo(G, pathList,\
-                # precision,[(G.getNode("s"),G.getNode("t"), PWConst([0,10,50],[3,0],0))],\
-                # precision,[(G.getNode("s"),G.getNode("t"), PWConst([0,10,20],[3,0],0))],\
-                precision,[(G.getNode("s"),G.getNode("t"), PWConst([0,10],[3],0))],\
-                timeHorizon, maxIter, timeStep, alpha, True)
+    # if insName == "nguyen":
+        # f, alphaIter, absDiffBwFlowsIter, relDiffBwFlowsIter, travelTime, stopStr,\
+        # alphaStr, qopiIter = fixedPointAlgo(G, pathList, precision, [\
+                # (G.getNode("1"), G.getNode("2"),PWConst([0,10,20],[3,0],0)),\
+                # (G.getNode("1"), G.getNode("3"),PWConst([0,10,20],[3,0],0)),\
+                # (G.getNode("4"), G.getNode("2"),PWConst([0,10,20],[3,0],0)),\
+                # (G.getNode("4"), G.getNode("3"),PWConst([0,10,20],[3,0],0))],\
+                # timeHorizon,maxIter,timeStep,alpha,True)
+    # else:
+        # comm = [(G.getNode("s"),G.getNode("t"), PWConst([0,10],[3],0))]
+        # f, alphaIter, absDiffBwFlowsIter, relDiffBwFlowsIter, travelTime, stopStr,\
+        # alphaStr, qopiIter = fixedPointAlgo(G, pathList,\
+                # # precision,[(G.getNode("s"),G.getNode("t"), PWConst([0,10,50],[3,0],0))],\
+                # # precision,[(G.getNode("s"),G.getNode("t"), PWConst([0,10,20],[3,0],0))],\
+                # precision,comm,\
+                # # precision,[(G.getNode("s"),G.getNode("t"), PWConst([0,10],[3],0))],\
+                # timeHorizon, maxIter, timeStep, alpha, True)
+    f, alphaIter, absDiffBwFlowsIter, relDiffBwFlowsIter, travelTime, stopStr,\
+            alphaStr, qopiIter = fixedPointAlgo(G, pathList, precision, commodities,\
+                    timeHorizon, maxIter, timeStep, alpha, True)
 
     tEnd = time.time()
     print("travelTimes: ", travelTime)
@@ -221,7 +289,7 @@ if __name__ == "__main__":
     for id, e in enumerate(eventualFlow.network.edges):
         print("edge %d: "%id, e, eventualFlow.queues[e])
 
-    # alpha and flow diff
+    # alpha and flowDiff
     ralphaIter = [round(float(b),3) for b in alphaIter]
     rAbsDiffBwFlowsIter = [round(float(b),3) for b in absDiffBwFlowsIter]
     rRelDiffBwFlowsIter = [round(float(b),3) for b in relDiffBwFlowsIter]
@@ -242,4 +310,5 @@ if __name__ == "__main__":
             alphaIter=alphaIter,absDiffBwFlowsIter=absDiffBwFlowsIter,\
             relDiffBwFlowsIter=relDiffBwFlowsIter,travelTime=travelTime,\
             stopStr=stopStr,alphaStr=alphaStr,qopiIter=qopiIter)
+    print("output saved to file: %s.npz"%fname)
 

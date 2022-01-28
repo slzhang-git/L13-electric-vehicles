@@ -4,9 +4,10 @@ import random
 from typing import Union, List
 
 from utilities import *
+from collections import deque
 
-# A directed edge (from https://github.com/Schedulaar/predicted-dynamic-flows/blob/main/predictor/src/core/graph.py )
-# with capacity nu and travel time tau
+# A directed edge (from https://github.com/Schedulaar/predicted-dynamic-flows/blob/main/predictor/src/core/graph.py)
+# with capacity nu, travel time tau, and energy consumption ec
 class Edge:
     node_from: Node
     node_to: Node
@@ -130,6 +131,69 @@ class Network:
                 s += "\n"
         return s
 
+    # Function for finding acyclic energy feasible paths in graph from source src to
+    # destination dest
+    # args: source (src), destination (dest), number of nodes (numNodes), energy
+    # budget (EB)
+    # TODO: Finding paths with cycles in the network
+    def findPaths(self, src, dest, EB: ExtendedRational=math.inf, verbose: bool=False) -> List[Path]:
+        numNodes = len(self.nodes)
+        # Queue to store (partial) paths
+        q = deque()
+
+        # Add edges going out of the source to q
+        for e in self.edges:
+            if e.node_from == src:
+                q.append(Path([e]))
+
+        # List to store the final paths
+        pathList = []
+        count = 0
+
+        while q:
+            count += 1
+            if verbose: print("\ncount:%d"%count)
+
+            # Get the (earliest generated) partial path
+            if verbose: print("q before pop")
+            for p in q:
+                if verbose: print(printPathInNetwork(p, self))
+            path = q.popleft()
+            # print("after pop ", printPathInNetwork(path, self), q)
+            for p in q:
+                printPathInNetwork(p, self)
+
+            # Get the last node in the partial path
+            last = path.edges[-1].node_to
+            if verbose: print("last ", last)
+
+            # If the last node is the destination node then store the path
+            if last == dest:
+                if verbose: print("Found s-t Path:", printPathInNetwork(path, self))
+                pathList.append(path)
+
+            # Traverse all the nodes connected to the current node and push new partial
+            # path to queue
+            edgeListCurrNode = [e for e in self.edges if e.node_from == last]
+            if verbose: print("edgeListCurrNode ", len(edgeListCurrNode), edgeListCurrNode)
+            for e in edgeListCurrNode:
+                if verbose: print("edge %d" %self.edges.index(e), e,\
+                        printPathInNetwork(path, self), path.isNodeInPath(e.node_to),\
+                        path.getEnergyConsump(), e.ec, (path.getEnergyConsump() + e.ec <= EB))
+                if path.isNodeInPath(e.node_to) and (path.getEnergyConsump() + e.ec <= EB):
+                    newpath = Path(path.edges)
+                    if verbose: print("newpath before append ", printPathInNetwork(newpath,self))
+                    newpath.add_edge_at_end(e)
+                    q.append(newpath)
+                    if verbose: print("newpath after append ", printPathInNetwork(newpath, self))
+
+        # Print pathList
+        if verbose: print("\nAll s-t paths are:", pathList)
+        for p in pathList:
+            if verbose: print(printPathInNetwork(p, self))
+        return pathList
+
+
 # A directed path
 class Path:
     edges: List[Edge]
@@ -209,7 +273,6 @@ class Path:
                 return False
         return True
 
-    # PP: why do we need this?
     def __hash__(self):
         # TODO: This is a very bad way of hashing
         # If possible, this should be avoided at all as Path-objects are not immutable
@@ -217,6 +280,17 @@ class Path:
         for e in self.edges:
             h = 2*h + hash(e)
         return h
+
+    # Function to check if a node is part of the path
+    def isNodeInPath(self, x: Node) -> bool:
+        # print("nodes in path ", str(self.getNodesInPath()))
+        if x in self.getNodesInPath():
+            # print("False")
+            return False
+        else:
+            # print("True")
+            return True
+
 
 # Creates a random series parallel network with m edges
 # The source node will be named s, the sink node t. All other nodes are nameless
