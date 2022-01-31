@@ -143,5 +143,5 @@ if __name__ == "__main__":
             alphaIter=alphaIter,absDiffBwFlowsIter=absDiffBwFlowsIter,\
             relDiffBwFlowsIter=relDiffBwFlowsIter,travelTime=travelTime,\
             stopStr=stopStr,alphaStr=alphaStr,qopiIter=qopiIter)
-    print("output saved to file: %s.npz"%fname)
+    print("output saved to file: %s.npz"%os.path.join(dirname, fname))
 
