@@ -44,115 +44,39 @@ def findShortestFeasibleSTpath(time: ExtendedRational, s: Node, t: Node, flow:
     return p
 
 
-def getEVExamplePaths(G: Network, s: Node, t: Node) -> List[Path]:
-    # Paths for EVExample3 network
-    p1 = Path([G.edges[0], G.edges[2], G.edges[4]])
-    p2 = Path([G.edges[1], G.edges[2], G.edges[3]])
-    p3 = Path([G.edges[1], G.edges[2], G.edges[4]])
-    # printPathInNetwork(p2,G)
-    # printPathInNetwork(p3,G)
-    # exit(0)
-    return [p1, p2, p3]
+# def setInitialPathFlows(G: Network, pathList : List[Path],\
+        # commodities : List[Tuple[Node, Node, PWConst]],\
+        # zeroflow: PartialFlow, pathInflows: PartialFlowPathBased) -> PartialFlowPathBased:
+    # print("To be implemented! Passing hardcoded path inflows.")
+    # genPaths = False
+    # if not pathList:
+        # genPaths = True
 
+    # for i,(s,t,u) in enumerate(commodities):
+        # # TODO: get rid of this temporary hack asap
+        # # Get pathlist if empty
+        # if genPaths:
+            # # pathList = getEVExamplePaths(G, s, t)
+            # # pathList = getLeonsPaths(G, s, t)
+            # pathList = getNguyenPaths(G, s, t)
 
-def getLeonsPaths(G: Network, s: Node, t: Node) -> List[Path]:
-    # Paths for the example in Leon's thesis
-    p1 = Path([G.edges[0], G.edges[1], G.edges[2]])
-    p2 = Path([G.edges[3], G.edges[4], G.edges[2]])
-    p3 = Path([G.edges[0], G.edges[5], G.edges[6]])
-    return [p1, p2, p3]
+        # # Get flowlist
+        # # flowlist = [u,PWConst([0,50],[0],0),PWConst([0,50],[0],0)]
+        # # flowlist = [PWConst([0,50],[0],0)]*(len(pathList)-1)
+        # flowlist = [PWConst([0,u.segmentBorders[-1]],[0],0)]*(len(pathList)-1)
+        # flowlist.insert(0,u)
+        # # print("len ", len(pathlist), len(flowlist))
+        # # exit(0)
 
-
-def getNguyenPaths(G: Network, s: Node, t: Node) -> List[Path]:
-    # Paths for the example in Leon's thesis
-    # print(s,t,int(s.name)==1,s.name=="4",t.name=="2",t.name=="3")
-    pathlist = []
-    if int(s.name)==1:
-        if int(t.name)==2:
-            pathlist.append(Path([G.edges[1-1], G.edges[4-1], G.edges[13-1]]))
-            pathlist.append(Path([G.edges[1-1], G.edges[3-1], G.edges[7-1], G.edges[8-1], G.edges[13-1]]))
-            pathlist.append(Path([G.edges[1-1], G.edges[3-1], G.edges[7-1], G.edges[12-1], G.edges[16-1]]))
-            pathlist.append(Path([G.edges[1-1], G.edges[3-1], G.edges[11-1], G.edges[15-1], G.edges[16-1]]))
-
-            pathlist.append(Path([G.edges[2-1], G.edges[6-1], G.edges[7-1], G.edges[8-1], G.edges[13-1]]))
-            pathlist.append(Path([G.edges[2-1], G.edges[6-1], G.edges[7-1], G.edges[12-1], G.edges[16-1]]))
-            pathlist.append(Path([G.edges[2-1], G.edges[6-1], G.edges[11-1], G.edges[15-1], G.edges[16-1]]))
-            pathlist.append(Path([G.edges[2-1], G.edges[10-1], G.edges[14-1], G.edges[15-1], G.edges[16-1]]))
-        elif int(t.name)==3:
-            pathlist.append(Path([G.edges[1-1], G.edges[3-1], G.edges[7-1], G.edges[12-1], G.edges[18-1]]))
-            pathlist.append(Path([G.edges[1-1], G.edges[3-1], G.edges[11-1], G.edges[15-1], G.edges[18-1]]))
-
-            pathlist.append(Path([G.edges[2-1], G.edges[6-1], G.edges[7-1], G.edges[12-1], G.edges[18-1]]))
-            pathlist.append(Path([G.edges[2-1], G.edges[6-1], G.edges[11-1], G.edges[15-1], G.edges[18-1]]))
-            pathlist.append(Path([G.edges[2-1], G.edges[10-1], G.edges[14-1], G.edges[15-1], G.edges[18-1]]))
-            pathlist.append(Path([G.edges[2-1], G.edges[10-1], G.edges[17-1], G.edges[19-1]]))
-    elif int(s.name)==4:
-        if int(t.name)==2:
-            pathlist.append(Path([G.edges[5-1], G.edges[6-1], G.edges[7-1], G.edges[8-1], G.edges[13-1]]))
-            pathlist.append(Path([G.edges[5-1], G.edges[6-1], G.edges[7-1], G.edges[12-1], G.edges[16-1]]))
-            pathlist.append(Path([G.edges[5-1], G.edges[6-1], G.edges[11-1], G.edges[15-1], G.edges[16-1]]))
-            pathlist.append(Path([G.edges[5-1], G.edges[10-1], G.edges[14-1], G.edges[15-1], G.edges[16-1]]))
-
-            pathlist.append(Path([G.edges[9-1], G.edges[14-1], G.edges[15-1], G.edges[16-1]]))
-        elif int(t.name)==3:
-            pathlist.append(Path([G.edges[5-1], G.edges[6-1], G.edges[7-1], G.edges[12-1], G.edges[18-1]]))
-            pathlist.append(Path([G.edges[5-1], G.edges[6-1], G.edges[11-1], G.edges[15-1], G.edges[18-1]]))
-            pathlist.append(Path([G.edges[5-1], G.edges[10-1], G.edges[14-1], G.edges[15-1], G.edges[18-1]]))
-
-            pathlist.append(Path([G.edges[9-1], G.edges[14-1], G.edges[15-1], G.edges[18-1]]))
-            pathlist.append(Path([G.edges[9-1], G.edges[17-1], G.edges[19-1]]))
-
-    # print("pathlist: ")
-    # for i in range(len(pathlist)):
-        # print(pathlist[i])
-
-    return pathlist
-
-
-def setInitialPathFlows(G: Network, pathList : List[Path],\
-        commodities : List[Tuple[Node, Node, PWConst]],\
-        zeroflow: PartialFlow, pathInflows: PartialFlowPathBased) -> PartialFlowPathBased:
-    print("To be implemented! Passing hardcoded path inflows.")
-    genPaths = False
-    if not pathList:
-        genPaths = True
-
-    for i,(s,t,u) in enumerate(commodities):
-        # TODO: get rid of this temporary hack asap
-        # Get pathlist if empty
-        if genPaths:
-            # pathList = getEVExamplePaths(G, s, t)
-            # pathList = getLeonsPaths(G, s, t)
-            pathList = getNguyenPaths(G, s, t)
-
-        # Get flowlist
-        # flowlist = [u,PWConst([0,50],[0],0),PWConst([0,50],[0],0)]
-        # flowlist = [PWConst([0,50],[0],0)]*(len(pathList)-1)
-        flowlist = [PWConst([0,u.segmentBorders[-1]],[0],0)]*(len(pathList)-1)
-        flowlist.insert(0,u)
-        # print("len ", len(pathlist), len(flowlist))
-        # exit(0)
-
-        # pathInflows.setPaths(commodityId, [p1,p2,p3], [u,PWConst([0,50],[0],0),PWConst([0,50],[0],0)])
-        print("Setting paths up for s-t commodity: ", s, "-", t)
-        pathInflows.setPaths(i, pathList, flowlist)
-        # print(pathlist, flowlist)
-        # print("Setting up path ", p2)
-        # pathInflows.setPaths(commodityId, p2, 0)
-        # print("Setting up path ", p3)
-        # pathInflows.setPaths(commodityId, p3, 0)
-    return pathInflows
-
-
-def getAllSTpaths(G: Network, s: Node, t: Node, flow: PartialFlow) -> List[Path]:
-    print("To be implemented: passing hardcoded paths for now.")
-    # p1 = Path([G.edges[0], G.edges[2], G.edges[4]])
-    # p2 = Path([G.edges[1], G.edges[2], G.edges[3]])
-    # p3 = Path([G.edges[1], G.edges[2], G.edges[4]])
-    # pathList = [p1,p2,p3]
-    # print("Path list :", pathList)
-    # print("Freeflow travel times :", (sum(t) for t in p1.edges.tau)
-    return pathList
+        # # pathInflows.setPaths(commodityId, [p1,p2,p3], [u,PWConst([0,50],[0],0),PWConst([0,50],[0],0)])
+        # print("Setting paths up for s-t commodity: ", s, "-", t)
+        # pathInflows.setPaths(i, pathList, flowlist)
+        # # print(pathlist, flowlist)
+        # # print("Setting up path ", p2)
+        # # pathInflows.setPaths(commodityId, p2, 0)
+        # # print("Setting up path ", p3)
+        # # pathInflows.setPaths(commodityId, p3, 0)
+    # return pathInflows
 
 
 def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
@@ -290,7 +214,6 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
     # for id, e in enumerate(currentFlow.network.edges):
         # print("queue at edge %d: "%id, e, currentFlow.queues[e])
     # print("timeDiff ", timeDiff)
-    # exit(0)
     print("newPathInflows: ", newPathInflows)
     return newPathInflows
 
@@ -334,12 +257,7 @@ def differenceBetweenPathInflows(oldPathInflows : PartialFlowPathBased, newPathI
     for i in range(oldPathInflows.getNoOfCommodities()):
         for path in oldPathInflows.fPlus[i]:
             if path in newPathInflows.fPlus[i]:
-                # print("difference ", round(float(difference),2))
-                # print("oldvals ", oldPathInflows.fPlus[i][path])
-                # print("newvals ", newPathInflows.fPlus[i][path])
-                # print("diff ", oldPathInflows.fPlus[i][path] + newPathInflows.fPlus[i][path].smul(ExtendedRational(-1,1)))
                 difference += (oldPathInflows.fPlus[i][path] + newPathInflows.fPlus[i][path].smul(ExtendedRational(-1,1))).norm()
-                # print("difference ", round(float(difference),2))
             else:
                 difference += oldPathInflows.fPlus[i][path].norm()
         for path in newPathInflows.fPlus[i]:
@@ -360,7 +278,7 @@ def sumNormOfPathInflows(pathInflows : PartialFlowPathBased) -> ExtendedRational
 
 # Function arguments: (network, precision, List[source node, sink node, ?], time
 # horizon, maximum allowed number of iterations, verbosity on/off)
-# TODO: make provision to warm-start the script given a path flow
+# TODO: warm-start using an available path flow?
 def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commodities :
         List[Tuple[Node, Node, PWConst]], timeHorizon:
         ExtendedRational=math.inf, maxSteps: int = None, timeStep: int = None,
@@ -378,13 +296,10 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
     for i,(s,t,u) in enumerate(commodities):
         flowlist = [PWConst([0,u.segmentBorders[-1]],[0],0)]*(len(pathList[i])-1)
         flowlist.insert(0,u)
-        print("set ", u, flowlist, pathList[i], pathInflows)
+        # print("set ", u, flowlist, pathList[i], pathInflows)
         pathInflows.setPaths(i, pathList[i], flowlist)
         # print("u ", u)
         # setInitialPathFlows(i, N, s, t, u, zeroflow, pathInflows)
-
-    # setInitialPathFlows(N, pathList, commodities, zeroflow, pathInflows)
-    # setInitialPathFlows(N, pathList[0], commodities, zeroflow, pathInflows)
 
     if verbose: print("Starting with flow: \n", pathInflows)
 
@@ -484,7 +399,6 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
     for i,comd in enumerate(commodities):
         ttravelTime = np.empty([len(pathInflows.fPlus[i]),\
                 math.ceil(pathInflows.getEndOfInflow(i)/timeStep)])
-        # print("ttravelTime ", np.shape(ttravelTime), ttravelTime)
         theta = ExtendedRational(0,1)
         k = -1
         while theta < pathInflows.getEndOfInflow(i):
