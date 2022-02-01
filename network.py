@@ -11,12 +11,12 @@ from collections import deque
 class Edge:
     node_from: Node
     node_to: Node
-    tau: ExtendedRational
-    nu: ExtendedRational
-    ec: ExtendedRational
+    tau: number
+    nu: number
+    ec: number
 
-    def __init__(self, node_from: Node, node_to: Node, capacity: ExtendedRational=1,\
-            traveltime: ExtendedRational=1, energyCons: ExtendedRational=0):
+    def __init__(self, node_from: Node, node_to: Node, capacity: number=1,\
+            traveltime: number=1, energyCons: number=0):
         # Creating an edge from node_from to node_to
         self.node_from = node_from
         self.node_to = node_to
@@ -73,7 +73,7 @@ class Network:
         self.nodes = []
         self.idCounter = 0
 
-    def getNode(self,node: Union[str,int,Node]) -> Node:
+    def getNode(self,node: Union[str,int,Node]) -> Union[Node,None]:
         if isinstance(node,Node):
             return node
         elif isinstance(node, str):
@@ -94,7 +94,7 @@ class Network:
         return self.nodes[-1]
 
     def addEdge(self,node_from: Union[str,int,Node], node_to: Union[str,int,Node],\
-            nu: ExtendedRational, tau: ExtendedRational, ec: ExtendedRational=0):
+            nu: number, tau: number, ec: number=0):
         v = self.getNode(node_from)
         w = self.getNode(node_to)
         e = Edge(v, w, nu, tau, ec)
@@ -107,15 +107,15 @@ class Network:
         edge.node_from.outgoing_edges.remove(edge)
         self.edges.remove(edge)
 
-    def subdivide(self,edge:Edge, nu: ExtendedRational, tau: ExtendedRational,\
-            ec: ExtendedRational):
+    def subdivide(self,edge:Edge, nu: number, tau: number,\
+            ec: number):
         self.edges.remove(edge)
         v = self.addNode()
         self.addEdge(edge.node_from, v, nu, tau, ec)
         self.addEdge(v, edge.node_to, nu, tau, ec)
 
-    def duplicate(self, edge:Edge, nu: ExtendedRational, tau: ExtendedRational,\
-            ec: ExtendedRational):
+    def duplicate(self, edge:Edge, nu: number, tau: number,\
+            ec: number):
         self.addEdge(edge.node_from, edge.node_to, nu, tau, ec)
 
     def __str__(self) -> str:
@@ -136,7 +136,7 @@ class Network:
     # args: source (src), destination (dest), number of nodes (numNodes), energy
     # budget (EB)
     # TODO: Finding paths with cycles in the network
-    def findPaths(self, src, dest, EB: ExtendedRational=math.inf, verbose: bool=False) -> List[Path]:
+    def findPaths(self, src, dest, EB: number=math.inf, verbose: bool=False) -> List[Path]:
         numNodes = len(self.nodes)
         # Queue to store (partial) paths
         q = deque()

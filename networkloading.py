@@ -13,10 +13,10 @@ class Event:
     # An event consists of a time and a node
     # Such an event denotes a time at which a new flow split has to be calculated at the given node
     # (because the amount of incoming flow into the node potentially changes after this time)
-    time: ExtendedRational
+    time: number
     v: Node
 
-    def __init__(self, time: ExtendedRational, v: Node):
+    def __init__(self, time: number, v: Node):
         self.time = time
         self.v = v
 
@@ -34,7 +34,7 @@ class EventQueue:
         self.events = []
 
     # Adds a new event to the queue
-    def pushEvent(self,time:ExtendedRational,v:Node):
+    def pushEvent(self,time:number,v:Node):
         heapq.heappush(self.events, Event(time, v))
 
     # Returns the next event and removes it from the queue
@@ -52,7 +52,7 @@ class EventQueue:
 #   its source, sink, network inflow rate and a list of tuples (path p, inflow rate into path p)
 # - timeHorizon (optional): the flow will be determined for the time interval [0,timeHorizon]; default is infinity
 # - verbose: If True, more information is printed during the network loading procedure; default is False
-def networkLoading(pathBasedFlows : PartialFlowPathBased, timeHorizon: ExtendedRational=math.inf, verbose:bool=False) -> PartialFlow:
+def networkLoading(pathBasedFlows : PartialFlowPathBased, timeHorizon: number=infinity, verbose:bool=False) -> PartialFlow:
     network = pathBasedFlows.network
 
     # We start by creating a list of partial path flows.
@@ -87,7 +87,7 @@ def networkLoading(pathBasedFlows : PartialFlowPathBased, timeHorizon: ExtendedR
     # and if \theta < timeHorizon there is an event (\theta,v) in the queue (sigifying that at that time a new flow
     # distribution has to be determined at node v
     for v in network.nodes:
-        eventQueue.pushEvent(ExtendedRational(0),v)
+        eventQueue.pushEvent(zero,v)
 
     flowTerminated = False  # TODO: Das als Abbruchbedingung einbauen
 
@@ -162,25 +162,25 @@ def networkLoading(pathBasedFlows : PartialFlowPathBased, timeHorizon: ExtendedR
                         outflowRate = partialPathFlows[i].fPlus[j].getValueAt(theta) / flowTo[e] * min(flowTo[e], e.nu)
                     else:
                         outflowRate = 0
-                    if nextTheta < ExtendedRational(1,0):
+                    if nextTheta < infinity:
                         partialPathFlows[i].fMinus[j].addSegment(flow.T(e, nextTheta), outflowRate)
                     else:
-                        partialPathFlows[i].fMinus[j].addSegment(ExtendedRational(1,0), outflowRate)
+                        partialPathFlows[i].fMinus[j].addSegment(infinity, outflowRate)
 
             # Now we convert the path flows into the actual edge in- and outflow rates
             # i.e. if an edge occurs multiple times on a commodity's path we add up the corresponding rates from the path flow
             for e in v.outgoing_edges:
-                inflowRate = ExtendedRational(0)
-                outflowRate = ExtendedRational(0)
+                inflowRate = zero
+                outflowRate = zero
                 for j in range(len(partialPathFlows[i].path.edges)):
                     if partialPathFlows[i].path.edges[j] == e:
                         inflowRate += partialPathFlows[i].fPlus[j].getValueAt(theta)
                         outflowRate += partialPathFlows[i].fMinus[j].getValueAt(flow.T(e,theta))
                 flow.fPlus[(e,i)].addSegment(nextTheta,inflowRate)
-                if nextTheta < ExtendedRational(1,0):
+                if nextTheta < infinity:
                     flow.fMinus[(e, i)].addSegment(flow.T(e,nextTheta), outflowRate)
                 else:
-                    flow.fMinus[(e, i)].addSegment(ExtendedRational(1,0), outflowRate)
+                    flow.fMinus[(e, i)].addSegment(infinity, outflowRate)
 
         # Now the extension at node v is done -> we have a flow up to time nextTheta at node v
         flow.upToAt[v] = nextTheta

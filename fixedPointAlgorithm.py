@@ -7,7 +7,7 @@ from dynamic_dijkstra import dynamic_dijkstra
 from scipy import optimize
 import numpy as np
 
-def findShortestSTpath(s: Node, t: Node, flow: PartialFlow, time: ExtendedRational) -> Path:
+def findShortestSTpath(s: Node, t: Node, flow: PartialFlow, time: number) -> Path:
     (arrivalTimes, realizedTimes) = dynamic_dijkstra(time, s, t, flow)
     # for i in enumerate(arrivalTimes):
         # print("times ", i, i[0], i[1])
@@ -25,8 +25,8 @@ def findShortestSTpath(s: Node, t: Node, flow: PartialFlow, time: ExtendedRation
     return p
 
 
-def findShortestFeasibleSTpath(time: ExtendedRational, s: Node, t: Node, flow:
-        PartialFlow, budget: ExtendedRational) -> Path:
+def findShortestFeasibleSTpath(time: number, s: Node, t: Node, flow:
+        PartialFlow, budget: number) -> Path:
     (arrivalTimes, realizedTimes) = dynamicFeasDijkstra(time, s, t, flow, budget)
     for i in enumerate(arrivalTimes):
         print("times ", i, i[0], i[1])
@@ -80,7 +80,7 @@ def findShortestFeasibleSTpath(time: ExtendedRational, s: Node, t: Node, flow:
 
 
 def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
-        ExtendedRational, alpha: float, timestepSize, commodities, verbose: bool) -> PartialFlowPathBased:
+        number, alpha: float, timestepSize, commodities, verbose: bool) -> PartialFlowPathBased:
     currentFlow = networkLoading(oldPathInflows)
 
     newPathInflows = PartialFlowPathBased(oldPathInflows.network, oldPathInflows.getNoOfCommodities())
@@ -95,10 +95,10 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
         flowValue = [None]*len(oldPathInflows.fPlus[i])
         travelTime = [None]*len(oldPathInflows.fPlus[i])
         if verbose: print("Considering commodity ", i)
-        newPathInflows.setPaths(i,[P for P in oldPathInflows.fPlus[i]],[PWConst([ExtendedRational(0,1)],[],ExtendedRational(0,1)) for P in oldPathInflows.fPlus[i]])
+        newPathInflows.setPaths(i,[P for P in oldPathInflows.fPlus[i]],[PWConst([zero],[],zero) for P in oldPathInflows.fPlus[i]])
         s = newPathInflows.sources[i]
         t = newPathInflows.sinks[i]
-        theta = ExtendedRational(0,1)
+        theta = zero
         meanIter = 0
         # We subdivide the time into intervals of length timestepSize
         k = -1
@@ -203,8 +203,7 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
                 # Uncomment below when using optimize.root_scalar() function
                 newFlowVal = max(flowValue[j] - alpha*travelTime[j] + sol.root, 0)
                 # print("newFlowVal ", newFlowVal)
-                newPathInflows.fPlus[i][P].addSegment(ExtendedRational(theta +
-                    timestepSize), ExtendedRational(newFlowVal))
+                newPathInflows.fPlus[i][P].addSegment(makeNumber(theta+timestepSize), makeNumber(newFlowVal))
             # print("newPathInflows: ", newPathInflows)
             theta = theta + timestepSize
         tmpVar = max(timestepSize,1/timestepSize)
@@ -248,16 +247,16 @@ def dualVarRootFuncComb(x, alpha, flowValue, travelTime, timestepSize, ubar):
     return float(termSum - ubar), float(gradTermSum)
 
 
-def differenceBetweenPathInflows(oldPathInflows : PartialFlowPathBased, newPathInflows : PartialFlowPathBased) -> ExtendedRational:
+def differenceBetweenPathInflows(oldPathInflows : PartialFlowPathBased, newPathInflows : PartialFlowPathBased) -> number:
     assert (oldPathInflows.getNoOfCommodities() == newPathInflows.getNoOfCommodities())
     #TODO: Also check if the time horizon for both the pathInflows is same or not
 
-    difference = ExtendedRational(0)
+    difference = zero
 
     for i in range(oldPathInflows.getNoOfCommodities()):
         for path in oldPathInflows.fPlus[i]:
             if path in newPathInflows.fPlus[i]:
-                difference += (oldPathInflows.fPlus[i][path] + newPathInflows.fPlus[i][path].smul(ExtendedRational(-1,1))).norm()
+                difference += (oldPathInflows.fPlus[i][path] + newPathInflows.fPlus[i][path].smul(-1)).norm()
             else:
                 difference += oldPathInflows.fPlus[i][path].norm()
         for path in newPathInflows.fPlus[i]:
@@ -267,8 +266,8 @@ def differenceBetweenPathInflows(oldPathInflows : PartialFlowPathBased, newPathI
     return difference
 
 # Find the sum of norm (integration) of path inflow fPlus functions
-def sumNormOfPathInflows(pathInflows : PartialFlowPathBased) -> ExtendedRational:
-    sumNorm = ExtendedRational(0)
+def sumNormOfPathInflows(pathInflows : PartialFlowPathBased) -> number:
+    sumNorm = zero
     for i in range(pathInflows.getNoOfCommodities()):
         for path in pathInflows.fPlus[i]:
             sumNorm += (pathInflows.fPlus[i][path]).norm()
@@ -281,7 +280,7 @@ def sumNormOfPathInflows(pathInflows : PartialFlowPathBased) -> ExtendedRational
 # TODO: warm-start using an available path flow?
 def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commodities :
         List[Tuple[Node, Node, PWConst]], timeHorizon:
-        ExtendedRational=math.inf, maxSteps: int = None, timeStep: int = None,
+        number=infinity, maxSteps: int = None, timeStep: int = None,
         alpha : float = None, verbose : bool = False) -> PartialFlowPathBased:
     step = 0
 
@@ -363,7 +362,7 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
             qopi = 0
             for i,comd in enumerate(commodities):
                 fP = newpathInflows.fPlus[i]
-                theta = ExtendedRational(0,1)
+                theta = zero
                 while theta < newpathInflows.getEndOfInflow(i):
                     tt = np.empty(len(newpathInflows.fPlus[i]))
                     for j,P in enumerate(newpathInflows.fPlus[i]):
@@ -399,7 +398,7 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
     for i,comd in enumerate(commodities):
         ttravelTime = np.empty([len(pathInflows.fPlus[i]),\
                 math.ceil(pathInflows.getEndOfInflow(i)/timeStep)])
-        theta = ExtendedRational(0,1)
+        theta = zero
         k = -1
         while theta < pathInflows.getEndOfInflow(i):
             k += 1
