@@ -50,6 +50,21 @@ class ExtendedRational(Fraction):
         else:
             return Fraction._richcmp(self, other, op)
 
+    def __add__(self, other):
+        if self.isInfinite and isinstance(other, ExtendedRational) and other.isInfinite:
+            if self.numerator > 0 and other.numerator > 0:
+                return ExtendedRational(1,0)
+            elif self.numerator > 0 and other.numerator > 0:
+                return ExtendedRational(-1,0)
+            else:
+                pass # TODO
+        elif self.isInfinite:
+            return self
+        elif isinstance(other, ExtendedRational) and other.isInfinite:
+            return other
+        else:
+            return Fraction.__add__(self,other)
+
     def __float__(self) -> float:
         if self.isInfinite:
             if self.numerator > 0:
@@ -65,9 +80,9 @@ class ExtendedRational(Fraction):
 
 # If exact=0, we use floating point numbers for all calculaion
 # Otherwise we use extendedRationals
-exact = 0
-number = float
-#number = ExtendedRational
+exact = 1
+#number = float
+number = ExtendedRational
 
 if exact == 0:
     infinity = math.inf
