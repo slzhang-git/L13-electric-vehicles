@@ -88,7 +88,7 @@ class PartialFlow:
         # Since all flow rates are assumed to be right-constant, it suffices to check the conditions
         # at every stepping point (for at least one of the relevant flow rate functions)
         while theta < upTo:
-            nextTheta = number(1, 0)
+            nextTheta = infinity
             flow = zero
             # Add up node inflow rate (over all incoming edges)
             for e in v.incoming_edges:

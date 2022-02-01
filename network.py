@@ -94,7 +94,7 @@ class Network:
         return self.nodes[-1]
 
     def addEdge(self,node_from: Union[str,int,Node], node_to: Union[str,int,Node],\
-            nu: number, tau: number, ec: number=0):
+            nu: number, tau: number, ec: number=zero):
         v = self.getNode(node_from)
         w = self.getNode(node_to)
         e = Edge(v, w, nu, tau, ec)
@@ -136,7 +136,7 @@ class Network:
     # args: source (src), destination (dest), number of nodes (numNodes), energy
     # budget (EB)
     # TODO: Finding paths with cycles in the network
-    def findPaths(self, src, dest, EB: number=math.inf, verbose: bool=False) -> List[Path]:
+    def findPaths(self, src, dest, EB: number=infinity, verbose: bool=False) -> List[Path]:
         numNodes = len(self.nodes)
         # Queue to store (partial) paths
         q = deque()
