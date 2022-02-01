@@ -63,20 +63,22 @@ class ExtendedRational(Fraction):
 
 
 
-# If precision = 0, we use floating point numbers for all calculaion
+# If exact=0, we use floating point numbers for all calculaion
 # Otherwise we use extendedRationals
-precision = 1
-#number = float
-number = ExtendedRational
+exact = 0
+number = float
+#number = ExtendedRational
 
-if precision == 0:
+if exact == 0:
     infinity = math.inf
     zero = 0.0
     def makeNumber(n):
         return float(n)
+    precision = 0.00001
 else:
     infinity = ExtendedRational(1,0)
     zero = ExtendedRational(0)
     def makeNumber(n):
         return ExtendedRational(n)
+    precision = zero
 

@@ -111,6 +111,7 @@ def networkLoading(pathBasedFlows : PartialFlowPathBased, timeHorizon: number=in
                 # If node v is the source of the current commodity i then this commodities network inflow rate u
                 # determines the amount of flow we have to send.
                 nextTheta = min(nextTheta,flow.u[i].getNextStepFrom(theta))
+                assert(nextTheta>theta)
                 flowTo[partialPathFlows[i].path.edges[0]] += flow.u[i].getValueAt(theta)
 
             for j in range(len(partialPathFlows[i].path.edges)-1):
@@ -119,6 +120,7 @@ def networkLoading(pathBasedFlows : PartialFlowPathBased, timeHorizon: number=in
                 if partialPathFlows[i].path.edges[j].node_to == v:
                     # If so, the outflow from this edge will be sent to the next edge on the path
                     nextTheta = min(nextTheta,partialPathFlows[i].fMinus[j].getNextStepFrom(theta))
+                    assert (nextTheta > theta)
                     flowTo[partialPathFlows[i].path.edges[j+1]] += partialPathFlows[i].fMinus[j].getValueAt(theta)
 
         # Check whether queues on outgoing edges deplete before nextTheta
@@ -130,7 +132,9 @@ def networkLoading(pathBasedFlows : PartialFlowPathBased, timeHorizon: number=in
                 # the time at which the queue on e will run empty (if the inflow into e remains constant)
                 x = qeAtTheta/(e.nu-flowTo[e])
                 # If this is before the current value of nextTheta we reduce nextTheta to the time the queue runs empty
-                nextTheta = min(nextTheta,theta+x)
+                if theta+x>theta:
+                    nextTheta = min(nextTheta,theta+x)
+                assert (nextTheta > theta)
 
         # Now we have all the information to extend the current flow at node v over the time interval [theta,nextTheta]:
 
