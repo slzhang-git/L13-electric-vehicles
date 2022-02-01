@@ -50,6 +50,17 @@ class ExtendedRational(Fraction):
         else:
             return Fraction._richcmp(self, other, op)
 
+    def __float__(self) -> float:
+        if self.isInfinite:
+            if self.numerator > 0:
+                return float(math.inf)
+            elif self.numerator < 0:
+                return float(-math.inf)
+            else:
+                return float(0/0)
+        else:
+            return Fraction.__float__(self)
+
 
 
 # If precision = 0, we use floating point numbers for all calculaion

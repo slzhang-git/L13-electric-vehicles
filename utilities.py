@@ -175,7 +175,7 @@ class PWConst:
         for i in range(len(self.segmentValues)):
             # f += "-" + str(self.segmentValues[i]) + "-|" + str(self.segmentBorders[i + 1]) + "|"
             f += " " + str(round(float(self.segmentValues[i]),2)) + " |"
-            if self.segmentBorders[i+1] < math.inf:
+            if self.segmentBorders[i+1] < infinity:
                 f += str(round(float(self.segmentBorders[i + 1]),2)) + "|"
             else:
                 f += str(self.segmentBorders[i + 1]) + "|"
@@ -262,12 +262,29 @@ class PWLin:
 
         # return f
 
-    def __str__(self):
+    def segment_as_str(self,i:int,ommitStart:bool=True) -> str:
+        # Creates a string of the form |2|3 4|4| for the i-th segment
+        # |2| is omitted if ommitStart=True (standard)
+        assert(i<self.noOfSegments)
+        s = ""
+        if not ommitStart:
+            s += "|" + str(round(float(self.segmentBorders[i]),2)) + "|"
+        s += str(round(float(self.segmentTvalues[i]),2)) + " "
+        if self.segmentBorders[i+1] < infinity:
+            s += str(round(float(self.segmentTvalues[i] + (self.segmentBorders[i + 1] - self.segmentBorders[i]) * self.segmentMvalues[i]),2))
+        else:
+            if self.segmentMvalues[i] == 0:
+                s += "0"
+            elif self.segmentMvalues[i] > 0:
+                s += "infty"
+            else:
+                s += "-infty"
+        s += "|" + str(round(float(self.segmentBorders[i+1]),2)) + "|"
+        return s
+
+    def __str__(self) -> str:
         f = "|" + str(round(float(self.segmentBorders[0]),2)) + "|"
         for i in range(len(self.segmentMvalues)):
-            f += str(round(float(self.segmentTvalues[i]),2)) + " " \
-                 + str(round(float(self.segmentTvalues[i] +\
-                 (self.segmentBorders[i + 1] - self.segmentBorders[i]) * self.segmentMvalues[i]),2)) \
-                 + "|" + str(round(float(self.segmentBorders[i + 1]),2)) + "|"
+            f += self.segment_as_str(i)
 
         return f
