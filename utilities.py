@@ -57,6 +57,7 @@ class PWConst:
     noOfSegments: int
     segmentBorders: List[ExtendedRational]
     segmentValues: List[ExtendedRational]
+    #TODO: rename the following parameter
     default: ExtendedRational
     autoSimplify: bool
 

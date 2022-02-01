@@ -161,7 +161,7 @@ class Network:
             path = q.popleft()
             # print("after pop ", printPathInNetwork(path, self), q)
             for p in q:
-                printPathInNetwork(p, self)
+                if verbose: printPathInNetwork(p, self)
 
             # Get the last node in the partial path
             last = path.edges[-1].node_to
@@ -188,9 +188,10 @@ class Network:
                     if verbose: print("newpath after append ", printPathInNetwork(newpath, self))
 
         # Print pathList
-        if verbose: print("\nAll s-t paths are:", pathList)
-        for p in pathList:
-            if verbose: print(printPathInNetwork(p, self))
+        print("\nTotal %d paths found from node %s to node %s:"%(len(pathList),src,dest))
+        if verbose:
+            for i,p in enumerate(pathList):
+                print(i, len(p), printPathInNetwork(p, self))
         return pathList
 
 
@@ -320,7 +321,9 @@ def createRandomSPnetwork(m:int) -> Network:
 def printPathInNetwork(p: Path, G: Network):
     s = str()
     for e in p.edges:
-        s += str(G.edges.index(e))
+        if len([i for i in e.node_from.outgoing_edges\
+                if i.node_to == e.node_to]) > 1:
+            s += str(G.edges.index(e))
         s += str(e)
     return s
 

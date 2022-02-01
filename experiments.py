@@ -57,23 +57,25 @@ def readNetwork(edgeList, verbose: bool=False) -> Network:
 
 
 def readCommodities(commList) -> List[Tuple[Node, Node, PWConst]]:
-    #TODO: Provision for ignoring commented lines
     commodities = []
     with open(commList, 'r') as fobj:
         for line in fobj:
-            # print(line)
-            data = [entry for entry in line.split()]
-            # print(data, len(data)-2, data[2:len(data)-1])
-            # Create the PWConst function for this commodity
-            times = [ExtendedRational(i) for i in data[2:2+math.ceil(len(data)/2 -1)]]
-            vals = [ExtendedRational(i) for i in data[2+len(times):len(data)]]
-            # pwcList = [ExtendedRational()]
-            # TODO: Autosimplify=0 has to be passed otherwise error occurs in
-            # networkloaading()
-            pwcf = PWConst(times, vals, 0)
-            print(pwcf)
-            commodities.append((G.getNode(data[0]), G.getNode(data[1]), pwcf))
-    print('comm: ', commodities)
+            # print('line ', line)
+            line = line.partition('#')[0]
+            line = line.rstrip()
+            if line:
+                data = [entry for entry in line.split()]
+                # print('data ', data, len(data)-2, data[2:len(data)-1])
+                # Create the PWConst function for this commodity
+                times = [ExtendedRational(i) for i in data[2:2+math.ceil(len(data)/2 -1)]]
+                vals = [ExtendedRational(i) for i in data[2+len(times):len(data)]]
+                # print(times, vals)
+                # The third argument = 0 means that the inflow rate is 0 for the rest of
+                # the real line outside the specified time intervals
+                pwcf = PWConst(times, vals, 0)
+                # print(pwcf)
+                commodities.append((G.getNode(data[0]), G.getNode(data[1]), pwcf))
+    # print('comm: ', commodities)
     return commodities
 
 
@@ -106,6 +108,8 @@ if __name__ == "__main__":
         pathList.append(G.findPaths(s, t, energyBudget))
         # for p in pathList[i]:
             # print(p)
+
+    print('Total number of paths: ', sum(len(x) for x in pathList))
 
     # Start
     tStart = time.time()
