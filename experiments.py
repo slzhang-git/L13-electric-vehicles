@@ -113,13 +113,13 @@ if __name__ == "__main__":
         # for p in pathList[i]:
             # print(p)
 
-    print('Total number of paths: ', sum(len(x) for x in pathList))
-    maxTravelTime = -math.inf
+    if True: print('Total number of paths: ', sum(len(x) for x in pathList))
+    maxTravelTime = -infinity
     for p in pathList:
         val = max([i.getFreeFlowTravelTime() for i in p])
         maxTravelTime = max(maxTravelTime, val)
 
-    print('Max travel time ', maxTravelTime)
+    if True: print('Max. path travel time ', maxTravelTime)
 
     # Start
     tStart = time.time()
