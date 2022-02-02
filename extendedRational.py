@@ -80,20 +80,21 @@ class ExtendedRational(Fraction):
 
 # If exact=0, we use floating point numbers for all calculaion
 # Otherwise we use extendedRationals
-exact = 1
-#number = float
-number = ExtendedRational
+#TODO: make it user-defined (command line argument)
+exact = 0
 
 if exact == 0:
+    number = float
     infinity = math.inf
     zero = 0.0
     def makeNumber(n):
         return float(n)
-    precision = 0.00001
+    numPrecision = 0.00001
 else:
+    number = ExtendedRational
     infinity = ExtendedRational(1,0)
     zero = ExtendedRational(0)
     def makeNumber(n):
         return ExtendedRational(n)
-    precision = zero
+    numPrecision = zero
 

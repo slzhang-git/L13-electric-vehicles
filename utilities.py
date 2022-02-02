@@ -30,10 +30,10 @@ class PWConst:
 
     def addSegment(self, border: number, value: number):
         # Adds a new constant segment at the right side
-        assert (self.segmentBorders[-1] <= border + precision)
+        assert (self.segmentBorders[-1] <= border + numPrecision)
 
         # Only add new segment if it is larger than the given precision
-        if self.segmentBorders[-1] - precision < border < self.segmentBorders[-1]+precision:
+        if self.segmentBorders[-1] - numPrecision < border < self.segmentBorders[-1]+numPrecision:
             return
 
         if self.autoSimplify and len(self.segmentValues) > 0 and self.segmentValues[-1] == value:

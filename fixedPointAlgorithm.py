@@ -302,9 +302,9 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
 
     if verbose: print("Starting with flow: \n", pathInflows)
 
-    oldAbsDiffBwFlows = math.inf
-    oldRelDiffBwFlows = math.inf
-    gamma = 1
+    oldAbsDiffBwFlows = infinity
+    oldRelDiffBwFlows = infinity
+    gamma = makeNumber(1)
     alphaIter = []
     absDiffBwFlowsIter = []
     relDiffBwFlowsIter = []
