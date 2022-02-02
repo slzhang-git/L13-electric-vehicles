@@ -84,6 +84,10 @@ if __name__ == "__main__":
     argList = readArgs(sys.argv)
 
     G = readNetwork(argList[0])
+    nuMin = min([e.nu for e in G.edges])
+    tauMin = min([e.tau for e in G.edges])
+    ecMin = min([e.ec for e in G.edges])
+    if True: print(round(float(nuMin),2), round(float(tauMin),2), round(float(ecMin),2))
 
     commodities = readCommodities(argList[1])
 
@@ -104,12 +108,18 @@ if __name__ == "__main__":
     # TODO: put data checks
     pathList = []
     for i,(s,t,u) in enumerate(commodities):
-        print("i ", i,s,t,u)
+        if False: print("i ", i,s,t,u)
         pathList.append(G.findPaths(s, t, energyBudget))
         # for p in pathList[i]:
             # print(p)
 
     print('Total number of paths: ', sum(len(x) for x in pathList))
+    maxTravelTime = -math.inf
+    for p in pathList:
+        val = max([i.getFreeFlowTravelTime() for i in p])
+        maxTravelTime = max(maxTravelTime, val)
+
+    print('Max travel time ', maxTravelTime)
 
     # Start
     tStart = time.time()
