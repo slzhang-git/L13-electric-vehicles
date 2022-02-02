@@ -1,68 +1,23 @@
 from __future__ import annotations
 from typing import List
 
-from fractions import Fraction
 import heapq, math
 
 import matplotlib.pyplot as plt
 
-
-# A class for rational numbers including +/- infinity
-# (basically just the class Fraction with +/- infinity)
-class ExtendedRational(Fraction):
-    def __new__(cls, numerator=0, denominator=None, *, _normalize=True):
-        if not denominator is None and denominator == 0:
-            self = super(Fraction, cls).__new__(cls)
-            if numerator > 0:
-                self.isInfinite = True
-                self._numerator = 1
-                return self
-            elif numerator < 0:
-                self.isInfinite = True
-                self._numerator = -1
-                return self
-            else:
-                # TODO
-                pass
-        else:
-            cls.isInfinite = False
-            return Fraction.__new__(cls, numerator, denominator)
-
-    def __str__(self):
-        if self.isInfinite:
-            if self._numerator > 0:
-                return "infty"
-            else:
-                return "-infty"
-        else:
-            return Fraction.__str__(self)
-
-    def _richcmp(self, other, op):
-        if self.isInfinite:
-            if self._numerator > 0:
-                return op(math.inf, other)
-            else:
-                return op(-math.inf, other)
-        elif isinstance(other, ExtendedRational) and other.isInfinite:
-            if other._numerator > 0:
-                return op(self, math.inf)
-            else:
-                return op(self, -math.inf)
-        else:
-            return Fraction._richcmp(self, other, op)
-
+from extendedRational import *
 
 # A right-constant function
 class PWConst:
     noOfSegments: int
-    segmentBorders: List[ExtendedRational]
-    segmentValues: List[ExtendedRational]
+    segmentBorders: List[number]
+    segmentValues: List[number]
     #TODO: rename the following parameter
-    default: ExtendedRational
+    default: number
     autoSimplify: bool
 
-    def __init__(self, borders: List[ExtendedRational], values: List[ExtendedRational],
-                 default: ExtendedRational = None, autoSimplyfy: bool = True):
+    def __init__(self, borders: List[number], values: List[number],
+                 default: number = None, autoSimplyfy: bool = True):
         # autoSimplify=True means that adjacent segments with the same value are automatically unified to a single segment
         self.default = default
         assert (len(borders) == len(values) + 1)
@@ -73,9 +28,13 @@ class PWConst:
 
         self.autoSimplify = autoSimplyfy
 
-    def addSegment(self, border: ExtendedRational, value: ExtendedRational):
+    def addSegment(self, border: number, value: number):
         # Adds a new constant segment at the right side
-        assert (self.segmentBorders[-1] <= border)
+        assert (self.segmentBorders[-1] <= border + numPrecision)
+
+        # Only add new segment if it is larger than the given precision
+        if self.segmentBorders[-1] - numPrecision < border < self.segmentBorders[-1]+numPrecision:
+            return
 
         if self.autoSimplify and len(self.segmentValues) > 0 and self.segmentValues[-1] == value:
             self.segmentBorders[-1] = border
@@ -84,7 +43,7 @@ class PWConst:
             self.segmentValues.append(value)
             self.noOfSegments += 1
 
-    def getValueAt(self, x: ExtendedRational) -> ExtendedRational:
+    def getValueAt(self, x: number) -> number:
         if x < self.segmentBorders[0] or x >= self.segmentBorders[-1]:
             # x is outside the range of the function
             return self.default
@@ -93,13 +52,13 @@ class PWConst:
                 if x < self.segmentBorders[i + 1]:
                     return self.segmentValues[i]
 
-    def getNextStepFrom(self, x: ExtendedRational) -> ExtendedRational:
+    def getNextStepFrom(self, x: number) -> number:
         if x >= self.segmentBorders[-1]:
             if self.default is None:
                 # TODO
                 pass
             else:
-                return ExtendedRational(1, 0)
+                return infinity
         else:
             for i in range(0, self.noOfSegments + 1):
                 if x < self.segmentBorders[i]:
@@ -127,7 +86,7 @@ class PWConst:
 
         return sum
 
-    def smul(self, mu: ExtendedRational) -> PWConst:
+    def smul(self, mu: number) -> PWConst:
         # Creates a new piecewise constant function by scaling the current one by mu
 
         if self.default is None:
@@ -140,7 +99,7 @@ class PWConst:
 
         return scaled
 
-    def restrictTo(self, a: ExtendedRational, b: ExtendedRational, default: ExtendedRational = None) -> PWConst:
+    def restrictTo(self, a: number, b: number, default: number = None) -> PWConst:
         # Creates a new piecewise constant function by restricting the current one to the interval [a,b]
         restrictedF = PWConst([a], [], default=default)
         x = a
@@ -164,29 +123,25 @@ class PWConst:
 
         return absf
 
-    def integrate(self, a: ExtendedRational, b: ExtendedRational) -> ExtendedRational:
+    def integrate(self, a: number, b: number) -> number:
         # Determines the value of the integral of the given piecewise function from a to b
         assert (self.default is not None or (a >= self.segmentBorders[0] and b <= self.segmentBorders[-1]))
 
-        integral = ExtendedRational(0)
+        integral = zero
         x = a
         while x < b:
             y = min(self.getNextStepFrom(x), b)
             integral += (y - x) * self.getValueAt(x)
-            # print("integ + ", round(float((y - x)),2),\
-                    # round(float(self.getValueAt(x)),2),\
-                    # round(float((y - x) * self.getValueAt(x)),2),\
-                    # round(float(integral),2))
             x = y
 
         return integral
 
-    def norm(self) -> ExtendedRational:
+    def norm(self) -> number:
         # Computes the L1-norm
         assert (self.default is None or self.default == 0)
         return self.__abs__().integrate(self.segmentBorders[0], self.segmentBorders[-1])
 
-    def drawGraph(self, start: ExtendedRational, end: ExtendedRational):
+    def drawGraph(self, start: number, end: number):
         current = start
         x = []
         y = []
@@ -203,7 +158,7 @@ class PWConst:
         plt.plot(x, y)
         return plt
 
-    def getXandY(self, start: ExtendedRational, end: ExtendedRational):
+    def getXandY(self, start: number, end: number):
         current = start
         x = []
         y = []
@@ -224,7 +179,7 @@ class PWConst:
         for i in range(len(self.segmentValues)):
             # f += "-" + str(self.segmentValues[i]) + "-|" + str(self.segmentBorders[i + 1]) + "|"
             f += " " + str(round(float(self.segmentValues[i]),2)) + " |"
-            if self.segmentBorders[i+1] < math.inf:
+            if self.segmentBorders[i+1] < infinity:
                 f += str(round(float(self.segmentBorders[i + 1]),2)) + "|"
             else:
                 f += str(self.segmentBorders[i + 1]) + "|"
@@ -235,12 +190,12 @@ class PWConst:
 class PWLin:
     noOfSegments: int
     autoSimplify: bool
-    segmentBorders: List[ExtendedRational]
-    segmentTvalues: List[ExtendedRational]
-    segmentMvalues: List[ExtendedRational]
+    segmentBorders: List[number]
+    segmentTvalues: List[number]
+    segmentMvalues: List[number]
 
-    def __init__(self, borders: List[ExtendedRational], mvalues: List[ExtendedRational],
-                 tvalues: List[ExtendedRational], autoSimplify: bool = True):
+    def __init__(self, borders: List[number], mvalues: List[number],
+                 tvalues: List[number], autoSimplify: bool = True):
         # autoSimplify=True means that adjacent segments are automatically unified whenever possible
         self.autoSimplify = autoSimplify
 
@@ -253,7 +208,7 @@ class PWLin:
         self.segmentMvalues = mvalues
         self.segmentTvalues = tvalues
 
-    def addSegmant(self, border: ExtendedRational, m: ExtendedRational, t: ExtendedRational = None):
+    def addSegmant(self, border: number, m: number, t: number = None):
         # Adds a new segment on the right side
         # If no t value is provided the function is extended continuously
         if t is None:
@@ -269,7 +224,7 @@ class PWLin:
             self.segmentTvalues.append(t)
             self.noOfSegments += 1
 
-    def getValueAt(self, x: ExtendedRational) -> ExtendedRational:
+    def getValueAt(self, x: number) -> number:
         if x < self.segmentBorders[0] or x > self.segmentBorders[-1]:
             # x is outside the range of the function
             pass
@@ -278,19 +233,19 @@ class PWLin:
                 if x <= self.segmentBorders[i + 1]:
                     return self.segmentTvalues[i] + (x - self.segmentBorders[i]) * self.segmentMvalues[i]
 
-    def getNextStepFrom(self, x: ExtendedRational) -> ExtendedRational:
+    def getNextStepFrom(self, x: number) -> number:
         if x >= self.segmentBorders[-1]:
             if self.default is None:
-                # TODO
+                # TODO: default is not implemented yet!
                 pass
             else:
-                return ExtendedRational(1, 0)
+                return infinity
         else:
             for i in range(0, self.noOfSegments + 1):
                 if x < self.segmentBorders[i]:
                     return self.segmentBorders[i]
 
-    def drawGraph(self, start: ExtendedRational, end: ExtendedRational):
+    def drawGraph(self, start: number, end: number):
         x = [start]
         y = [self.getValueAt(start)]
         while self.getNextStepFrom(x[-1]) < end:
@@ -311,12 +266,29 @@ class PWLin:
 
         # return f
 
-    def __str__(self):
+    def segment_as_str(self,i:int,ommitStart:bool=True) -> str:
+        # Creates a string of the form |2|3 4|4| for the i-th segment
+        # |2| is omitted if ommitStart=True (standard)
+        assert(i<self.noOfSegments)
+        s = ""
+        if not ommitStart:
+            s += "|" + str(round(float(self.segmentBorders[i]),2)) + "|"
+        s += str(round(float(self.segmentTvalues[i]),2)) + " "
+        if self.segmentBorders[i+1] < infinity:
+            s += str(round(float(self.segmentTvalues[i] + (self.segmentBorders[i + 1] - self.segmentBorders[i]) * self.segmentMvalues[i]),2))
+        else:
+            if self.segmentMvalues[i] == 0:
+                s += "0"
+            elif self.segmentMvalues[i] > 0:
+                s += "infty"
+            else:
+                s += "-infty"
+        s += "|" + str(round(float(self.segmentBorders[i+1]),2)) + "|"
+        return s
+
+    def __str__(self) -> str:
         f = "|" + str(round(float(self.segmentBorders[0]),2)) + "|"
         for i in range(len(self.segmentMvalues)):
-            f += str(round(float(self.segmentTvalues[i]),2)) + " " \
-                 + str(round(float(self.segmentTvalues[i] +\
-                 (self.segmentBorders[i + 1] - self.segmentBorders[i]) * self.segmentMvalues[i]),2)) \
-                 + "|" + str(round(float(self.segmentBorders[i + 1]),2)) + "|"
+            f += self.segment_as_str(i)
 
         return f

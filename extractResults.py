@@ -18,8 +18,8 @@ import re
 # TODO: Use pickle to store class objects
 data = np.load(sys.argv[1], allow_pickle=True);
 fname = os.path.splitext(os.path.split(sys.argv[1])[1])[0]
-
-[insName,timeHorizon,maxIter,precision,alpha,timeStep,_] = re.split('[_]', fname)
+print(re.split('[_]', fname))
+[insName,timeHorizon,maxIter,precision,alpha,timeStep,_,_] = re.split('[_]', fname)
 runTime = round(float(data['time']),2)
 print("Data: ", data.files)
 print("Termination message: ", data['stopStr'])

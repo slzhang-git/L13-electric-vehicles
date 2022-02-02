@@ -40,8 +40,8 @@ def readNetwork(edgeList, verbose: bool=False) -> Network:
     # First read as a MultiDiGraph
     Gn = nx.MultiDiGraph()
     Gn = nx.read_edgelist(edgeList, comments='#', nodetype=str,\
-            create_using=nx.MultiDiGraph, data=(("nu", ExtendedRational),\
-            ("tau", ExtendedRational), ("ec", ExtendedRational),))
+            create_using=nx.MultiDiGraph, data=(("nu", number),\
+            ("tau", number), ("ec", number),))
     if verbose: print('edges: ', list(Gn.edges(data=True)))
     if verbose: print('nodes: ', list(Gn.nodes()))
 
@@ -67,8 +67,8 @@ def readCommodities(commList) -> List[Tuple[Node, Node, PWConst]]:
                 data = [entry for entry in line.split()]
                 # print('data ', data, len(data)-2, data[2:len(data)-1])
                 # Create the PWConst function for this commodity
-                times = [ExtendedRational(i) for i in data[2:2+math.ceil(len(data)/2 -1)]]
-                vals = [ExtendedRational(i) for i in data[2+len(times):len(data)]]
+                times = [makeNumber(i) for i in data[2:2+math.ceil(len(data)/2 -1)]]
+                vals = [makeNumber(i) for i in data[2+len(times):len(data)]]
                 # print(times, vals)
                 # The third argument = 0 means that the inflow rate is 0 for the rest of
                 # the real line outside the specified time intervals
@@ -94,13 +94,13 @@ if __name__ == "__main__":
     fname = ""
     for i in range(2,len(argList)):
         fname += argList[i] + "_"
-    fname += argList[-1]
+    # fname += argList[-1]
 
     # Read arguments into required variables
-    [insName,timeHorizon,maxIter,precision,alpha,timeStep, energyBudget] = argList[2:len(argList)]
-    [insName,timeHorizon,maxIter,precision,alpha,timeStep, energyBudget] = [str(insName),\
-            ExtendedRational(timeHorizon),int(maxIter),float(precision),\
-            ExtendedRational(alpha),ExtendedRational(timeStep),ExtendedRational(energyBudget)]
+    [insName,timeHorizon,maxIter,precision,alpha,timeStep,energyBudget] = argList[2:len(argList)]
+    [insName,timeHorizon,maxIter,precision,alpha,timeStep,energyBudget] = [str(insName),\
+            makeNumber(timeHorizon),int(maxIter),float(precision),\
+            makeNumber(alpha),makeNumber(timeStep),makeNumber(energyBudget)]
     print("read args: insName,timeHorizon,maxIter,precision,alpha,timeStep,energyBudget")
     print("values: ",insName,timeHorizon,maxIter,precision,alpha,timeStep,energyBudget)
 
@@ -152,7 +152,7 @@ if __name__ == "__main__":
     # Save the results to files
     # dirname = os.path.expanduser('./npzfiles')
     dirname = os.path.expanduser('./miscfiles')
-    fname += '_' + alphaStr.replace('/','By')
+    fname += alphaStr.replace('/','By')
     numpy.savez(os.path.join(dirname, fname),G=G,f=f,eventualFlow=eventualFlow,time=tEnd-tStart,\
             alphaIter=alphaIter,absDiffBwFlowsIter=absDiffBwFlowsIter,\
             relDiffBwFlowsIter=relDiffBwFlowsIter,travelTime=travelTime,\
