@@ -82,16 +82,20 @@ class ExtendedRational(Fraction):
 # Otherwise we use extendedRationals
 #TODO: make it user-defined (command line argument)
 exact = 0
+# The type has to be set here (outside the if-clause)
+# Otherwise the typing system breaks (at least the way we do it right now)
+# However, typing should be irrelevant for the correctness of the code itself anyway
+# so it shouldn't matter if we forget to change this
+number = float
+#number = ExtendedRational
 
 if exact == 0:
-    number = float
     infinity = math.inf
     zero = 0.0
     def makeNumber(n):
         return float(n)
     numPrecision = 0.00001
 else:
-    number = ExtendedRational
     infinity = ExtendedRational(1,0)
     zero = ExtendedRational(0)
     def makeNumber(n):
