@@ -1,9 +1,4 @@
 from __future__ import annotations
-
-import heapq, math
-from typing import List, Dict
-
-from network import *
 from flows import *
 from utilities import *
 
@@ -15,16 +10,21 @@ class Event:
     # (because the amount of incoming flow into the node potentially changes after this time)
     time: number
     v: Node
+    description: str
 
-    def __init__(self, time: number, v: Node):
+    def __init__(self, time: number, v: Node, desc: str=""):
         self.time = time
         self.v = v
+        self.description = desc
 
     def __lt__(self, other):
         return self.time < other.time
 
     def __str__(self):
-        return "Event at node " + str(self.v) + " at time " + str(float(self.time)) + " ≈ " + str(self.time)
+        s = "Event at node " + str(self.v) + " at time " + str(float(self.time)) + " ≈ " + str(self.time)
+        if self.description != "":
+            s += ": " + self.description
+        return s
 
 class EventQueue:
     # A queue of events, where events are ordered by non-decreasing trigger time
@@ -34,8 +34,8 @@ class EventQueue:
         self.events = []
 
     # Adds a new event to the queue
-    def pushEvent(self,time:number,v:Node):
-        heapq.heappush(self.events, Event(time, v))
+    def pushEvent(self,time:number,v:Node,desc:str=""):
+        heapq.heappush(self.events, Event(time, v, desc))
 
     # Returns the next event and removes it from the queue
     def popEvent(self) -> Event:
@@ -71,6 +71,7 @@ def networkLoading(pathBasedFlows : PartialFlowPathBased, timeHorizon: number=in
     # This will be the actual flow (i.e. edge in-/outflow rates for all edges and commodities and queues for all edges
     flow = PartialFlow(network,noOfCommodities)
 
+
     # For all commodities (corresponding to one source-sink path each) set source, sink and network inflow rate
     j = 0
     for i in range(pathBasedFlows.getNoOfCommodities()):
@@ -84,10 +85,10 @@ def networkLoading(pathBasedFlows : PartialFlowPathBased, timeHorizon: number=in
     eventQueue = EventQueue()
     # During the network loading the following invariant always holds (at each node v separately):
     # There is some time \theta such that the edge inflow rates for all edges leaving v are defined up to time \theta
-    # and if \theta < timeHorizon there is an event (\theta,v) in the queue (sigifying that at that time a new flow
+    # and if \theta < timeHorizon there is an event (\theta,v) in the queue (signifying that at that time a new flow
     # distribution has to be determined at node v
     for v in network.nodes:
-        eventQueue.pushEvent(zero,v)
+        eventQueue.pushEvent(zero,v,"first flow")
 
     flowTerminated = False  # TODO: Das als Abbruchbedingung einbauen
 
@@ -103,6 +104,7 @@ def networkLoading(pathBasedFlows : PartialFlowPathBased, timeHorizon: number=in
 
         # At most, we extend until the given timeHorizon
         nextTheta = timeHorizon
+        nextThetaReason = "End of time horizon"
 
         # For each edge leaving v we will add up (over all commodities) the total volume of flow we have to send over this edge
         flowTo = {e: 0 for e in v.outgoing_edges}
@@ -110,7 +112,9 @@ def networkLoading(pathBasedFlows : PartialFlowPathBased, timeHorizon: number=in
             if flow.sources[i] == v:
                 # If node v is the source of the current commodity i then this commodities network inflow rate u
                 # determines the amount of flow we have to send.
-                nextTheta = min(nextTheta,flow.u[i].getNextStepFrom(theta))
+                if flow.u[i].getNextStepFrom(theta) < nextTheta:
+                    nextTheta = flow.u[i].getNextStepFrom(theta)
+                    nextThetaReason = "change in network inflow rate of commodity " + str(i)
                 assert(nextTheta>theta)
                 flowTo[partialPathFlows[i].path.edges[0]] += flow.u[i].getValueAt(theta)
 
@@ -119,7 +123,11 @@ def networkLoading(pathBasedFlows : PartialFlowPathBased, timeHorizon: number=in
                 # (last edge can be ignored as flow leaving this edges leaves the network)
                 if partialPathFlows[i].path.edges[j].node_to == v:
                     # If so, the outflow from this edge will be sent to the next edge on the path
-                    nextTheta = min(nextTheta,partialPathFlows[i].fMinus[j].getNextStepFrom(theta))
+                    if partialPathFlows[i].fMinus[j].getNextStepFrom(theta) < nextTheta:
+                        nextTheta = partialPathFlows[i].fMinus[j].getNextStepFrom(theta)
+                        nextThetaReason = "change in edge outflow rate of commodity " + str(i) + " from edge " + str(partialPathFlows[i].path.edges[j])
+                        if nextTheta > 10000:
+                            print(partialPathFlows[i].fMinus[j])
                     assert (nextTheta > theta)
                     flowTo[partialPathFlows[i].path.edges[j+1]] += partialPathFlows[i].fMinus[j].getValueAt(theta)
 
@@ -128,12 +136,13 @@ def networkLoading(pathBasedFlows : PartialFlowPathBased, timeHorizon: number=in
         for e in v.outgoing_edges:
             # The queue length at time theta:
             qeAtTheta = flow.queues[e].getValueAt(theta)
-            if qeAtTheta > 0 and flowTo[e] < e.nu:
+            if qeAtTheta > numPrecision and flowTo[e] < e.nu - numPrecision:
                 # the time at which the queue on e will run empty (if the inflow into e remains constant)
                 x = qeAtTheta/(e.nu-flowTo[e])
                 # If this is before the current value of nextTheta we reduce nextTheta to the time the queue runs empty
-                if theta+x>theta:
-                    nextTheta = min(nextTheta,theta+x)
+                if theta < theta+x < nextTheta:
+                    nextTheta = theta+x
+                    nextThetaReason = "Queue depletes on edge " + str(e)
                 assert (nextTheta > theta)
 
         # Now we have all the information to extend the current flow at node v over the time interval [theta,nextTheta]:
@@ -192,6 +201,6 @@ def networkLoading(pathBasedFlows : PartialFlowPathBased, timeHorizon: number=in
         # At time nextTheta we will have to determine a new flow distribution at node v
         # (unless we already reached our desired time horizon then)
         if nextTheta < timeHorizon:
-            eventQueue.pushEvent(nextTheta,v)
+            eventQueue.pushEvent(nextTheta,v,nextThetaReason)
 
     return flow
