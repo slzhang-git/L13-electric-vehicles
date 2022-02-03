@@ -40,8 +40,8 @@ def readNetwork(edgeList, verbose: bool=False) -> Network:
     # First read as a MultiDiGraph
     Gn = nx.MultiDiGraph()
     Gn = nx.read_edgelist(edgeList, comments='#', nodetype=str,\
-            create_using=nx.MultiDiGraph, data=(("nu", number),\
-            ("tau", number), ("ec", number),))
+            create_using=nx.MultiDiGraph, data=(("nu", ExtendedRational),\
+            ("tau", ExtendedRational), ("ec", ExtendedRational),))
     if verbose: print('edges: ', list(Gn.edges(data=True)))
     if verbose: print('nodes: ', list(Gn.nodes()))
 
@@ -50,7 +50,8 @@ def readNetwork(edgeList, verbose: bool=False) -> Network:
     for node in Gn.nodes():
         G.addNode(node)
     for u,v,data in Gn.edges(data=True):
-        G.addEdge(u,v,data['nu'],data['tau'],data['ec'])
+        G.addEdge(u,v,makeNumber(data['nu']), makeNumber(data['tau']),
+                makeNumber(data['ec']))
 
     #TODO: Plot the graph using nx
     return G
@@ -114,7 +115,7 @@ if __name__ == "__main__":
             # print(p)
 
     if True: print('Total number of paths: ', sum(len(x) for x in pathList))
-    maxTravelTime = -infinity
+    maxTravelTime = -math.inf
     for p in pathList:
         val = max([i.getFreeFlowTravelTime() for i in p])
         maxTravelTime = max(maxTravelTime, val)
@@ -156,6 +157,6 @@ if __name__ == "__main__":
     numpy.savez(os.path.join(dirname, fname),G=G,f=f,eventualFlow=eventualFlow,time=tEnd-tStart,\
             alphaIter=alphaIter,absDiffBwFlowsIter=absDiffBwFlowsIter,\
             relDiffBwFlowsIter=relDiffBwFlowsIter,travelTime=travelTime,\
-            stopStr=stopStr,alphaStr=alphaStr,qopiIter=qopiIter)
+            stopStr=stopStr,alphaStr=alphaStr,qopiIter=qopiIter, dtype=object)
     print("output saved to file: %s.npz"%os.path.join(dirname, fname))
 
