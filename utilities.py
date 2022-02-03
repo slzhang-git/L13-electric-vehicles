@@ -1,8 +1,6 @@
 from __future__ import annotations
 from typing import List
 
-import heapq, math
-
 import matplotlib.pyplot as plt
 
 from extendedRational import *
@@ -235,11 +233,8 @@ class PWLin:
 
     def getNextStepFrom(self, x: number) -> number:
         if x >= self.segmentBorders[-1]:
-            if self.default is None:
-                # TODO: default is not implemented yet!
-                pass
-            else:
-                return infinity
+            # TODO: Implement default value and/or better error handling
+            pass
         else:
             for i in range(0, self.noOfSegments + 1):
                 if x < self.segmentBorders[i]:

@@ -15,7 +15,7 @@ class Edge:
     nu: number
     ec: number
 
-    def __init__(self, node_from: Node, node_to: Node, capacity: number=1,\
+    def __init__(self, node_from: Node, node_to: Node, capacity: number=1,
             traveltime: number=1, energyCons: number=0):
         # Creating an edge from node_from to node_to
         self.node_from = node_from
@@ -93,7 +93,7 @@ class Network:
         self.idCounter += 1
         return self.nodes[-1]
 
-    def addEdge(self,node_from: Union[str,int,Node], node_to: Union[str,int,Node],\
+    def addEdge(self,node_from: Union[str,int,Node], node_to: Union[str,int,Node],
             nu: number, tau: number, ec: number=zero):
         v = self.getNode(node_from)
         w = self.getNode(node_to)
@@ -107,15 +107,14 @@ class Network:
         edge.node_from.outgoing_edges.remove(edge)
         self.edges.remove(edge)
 
-    def subdivide(self,edge:Edge, nu: number, tau: number,\
+    def subdivide(self,edge:Edge, nu: number, tau: number,
             ec: number):
         self.edges.remove(edge)
         v = self.addNode()
         self.addEdge(edge.node_from, v, nu, tau, ec)
         self.addEdge(v, edge.node_to, nu, tau, ec)
 
-    def duplicate(self, edge:Edge, nu: number, tau: number,\
-            ec: number):
+    def duplicate(self, edge:Edge, nu: number, tau: number, ec: number):
         self.addEdge(edge.node_from, edge.node_to, nu, tau, ec)
 
     def __str__(self) -> str:
@@ -177,8 +176,8 @@ class Network:
             edgeListCurrNode = [e for e in self.edges if e.node_from == last]
             if verbose: print("edgeListCurrNode ", len(edgeListCurrNode), edgeListCurrNode)
             for e in edgeListCurrNode:
-                if verbose: print("edge %d" %self.edges.index(e), e,\
-                        printPathInNetwork(path, self), path.isNodeInPath(e.node_to),\
+                if verbose: print("edge %d" %self.edges.index(e), e,
+                        printPathInNetwork(path, self), path.isNodeInPath(e.node_to),
                         path.getEnergyConsump(), e.ec, (path.getEnergyConsump() + e.ec <= EB))
                 if path.isNodeInPath(e.node_to) and (path.getEnergyConsump() + e.ec <= EB):
                     newpath = Path(path.edges)
@@ -312,9 +311,9 @@ def createRandomSPnetwork(m:int) -> Network:
     for _ in range(m):
         e = random.choice(network.edges)
         if random.choice([True,False]):
-            network.subdivide(e,1,1)
+            network.subdivide(e,1,1,1)
         else:
-            network.duplicate(e,1,1)
+            network.duplicate(e,1,1,1)
     return network
 
 # Print path p based on edge ids in the network G

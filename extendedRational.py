@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import math
-from typing import List
 
 from fractions import Fraction
 
@@ -54,7 +53,7 @@ class ExtendedRational(Fraction):
         if self.isInfinite and isinstance(other, ExtendedRational) and other.isInfinite:
             if self.numerator > 0 and other.numerator > 0:
                 return ExtendedRational(1,0)
-            elif self.numerator > 0 and other.numerator > 0:
+            elif self.numerator < 0 and other.numerator < 0:
                 return ExtendedRational(-1,0)
             else:
                 pass # TODO
@@ -64,6 +63,25 @@ class ExtendedRational(Fraction):
             return other
         else:
             return Fraction.__add__(self,other)
+
+
+    def __mul__(self, other):
+        if self.isInfinite:
+            if other > 0:
+                return self
+            elif other < 0:
+                return ExtendedRational(-self.numerator,0)
+            else:
+                pass
+        elif isinstance(other, ExtendedRational) and other.isInfinite:
+            if self > 0:
+                return other
+            elif self < 0:
+                return ExtendedRational(-other.numerator,0)
+            else:
+                pass
+        else:
+            return Fraction.__mul__(self,other)
 
     def __float__(self) -> float:
         if self.isInfinite:
@@ -82,16 +100,20 @@ class ExtendedRational(Fraction):
 # Otherwise we use extendedRationals
 #TODO: make it user-defined (command line argument)
 exact = 0
+# The type has to be set here (outside the if-clause)
+# Otherwise the typing system breaks (at least the way we do it right now)
+# However, typing should be irrelevant for the correctness of the code itself anyway
+# so it shouldn't matter if we forget to change this
+number = float
+#number = ExtendedRational
 
 if exact == 0:
-    number = float
     infinity = math.inf
     zero = 0.0
     def makeNumber(n):
         return float(n)
     numPrecision = 0.00001
 else:
-    number = ExtendedRational
     infinity = ExtendedRational(1,0)
     zero = ExtendedRational(0)
     def makeNumber(n):
