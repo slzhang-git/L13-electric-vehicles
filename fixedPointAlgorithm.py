@@ -139,19 +139,9 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
                         # % (float(maxTravelTime),float(shortestTravelTime)))
                 # exit(0)
 
-            # TODO: Find integral value, ubar, of (piecewise constant) function u in this
+            # Find integral value, ubar, of (piecewise constant) function u in this
             # subinterval
-            # uval1 = u.getValueAt(theta)
-            # uval2 = u.getValueAt(theta + timestepSize)
-            uval1 = comd[2].getValueAt(theta)
-            uval2 = comd[2].getValueAt(theta + timestepSize)
-            if uval1==uval2:
-                ubar = uval1*timestepSize
-            else:
-                if not uval2 == 0:
-                    print("Implement me: find integral of u when it has different\
-                            positive values within a subinterval")
-                    exit(0)
+            ubar = comd[2].integrate(theta, theta + timestepSize)
 
             # TODO: Find a good starting point
             # A trivial guess: assume all terms to be positive and solve for the dual variable
