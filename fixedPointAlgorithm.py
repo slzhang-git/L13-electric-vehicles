@@ -81,7 +81,7 @@ def findShortestFeasibleSTpath(time: number, s: Node, t: Node, flow:
 
 def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
         number, alpha: float, timestepSize, commodities, verbose: bool) -> PartialFlowPathBased:
-    currentFlow = networkLoading(oldPathInflows,verbose=True)
+    currentFlow = networkLoading(oldPathInflows)
 
     newPathInflows = PartialFlowPathBased(oldPathInflows.network, oldPathInflows.getNoOfCommodities())
 
@@ -358,7 +358,7 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
             # alpha = max(0.2, (0.5*gamma)*(0.5*gamma*alpha) + (1-0.5*gamma)*alpha) # expo smooth using gamma/2
 
             # Measure quality of the path inflows
-            iterFlow = networkLoading(newpathInflows,verbose=True)
+            iterFlow = networkLoading(newpathInflows)
             qopi = 0
             for i,comd in enumerate(commodities):
                 fP = newpathInflows.fPlus[i]

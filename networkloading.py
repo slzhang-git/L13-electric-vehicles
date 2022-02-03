@@ -154,7 +154,7 @@ def networkLoading(pathBasedFlows : PartialFlowPathBased, timeHorizon: number=in
 
         # Determine queues on the interval [theta,nextTheta]
         for e in v.outgoing_edges:
-            if flow.queues[e].getValueAt(theta) > 0:
+            if flow.queues[e].getValueAt(theta) > numPrecision:
                 flow.queues[e].addSegmant(nextTheta,flowTo[e]-e.nu)
             else:
                 flow.queues[e].addSegmant(nextTheta, max(flowTo[e] - e.nu,0))
@@ -180,10 +180,21 @@ def networkLoading(pathBasedFlows : PartialFlowPathBased, timeHorizon: number=in
                         outflowRate = partialPathFlows[i].fPlus[j].getValueAt(theta) / flowTo[e] * min(flowTo[e], e.nu)
                     else:
                         outflowRate = 0
-                    if nextTheta < infinity:
-                        partialPathFlows[i].fMinus[j].addSegment(flow.T(e, nextTheta), outflowRate)
-                    else:
-                        partialPathFlows[i].fMinus[j].addSegment(infinity, outflowRate)
+                    if outflowRate > 0:
+                        # Since the default value of the flow rates is zero, we do not have to add a new segment
+                        # if the flowrate over the next segment would be zero.
+                        # This is important because otherwise the network loading will run forever
+                        # TODO: Is this true? Explain better!
+
+                        # Add a segment of zero flow until the start of the current extension phase
+                        # This is important since we do not add segments of zero outflow at the time of the flow distribution
+                        # Note, that PWconst is implemented in such a way that no segment is added if the flowrate
+                        # already extended to T(e, theta)
+                        partialPathFlows[i].fMinus[j].addSegment(flow.T(e, theta), zero)
+                        if nextTheta < infinity:
+                            partialPathFlows[i].fMinus[j].addSegment(flow.T(e, nextTheta), outflowRate)
+                        else:
+                            partialPathFlows[i].fMinus[j].addSegment(infinity, outflowRate)
 
             # Now we convert the path flows into the actual edge in- and outflow rates
             # i.e. if an edge occurs multiple times on a commodity's path we add up the corresponding rates from the path flow
