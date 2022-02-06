@@ -187,8 +187,8 @@ class Network:
                     if verbose: print("newpath after append ", printPathInNetwork(newpath, self))
 
         # Print pathList
-        print("\nTotal %d paths found from node %s to node %s:"%(len(pathList),src,dest))
         if verbose:
+            print("\nTotal %d paths found from node %s to node %s:"%(len(pathList),src,dest))
             for i,p in enumerate(pathList):
                 print(i, len(p), printPathInNetwork(p, self))
         return pathList

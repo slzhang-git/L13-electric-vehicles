@@ -79,9 +79,9 @@ def findShortestFeasibleSTpath(time: number, s: Node, t: Node, flow:
     # return pathInflows
 
 
-def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
+def fixedPointUpdate(currentFlow: PartialFlow, oldPathInflows: PartialFlowPathBased, timeHorizon:
         number, alpha: float, timestepSize, commodities, verbose: bool) -> PartialFlowPathBased:
-    currentFlow = networkLoading(oldPathInflows)
+    # currentFlow = networkLoading(oldPathInflows)
 
     newPathInflows = PartialFlowPathBased(oldPathInflows.network, oldPathInflows.getNoOfCommodities())
 
@@ -197,13 +197,13 @@ def fixedPointUpdate(oldPathInflows: PartialFlowPathBased, timeHorizon:
             # print("newPathInflows: ", newPathInflows)
             theta = theta + timestepSize
         tmpVar = max(timestepSize,1/timestepSize)
-        print("Mean # of root.scalar() iterations ",\
+        if verbose: print("Mean # of root.scalar() iterations ",\
                 float(round(meanIter/(tmpVar*oldPathInflows.getEndOfInflow(i)),2)),\
                 " for ", tmpVar*oldPathInflows.getEndOfInflow(i), " subintervals")
     # for id, e in enumerate(currentFlow.network.edges):
         # print("queue at edge %d: "%id, e, currentFlow.queues[e])
     # print("timeDiff ", timeDiff)
-    print("newPathInflows: ", newPathInflows)
+    # print("newPathInflows: ", newPathInflows)
     return newPathInflows
 
 def dualVarRootFunc(x, alpha, flowValue, travelTime, timestepSize, ubar):
@@ -277,7 +277,8 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
     ## Init:
     # Create zero-flow (PP: why?)
     pathInflows = PartialFlowPathBased(N,0)
-    zeroflow = networkLoading(pathInflows)
+    # TODO: Conform with LG if this can be removed
+    # zeroflow = networkLoading(pathInflows)
 
     pathInflows = PartialFlowPathBased(N, len(commodities))
     # Initial flow: For every commodity, select the shortest s-t path and send
@@ -290,7 +291,7 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
         # print("u ", u)
         # setInitialPathFlows(i, N, s, t, u, zeroflow, pathInflows)
 
-    if verbose: print("Starting with flow: \n", pathInflows)
+    if False: print("Starting with flow: \n", pathInflows)
 
     oldAbsDiffBwFlows = infinity
     oldRelDiffBwFlows = infinity
@@ -311,12 +312,13 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
     # alphaStr = r'relExpoSmooth($\gamma/2$)'
     # alphaStr = r'min2ExpoSmooth($\gamma/2$)'
 
+    iterFlow = networkLoading(pathInflows)
     ## Iteration:
     while not shouldStop:
         if verbose: print("Starting iteration #", step)
         # newpathInflows = networkLoading(pathInflows,timeHorizon)
         # print("newpathInflows ", newpathInflows)
-        newpathInflows = fixedPointUpdate(pathInflows, timeHorizon, alpha,
+        newpathInflows = fixedPointUpdate(iterFlow, pathInflows, timeHorizon, alpha,
                 timeStep, commodities, verbose)
         newAbsDiffBwFlows = differenceBetweenPathInflows(pathInflows,newpathInflows)
         newRelDiffBwFlows = newAbsDiffBwFlows/sumNormOfPathInflows(pathInflows)
@@ -351,6 +353,7 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
             iterFlow = networkLoading(newpathInflows)
             qopi = 0
             for i,comd in enumerate(commodities):
+                if True: print('comm ', i)
                 fP = newpathInflows.fPlus[i]
                 theta = zero
                 while theta < newpathInflows.getEndOfInflow(i):
@@ -358,20 +361,18 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
                     for j,P in enumerate(newpathInflows.fPlus[i]):
                         tt[j] = iterFlow.pathArrivalTime(P,theta + timeStep/2) - (theta + timeStep/2)
                     tmin = min(tt)
+                    if False: print('qopi')
                     for j,P in enumerate(newpathInflows.fPlus[i]):
                         qopi += (tt[j] - tmin)*fP[P].getValueAt(theta + timeStep/2)
-
+                        if False: print(j, tt[j], tmin, fP[P].getValueAt(theta + timeStep/2), qopi)
+                    # print('\n')
                     theta = theta + timeStep
+            # exit(0)
             if verbose: print("Norm of change in flow (abs.) ", round(float(newAbsDiffBwFlows),2),\
                     " previous change ", round(float(oldAbsDiffBwFlows),2), " alpha ",\
                     round(float(alpha),2), ' qopi ', round(qopi,2))
             if verbose: print("Norm of change in flow (rel.) ", round(float(newRelDiffBwFlows),2),\
                     " previous change ", round(float(oldRelDiffBwFlows),2))
-
-            qopiIter.append(qopi)
-            alphaIter.append(alpha)
-            absDiffBwFlowsIter.append(newAbsDiffBwFlows)
-            relDiffBwFlowsIter.append(newRelDiffBwFlows)
 
             # if verbose: print("Current flow is\n", newpathInflows)
             # update iteration variables
@@ -379,12 +380,17 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
             oldAbsDiffBwFlows = newAbsDiffBwFlows
             oldRelDiffBwFlows = newRelDiffBwFlows
 
-            step += 1
-            print("\nEND OF STEP ", step,"\n")
+        qopiIter.append(qopi)
+        alphaIter.append(alpha)
+        absDiffBwFlowsIter.append(newAbsDiffBwFlows)
+        relDiffBwFlowsIter.append(newRelDiffBwFlows)
+
+        step += 1
+        print("\nEND OF STEP ", step,"\n")
 
     print(stopStr)
     # Find path travel times for the final flow
-    finalFlow = networkLoading(pathInflows)
+    finalFlow = networkLoading(pathInflows, verbose=False)
     for i,comd in enumerate(commodities):
         ttravelTime = np.empty([len(pathInflows.fPlus[i]),\
                 math.ceil(pathInflows.getEndOfInflow(i)/timeStep)])
