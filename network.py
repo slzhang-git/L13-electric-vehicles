@@ -179,7 +179,7 @@ class Network:
                 if verbose: print("edge %d" %self.edges.index(e), e,
                         printPathInNetwork(path, self), path.isNodeInPath(e.node_to),
                         path.getEnergyConsump(), e.ec, (path.getEnergyConsump() + e.ec <= EB))
-                if path.isNodeInPath(e.node_to) and (path.getEnergyConsump() + e.ec <= EB):
+                if (not path.isNodeInPath(e.node_to)) and (path.getEnergyConsump() + e.ec <= EB):
                     newpath = Path(path.edges)
                     if verbose: print("newpath before append ", printPathInNetwork(newpath,self))
                     newpath.add_edge_at_end(e)
@@ -286,10 +286,10 @@ class Path:
         # print("nodes in path ", str(self.getNodesInPath()))
         if x in self.getNodesInPath():
             # print("False")
-            return False
+            return True
         else:
             # print("True")
-            return True
+            return False
 
 
 # Creates a random series parallel network with m edges
