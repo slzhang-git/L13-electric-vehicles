@@ -5,6 +5,7 @@ from typing import Union, List
 
 from utilities import *
 from collections import deque
+import itertools
 
 # A directed edge (from https://github.com/Schedulaar/predicted-dynamic-flows/blob/main/predictor/src/core/graph.py)
 # with capacity nu, travel time tau, and energy consumption ec
@@ -130,13 +131,46 @@ class Network:
                 s += "\n"
         return s
 
-    # Function for finding acyclic energy feasible paths in graph from source src to
-    # destination dest
-    # args: source (src), destination (dest), number of nodes (numNodes), energy
-    # budget (EB)
+    # Print path p based on edge ids in the network G
+    def printPathInNetwork(self, p: Path):
+        s = str()
+        for e in p.edges:
+            if len([i for i in e.node_from.outgoing_edges\
+                    if i.node_to == e.node_to]) > 1:
+                s += str(self.edges.index(e))
+            s += str(e)
+        return s
+
+    # Concatenate two sets of (sub)paths
+    def concatenatePaths(self, P1: List[Path], P2: List[Path]) -> List[Path]:
+        pathList = []
+        for p1 in P1:
+            # print('for p1: ', self.printPathInNetwork(p1))
+            for p2 in P2:
+                path = Path(p1.edges)
+                # print('st p1: ', self.printPathInNetwork(path))
+                if p1.getEnd() == p2.getStart():
+                    for e in p2.edges:
+                        path.add_edge_at_end(e)
+                        # print('edge: ', e, end=' ')
+                        # print('path: ', self.printPathInNetwork(path))
+                pathList.append(path)
+        return pathList
+
+    # Find acyclic energy-feasible paths in the network from source src to
+    # destination dest with/without excluding nodes with self loop
+    # args: source (src), destination (dest), energy budget (EB)
     # TODO: Finding paths with cycles in the network
-    def findPaths(self, src, dest, EB: number=infinity, verbose: bool=False) -> List[Path]:
-        numNodes = len(self.nodes)
+    # This function can find only those paths in which a node is visited just once
+    def findPaths(self, src, dest, EB: number=infinity, excludeSelfLoopNodes:
+            bool=False, verbose: bool=False) -> List[Path]:
+        if excludeSelfLoopNodes:
+            # Find nodes with self loops
+            selfLoopNodes = [e.node_from for e in self.edges if e.node_from == e.node_to]
+        else:
+            selfLoopNodes = []
+        # print('Nodes with self loop: ', *(n for n in selfLoopNodes))
+
         # Queue to store (partial) paths
         q = deque()
 
@@ -173,7 +207,8 @@ class Network:
 
             # Traverse all the nodes connected to the current node and push new partial
             # path to queue
-            edgeListCurrNode = [e for e in self.edges if e.node_from == last]
+            edgeListCurrNode = [e for e in self.edges if (e.node_from == last and
+                e.node_to not in selfLoopNodes)]
             if verbose: print("edgeListCurrNode ", len(edgeListCurrNode), edgeListCurrNode)
             for e in edgeListCurrNode:
                 if verbose: print("edge %d" %self.edges.index(e), e,
@@ -192,6 +227,40 @@ class Network:
             for i,p in enumerate(pathList):
                 print(i, len(p), printPathInNetwork(p, self))
         return pathList
+
+    # Find (cyclic) energy-feasible paths in the network from source src to
+    # destination dest including ones generated using concatenation of subpaths (i)
+    # from src to nodes with self-loop (ii) from nodes with self-loop to dest (iii)
+    # between nodes with self-loop
+    # args: source (src), destination (dest), energy budget (EB)
+    def findPathsWithLoops(self, src, dest, EB: number=infinity, verbose: bool=False) -> List[Path]:
+        # (i) All energy feasible paths from src to dest
+        pathList = self.findPaths(src, dest, EB, excludeSelfLoopNodes=True)
+        # print('paths: ',*(printPathInNetwork(p, self) for p in pathList), sep='\n')
+
+        # (ii) All energy feasible paths involving nodes with self loops
+        # Each such path will contain a node with self loop atmost once
+        # Find nodes with self loops
+        selfLoopNodes = [e.node_from for e in self.edges if e.node_from == e.node_to]
+        pathCombs = list(combo for r in range(len(selfLoopNodes)) for combo in
+                itertools.combinations(selfLoopNodes, r+1))
+        # list(itertools.permutations(selfLoopNodes))
+        # print(*(k for c in pathCombs for k in c), sep='\n')
+        allCombs = list(itertools.permutations(c) for c in pathCombs)
+        print('combs: ',*(list(c) for c in allCombs), sep='\n')
+
+        exit(0)
+        for comb in pathCombs:
+            paths1 = self.findPaths(src, comb[0], EB)
+            pathList = [*pathList, *self.concatenatePaths(paths1,\
+                    self.findPaths(n1, dest, EB))]
+            for n2 in (i for i in selfLoopNodes if i != n1):
+                paths2 = self.findPaths(n1, n2, EB)
+            print('paths1: ', *(printPathInNetwork(p, self) for p in paths1), sep='\n')
+            print('paths2: ', *(printPathInNetwork(p, self) for p in paths2), sep='\n')
+            print('paths1+2: ', *(printPathInNetwork(p, self) for p in self.concatenatePaths(paths1, paths2)), sep='\n')
+            print('pathsList: ', *(printPathInNetwork(p, self) for p in pathList), sep='\n')
+            exit(0)
 
 
 # A directed path
