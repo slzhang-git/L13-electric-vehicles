@@ -115,12 +115,16 @@ if __name__ == "__main__":
             # print(p)
 
     if True: print('Total number of paths: ', sum(len(x) for x in pathList))
+    minTravelTime = infinity
     maxTravelTime = infinity*(-1)
     for p in pathList:
-        val = max([i.getFreeFlowTravelTime() for i in p])
-        maxTravelTime = max(maxTravelTime, val)
+        maxval,minval = max([i.getFreeFlowTravelTime() for i in p]),\
+        min([i.getFreeFlowTravelTime() for i in p])
 
-    if True: print('Max. path travel time ', maxTravelTime)
+        maxTravelTime,minTravelTime = max(maxTravelTime, maxval),min(minTravelTime,
+                minval)
+
+    if True: print('Max. (min.) path travel time: %.2f (%.2f) ' %(maxTravelTime, minTravelTime))
 
     # Start
     tStart = time.time()
@@ -135,7 +139,10 @@ if __name__ == "__main__":
     print("f: ", f)
     print("queue at: ")
     for id, e in enumerate(eventualFlow.network.edges):
-        print("edge %d: "%id, e, eventualFlow.queues[e])
+        if eventualFlow.queues[e].noOfSegments > 1 or\
+        (eventualFlow.queues[e].noOfSegments == 1 and
+                eventualFlow.queues[e].segmentValues[0] > 0):
+            print("edge %d: "%id, e, eventualFlow.queues[e])
 
     # alpha and flowDiff
     ralphaIter = [round(float(b),3) for b in alphaIter]
@@ -157,6 +164,6 @@ if __name__ == "__main__":
     numpy.savez(os.path.join(dirname, fname),G=G,f=f,eventualFlow=eventualFlow,time=tEnd-tStart,\
             alphaIter=alphaIter,absDiffBwFlowsIter=absDiffBwFlowsIter,\
             relDiffBwFlowsIter=relDiffBwFlowsIter,travelTime=travelTime,\
-            stopStr=stopStr,alphaStr=alphaStr,qopiIter=qopiIter, dtype=object)
+            stopStr=stopStr,alphaStr=alphaStr,qopiIter=qopiIter)
     print("output saved to file: %s.npz"%os.path.join(dirname, fname))
 
