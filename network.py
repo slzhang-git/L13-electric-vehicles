@@ -5,6 +5,7 @@ from typing import Union, List
 
 from utilities import *
 from collections import deque
+import itertools
 
 # A directed edge (from https://github.com/Schedulaar/predicted-dynamic-flows/blob/main/predictor/src/core/graph.py)
 # with capacity nu, travel time tau, and energy consumption ec
@@ -130,13 +131,60 @@ class Network:
                 s += "\n"
         return s
 
-    # Function for finding acyclic energy feasible paths in graph from source src to
-    # destination dest
-    # args: source (src), destination (dest), number of nodes (numNodes), energy
-    # budget (EB)
+    # Print path p based on edge ids in the network G
+    def printPathInNetwork(self, p: Path):
+        s = str()
+        for e in p.edges:
+            if len([i for i in e.node_from.outgoing_edges\
+                    if i.node_to == e.node_to]) > 1:
+                s += str(self.edges.index(e))
+            s += str(e)
+        return s
+
+    # Join two (sub)paths
+    def joinPaths(self, p1: Path, p2: Path) -> Path:
+        if p1.getEnd() == p2.getStart():
+            path = Path(p1.edges)
+            for e in p2.edges:
+                path.add_edge_at_end(e)
+                # print('edge: ', e, end=' ')
+                # print('path: ', self.printPathInNetwork(path))
+            return path
+        else:
+            print('Unable to join paths: ', self.printPathInNetwork(p1),
+                    self.printPathInNetwork(p2))
+            exit(0)
+            return None
+
+    # Concatenate two sets of (sub)paths while checking feasibility
+    def joinFeasiblePaths(self, P1: List[Path], P2: List[Path], EB: number=infinity) -> List[Path]:
+        pathList = []
+        for p1 in P1:
+            # print('for p1: ', self.printPathInNetwork(p1))
+            for p2 in P2:
+                # if first edge is a self loop, join (p1,p2)
+                if p2.edges[0].node_from == p2.edges[0].node_to:
+                    pathList.append(self.joinPaths(p1, p2))
+                # else check feasibility
+                else:
+                    if p1.getEnergyConsump() + p2.getEnergyConsump() <= EB:
+                        pathList.append(self.joinPaths(p1, p2))
+        return pathList
+
+    # Find acyclic energy-feasible paths in the network from source src to
+    # destination dest with/without excluding nodes with self loop
+    # args: source (src), destination (dest), energy budget (EB)
     # TODO: Finding paths with cycles in the network
-    def findPaths(self, src, dest, EB: number=infinity, verbose: bool=False) -> List[Path]:
-        numNodes = len(self.nodes)
+    # This function can find only those paths in which a node is visited just once
+    def findPaths(self, src, dest, EB: number=infinity, excludeSelfLoopNodes:
+            bool=False, verbose: bool=False) -> List[Path]:
+        if excludeSelfLoopNodes:
+            # Find nodes with self loops
+            selfLoopNodes = [e.node_from for e in self.edges if e.node_from == e.node_to]
+        else:
+            selfLoopNodes = []
+        # print('Nodes with self loop: ', *(n for n in selfLoopNodes))
+
         # Queue to store (partial) paths
         q = deque()
 
@@ -173,13 +221,14 @@ class Network:
 
             # Traverse all the nodes connected to the current node and push new partial
             # path to queue
-            edgeListCurrNode = [e for e in self.edges if e.node_from == last]
+            edgeListCurrNode = [e for e in self.edges if (e.node_from == last and
+                e.node_to not in selfLoopNodes)]
             if verbose: print("edgeListCurrNode ", len(edgeListCurrNode), edgeListCurrNode)
             for e in edgeListCurrNode:
                 if verbose: print("edge %d" %self.edges.index(e), e,
                         printPathInNetwork(path, self), path.isNodeInPath(e.node_to),
                         path.getEnergyConsump(), e.ec, (path.getEnergyConsump() + e.ec <= EB))
-                if path.isNodeInPath(e.node_to) and (path.getEnergyConsump() + e.ec <= EB):
+                if (not path.isNodeInPath(e.node_to)) and (path.getEnergyConsump() + e.ec <= EB):
                     newpath = Path(path.edges)
                     if verbose: print("newpath before append ", printPathInNetwork(newpath,self))
                     newpath.add_edge_at_end(e)
@@ -191,6 +240,49 @@ class Network:
             print("\nTotal %d paths found from node %s to node %s:"%(len(pathList),src,dest))
             for i,p in enumerate(pathList):
                 print(i, len(p), printPathInNetwork(p, self))
+        return pathList
+
+    # Find (cyclic) energy-feasible paths in the network from source src to
+    # destination dest including ones generated using concatenation of subpaths (i)
+    # from src to nodes with self-loop (ii) from nodes with self-loop to dest (iii)
+    # between nodes with self-loop
+    # args: source (src), destination (dest), energy budget (EB)
+    def findPathsWithLoops(self, src, dest, EB: number=infinity, verbose: bool=False) -> List[Path]:
+        # (i) All energy feasible paths from src to dest
+        pathList = self.findPaths(src, dest, EB, excludeSelfLoopNodes=True)
+        # print('paths: ',*(printPathInNetwork(p, self) for p in pathList), sep='\n')
+
+        # (ii) All energy feasible paths involving nodes with self loops
+        # Each such path will contain a node with self loop atmost once
+        # Find nodes with self loops
+        selfLoopNodes = [e.node_from for e in self.edges if e.node_from == e.node_to]
+        pathCombs = list(combo for r in range(len(selfLoopNodes)) for combo in
+                itertools.combinations(selfLoopNodes, r+1))
+        allCombs = []
+        for c in pathCombs:
+            allCombs = [*allCombs, *list(itertools.permutations(c))]
+        # for c in allCombs:
+            # print('c: ', c)
+            # print('i', *(i for i in (c)))
+        # print('combs: ',*(list(c) for c in allCombs), sep='\n')
+        # for c in allCombs:
+            # print('combs:',*(i for i in list(c)), sep='\n')
+            # print('combs:',list(c), sep='\n')
+        for comb in allCombs:
+            print('comb: ',*(i for i in list(comb)), sep=',')
+            pathsComb = self.findPaths(src, comb[0], EB)
+            k = 1
+            while k < len(comb):
+                pathsComb = self.joinFeasiblePaths(pathsComb,
+                        self.findPaths(comb[k-1], comb[k], EB), EB)
+                k += 1
+            pathList = [*pathList, *self.joinFeasiblePaths(pathsComb,\
+                    self.findPaths(comb[-1], dest, EB), EB)]
+            # print('pathsComb: ', *((self.printPathInNetwork(p),p.getEnergyConsump())
+                # for p in self.joinFeasiblePaths(pathsComb, self.findPaths(comb[-1],
+                    # dest, EB), EB)), sep='\n')
+        # print('pathsList: ', *((printPathInNetwork(p, self),p.getEnergyConsump()) for p in pathList), sep='\n')
+        # exit(0)
         return pathList
 
 
@@ -286,10 +378,10 @@ class Path:
         # print("nodes in path ", str(self.getNodesInPath()))
         if x in self.getNodesInPath():
             # print("False")
-            return False
+            return True
         else:
             # print("True")
-            return True
+            return False
 
 
 # Creates a random series parallel network with m edges

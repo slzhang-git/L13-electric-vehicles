@@ -30,7 +30,8 @@ print("Iterations: ", len(data['alphaIter']))
 # print("f: ", f, type(f), f.size, f.shape, f[()])
 # print("fPlus: ")
 
-colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'orange']
+colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'orange',
+        'darkviolet','magenta','darkorchid']
 # linestyles = ['solid', 'dashed', 'dashdot', 'dotted', 'offset',\
         # 'on-off-dash-seq', '-' , '--' , '-.' , ':' , 'None' ,\
         # ' ' , '']
@@ -38,7 +39,7 @@ fontsizes = ['xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-l
 linestyles = ['solid', 'dashed', 'dashdot', 'dotted', '-', '--',\
         '-.', ':', 'None', ' ', '', 'solid', 'dashed', 'dashdot',\
         'dotted']
-locs = ["upper left", "lower left", "center left", "center right"]
+locs = ["upper left", "lower left", "center left", "center right", "upper right"]
 
 f = data['f']
 
@@ -88,6 +89,7 @@ for c,p in enumerate(f[()].fPlus):
         # print("i: ", i,a,b)
         # if max(y)>0:
         axs[k].plot(x,y,label='path%d'%i, color=colors[i], linestyle=linestyles[i])
+        # axs[k].plot(x,y,label='path%d'%i, linestyle=linestyles[i])
         # axs[k].legend()
         # else:
             # k -= 1
@@ -110,7 +112,8 @@ for c,p in enumerate(f[()].fPlus):
     for p in range(len(tt[c])):
         y = tt[c][p]
         axs[k].plot(x,y,label='path%d'%p, color=colors[p], linestyle=linestyles[p])
-    axs[k].legend()
+        # axs[k].plot(x,y,label='path%d'%p, linestyle=linestyles[p])
+    axs[k].legend(loc='upper right')
     axs[k].set_xlabel('time', fontsize='xx-large')
     axs[k].set_title('Travel Times', fontsize='xx-large')
     # plt.show()

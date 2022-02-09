@@ -39,6 +39,7 @@ def readNetwork(edgeList, verbose: bool=False) -> Network:
     #TODO: put checks for a valid network
     # First read as a MultiDiGraph
     Gn = nx.MultiDiGraph()
+    # Reading ExtendedRational here to allow input data in fractions (e.g. 5/6)
     Gn = nx.read_edgelist(edgeList, comments='#', nodetype=str,\
             create_using=nx.MultiDiGraph, data=(("nu", ExtendedRational),\
             ("tau", ExtendedRational), ("ec", ExtendedRational),))
@@ -49,6 +50,7 @@ def readNetwork(edgeList, verbose: bool=False) -> Network:
     G = Network()
     for node in Gn.nodes():
         G.addNode(node)
+    # Converting to required data type (ExtendedRational or Float)
     for u,v,data in Gn.edges(data=True):
         G.addEdge(u,v,makeNumber(data['nu']), makeNumber(data['tau']),
                 makeNumber(data['ec']))
@@ -85,10 +87,13 @@ if __name__ == "__main__":
     argList = readArgs(sys.argv)
 
     G = readNetwork(argList[0])
-    nuMin = min([e.nu for e in G.edges])
-    tauMin = min([e.tau for e in G.edges])
-    ecMin = min([e.ec for e in G.edges])
-    if True: print(round(float(nuMin),2), round(float(tauMin),2), round(float(ecMin),2))
+    nuMin, nuMax = min([e.nu for e in G.edges]), max([e.nu for e in G.edges])
+    tauMin, tauMax = min([e.tau for e in G.edges]), max([e.tau for e in G.edges])
+    ecMin, ecMax = min([e.ec for e in G.edges]), max([e.ec for e in G.edges])
+    if True: print('Min.: nu = %.2f, tau = %.2f, ec = %.2f'%(round(float(nuMin),2),
+        round(float(tauMin),2), round(float(ecMin),2)))
+    if True: print('Max.: nu = %.2f, tau = %.2f, ec = %.2f'%(round(float(nuMax),2),
+        round(float(tauMax),2), round(float(ecMax),2)))
 
     commodities = readCommodities(argList[1])
 
@@ -110,8 +115,9 @@ if __name__ == "__main__":
     pathList = []
     for i,(s,t,u) in enumerate(commodities):
         if False: print("i ", i,s,t,u)
-        pathList.append(G.findPaths(s, t, energyBudget))
-        # for p in pathList[i]:
+        # pathList.append(G.findPaths(s, t, energyBudget))
+        pathList.append(G.findPathsWithLoops(s, t, energyBudget))
+        # for p in pathList:
             # print(p)
 
     if True: print('Total number of paths: ', sum(len(x) for x in pathList))
