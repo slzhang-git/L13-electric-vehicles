@@ -117,7 +117,7 @@ if __name__ == "__main__":
         if False: print("i ", i,s,t,u)
         # pathList.append(G.findPaths(s, t, energyBudget))
         pathList.append(G.findPathsWithLoops(s, t, energyBudget))
-        # for p in pathList[i]:
+        # for p in pathList:
             # print(p)
 
     if True: print('Total number of paths: ', sum(len(x) for x in pathList))
@@ -163,6 +163,6 @@ if __name__ == "__main__":
     numpy.savez(os.path.join(dirname, fname),G=G,f=f,eventualFlow=eventualFlow,time=tEnd-tStart,\
             alphaIter=alphaIter,absDiffBwFlowsIter=absDiffBwFlowsIter,\
             relDiffBwFlowsIter=relDiffBwFlowsIter,travelTime=travelTime,\
-            stopStr=stopStr,alphaStr=alphaStr,qopiIter=qopiIter, dtype=object)
+            stopStr=stopStr,alphaStr=alphaStr,qopiIter=qopiIter)
     print("output saved to file: %s.npz"%os.path.join(dirname, fname))
 

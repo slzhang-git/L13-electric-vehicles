@@ -141,20 +141,34 @@ class Network:
             s += str(e)
         return s
 
-    # Concatenate two sets of (sub)paths
-    def concatenatePaths(self, P1: List[Path], P2: List[Path]) -> List[Path]:
+    # Join two (sub)paths
+    def joinPaths(self, p1: Path, p2: Path) -> Path:
+        if p1.getEnd() == p2.getStart():
+            path = Path(p1.edges)
+            for e in p2.edges:
+                path.add_edge_at_end(e)
+                # print('edge: ', e, end=' ')
+                # print('path: ', self.printPathInNetwork(path))
+            return path
+        else:
+            print('Unable to join paths: ', self.printPathInNetwork(p1),
+                    self.printPathInNetwork(p2))
+            exit(0)
+            return None
+
+    # Concatenate two sets of (sub)paths while checking feasibility
+    def joinFeasiblePaths(self, P1: List[Path], P2: List[Path], EB: number=infinity) -> List[Path]:
         pathList = []
         for p1 in P1:
             # print('for p1: ', self.printPathInNetwork(p1))
             for p2 in P2:
-                path = Path(p1.edges)
-                # print('st p1: ', self.printPathInNetwork(path))
-                if p1.getEnd() == p2.getStart():
-                    for e in p2.edges:
-                        path.add_edge_at_end(e)
-                        # print('edge: ', e, end=' ')
-                        # print('path: ', self.printPathInNetwork(path))
-                pathList.append(path)
+                # if first edge is a self loop, join (p1,p2)
+                if p2.edges[0].node_from == p2.edges[0].node_to:
+                    pathList.append(self.joinPaths(p1, p2))
+                # else check feasibility
+                else:
+                    if p1.getEnergyConsump() + p2.getEnergyConsump() <= EB:
+                        pathList.append(self.joinPaths(p1, p2))
         return pathList
 
     # Find acyclic energy-feasible paths in the network from source src to
@@ -244,23 +258,32 @@ class Network:
         selfLoopNodes = [e.node_from for e in self.edges if e.node_from == e.node_to]
         pathCombs = list(combo for r in range(len(selfLoopNodes)) for combo in
                 itertools.combinations(selfLoopNodes, r+1))
-        # list(itertools.permutations(selfLoopNodes))
-        # print(*(k for c in pathCombs for k in c), sep='\n')
-        allCombs = list(itertools.permutations(c) for c in pathCombs)
-        print('combs: ',*(list(c) for c in allCombs), sep='\n')
-
-        exit(0)
-        for comb in pathCombs:
-            paths1 = self.findPaths(src, comb[0], EB)
-            pathList = [*pathList, *self.concatenatePaths(paths1,\
-                    self.findPaths(n1, dest, EB))]
-            for n2 in (i for i in selfLoopNodes if i != n1):
-                paths2 = self.findPaths(n1, n2, EB)
-            print('paths1: ', *(printPathInNetwork(p, self) for p in paths1), sep='\n')
-            print('paths2: ', *(printPathInNetwork(p, self) for p in paths2), sep='\n')
-            print('paths1+2: ', *(printPathInNetwork(p, self) for p in self.concatenatePaths(paths1, paths2)), sep='\n')
-            print('pathsList: ', *(printPathInNetwork(p, self) for p in pathList), sep='\n')
-            exit(0)
+        allCombs = []
+        for c in pathCombs:
+            allCombs = [*allCombs, *list(itertools.permutations(c))]
+        # for c in allCombs:
+            # print('c: ', c)
+            # print('i', *(i for i in (c)))
+        # print('combs: ',*(list(c) for c in allCombs), sep='\n')
+        # for c in allCombs:
+            # print('combs:',*(i for i in list(c)), sep='\n')
+            # print('combs:',list(c), sep='\n')
+        for comb in allCombs:
+            print('comb: ',*(i for i in list(comb)), sep=',')
+            pathsComb = self.findPaths(src, comb[0], EB)
+            k = 1
+            while k < len(comb):
+                pathsComb = self.joinFeasiblePaths(pathsComb,
+                        self.findPaths(comb[k-1], comb[k], EB), EB)
+                k += 1
+            pathList = [*pathList, *self.joinFeasiblePaths(pathsComb,\
+                    self.findPaths(comb[-1], dest, EB), EB)]
+            # print('pathsComb: ', *((self.printPathInNetwork(p),p.getEnergyConsump())
+                # for p in self.joinFeasiblePaths(pathsComb, self.findPaths(comb[-1],
+                    # dest, EB), EB)), sep='\n')
+        # print('pathsList: ', *((printPathInNetwork(p, self),p.getEnergyConsump()) for p in pathList), sep='\n')
+        # exit(0)
+        return pathList
 
 
 # A directed path
