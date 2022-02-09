@@ -116,7 +116,13 @@ if __name__ == "__main__":
     for i,(s,t,u) in enumerate(commodities):
         if False: print("i ", i,s,t,u)
         # pathList.append(G.findPaths(s, t, energyBudget))
-        pathList.append(G.findPathsWithLoops(s, t, energyBudget))
+        paths = G.findPathsWithLoops(s, t, energyBudget)
+        # print('len paths: ', len(paths))
+        if len(paths) > 0:
+            pathList.append(paths)
+        else:
+            print('No feasible paths found for comm.: ', i,s,t,u)
+            exit(0)
         # for p in pathList:
             # print(p)
 
@@ -130,7 +136,7 @@ if __name__ == "__main__":
         maxTravelTime,minTravelTime = max(maxTravelTime, maxval),min(minTravelTime,
                 minval)
 
-    if True: print('Max. (min.) path travel time: %.2f (%.2f) ' %(maxTravelTime, minTravelTime))
+    if True: print('Max., min. path travel time: %.2f, %.2f ' %(maxTravelTime, minTravelTime))
 
     # Start
     tStart = time.time()

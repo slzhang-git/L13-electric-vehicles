@@ -5,6 +5,7 @@ from dynamic_dijkstra import dynamic_dijkstra
 
 # For the root finding problem
 from scipy import optimize
+import sys, time
 import numpy as np
 
 def findShortestSTpath(s: Node, t: Node, flow: PartialFlow, time: number) -> Path:
@@ -94,7 +95,7 @@ def fixedPointUpdate(currentFlow: PartialFlow, oldPathInflows: PartialFlowPathBa
     for i,comd in enumerate(commodities):
         flowValue = [None]*len(oldPathInflows.fPlus[i])
         travelTime = [None]*len(oldPathInflows.fPlus[i])
-        if verbose: print("Considering commodity ", i)
+        if False: print("Considering commodity ", i)
         newPathInflows.setPaths(i,[P for P in oldPathInflows.fPlus[i]],[PWConst([zero],[],zero) for P in oldPathInflows.fPlus[i]])
         s = newPathInflows.sources[i]
         t = newPathInflows.sinks[i]
@@ -197,7 +198,7 @@ def fixedPointUpdate(currentFlow: PartialFlow, oldPathInflows: PartialFlowPathBa
             # print("newPathInflows: ", newPathInflows)
             theta = theta + timestepSize
         tmpVar = max(timestepSize,1/timestepSize)
-        if verbose: print("Mean # of root.scalar() iterations ",\
+        if False: print("Mean # of root.scalar() iterations ",\
                 float(round(meanIter/(tmpVar*oldPathInflows.getEndOfInflow(i)),2)),\
                 " for ", tmpVar*oldPathInflows.getEndOfInflow(i), " subintervals")
     # for id, e in enumerate(currentFlow.network.edges):
@@ -306,20 +307,28 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
 
     # alphaStr = ''
     # alphaStr = r'($\gamma$)'
-    # alphaStr = r'($\gamma\alpha$)'
+    alphaStr = r'($\gamma\alpha$)'
     # alphaStr = r'expoSmooth($\gamma$)'
-    alphaStr = r'expoSmooth($\gamma/2$)'
+    # alphaStr = r'expoSmooth($\gamma/2$)'
     # alphaStr = r'relExpoSmooth($\gamma/2$)'
     # alphaStr = r'min2ExpoSmooth($\gamma/2$)'
 
+    tStart = time.time()
     iterFlow = networkLoading(pathInflows)
+    tEnd = time.time()
+    print("\nTime taken in networkLoading(): ", round(tEnd-tStart,4))
+
     ## Iteration:
     while not shouldStop:
         if verbose: print("Starting iteration #", step)
         # newpathInflows = networkLoading(pathInflows,timeHorizon)
         # print("newpathInflows ", newpathInflows)
+        tStart = time.time()
         newpathInflows = fixedPointUpdate(iterFlow, pathInflows, timeHorizon, alpha,
                 timeStep, commodities, verbose)
+        tEnd = time.time()
+        print("\nTime taken in fixedPointUpdate(): ", round(tEnd-tStart,4))
+
         newAbsDiffBwFlows = differenceBetweenPathInflows(pathInflows,newpathInflows)
         newRelDiffBwFlows = newAbsDiffBwFlows/sumNormOfPathInflows(pathInflows)
 
@@ -327,9 +336,9 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
         if newAbsDiffBwFlows < precision:
             shouldStop = True
             stopStr = "Attained required (absolute) precision!"
-        # elif newRelDiffBwFlows < precision:
-            # shouldStop = True
-            # stopStr = "Attained required (relative) precision!"
+        elif newRelDiffBwFlows < precision:
+            shouldStop = True
+            stopStr = "Attained required (relative) precision!"
         elif not (maxSteps is None or step < maxSteps):
             shouldStop = True
             stopStr = "Maximum number of steps reached!"
@@ -344,16 +353,20 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
 
             # Alpha Update Rule
             # alpha = gamma # equal to factor
-            # alpha = gamma*alpha # multiplied by factor
+            alpha = gamma*alpha # multiplied by factor
             # alpha = (gamma)*(gamma*alpha) + (1-gamma)*alpha # expo smooth using gamma
-            alpha = (0.5*gamma)*(0.5*gamma*alpha) + (1-0.5*gamma)*alpha # expo smooth using gamma/2
+            # alpha = (0.5*gamma)*(0.5*gamma*alpha) + (1-0.5*gamma)*alpha # expo smooth using gamma/2
             # alpha = max(0.2, (0.5*gamma)*(0.5*gamma*alpha) + (1-0.5*gamma)*alpha) # expo smooth using gamma/2
 
             # Measure quality of the path inflows
+            tStart = time.time()
             iterFlow = networkLoading(newpathInflows)
+            tEnd = time.time()
+            print("\nTime taken in networkLoading(): ", round(tEnd-tStart,4))
+
             qopi = 0
             for i,comd in enumerate(commodities):
-                if True: print('comm ', i)
+                if False: print('comm ', i)
                 fP = newpathInflows.fPlus[i]
                 theta = zero
                 while theta < newpathInflows.getEndOfInflow(i):
