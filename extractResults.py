@@ -31,7 +31,7 @@ print("Iterations: ", len(data['alphaIter']))
 # print("fPlus: ")
 
 colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'orange',
-        'darkviolet','magenta','darkorchid']
+        'darkviolet','magenta','darkorchid','darkgreen']
 # linestyles = ['solid', 'dashed', 'dashdot', 'dotted', 'offset',\
         # 'on-off-dash-seq', '-' , '--' , '-.' , ':' , 'None' ,\
         # ' ' , '']
@@ -93,7 +93,7 @@ for c,p in enumerate(f[()].fPlus):
         # axs[k].legend()
         # else:
             # k -= 1
-    axs[k].legend()
+    axs[k].legend(loc='upper right')
     axs[k].set_title('Path Inflows', fontsize='xx-large')
     # plt.show()
 
