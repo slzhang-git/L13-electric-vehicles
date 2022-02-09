@@ -152,8 +152,9 @@ if __name__ == "__main__":
     print("queue at: ")
     for id, e in enumerate(eventualFlow.network.edges):
         if eventualFlow.queues[e].noOfSegments > 1 or\
-        (eventualFlow.queues[e].noOfSegments == 1 and
-                eventualFlow.queues[e].segmentValues[0] > 0):
+        (eventualFlow.queues[e].noOfSegments == 1 and\
+        (eventualFlow.queues[e].segmentTvalues[0] > 0 or\
+            eventualFlow.queues[e].segmentMvalues[0] > 0)):
             print("edge %d: "%id, e, eventualFlow.queues[e])
 
     # alpha and flowDiff
