@@ -103,12 +103,12 @@ if __name__ == "__main__":
     # fname += argList[-1]
 
     # Read arguments into required variables
-    [insName,timeHorizon,maxIter,precision,alpha,timeStep,energyBudget] = argList[2:len(argList)]
-    [insName,timeHorizon,maxIter,precision,alpha,timeStep,energyBudget] = [str(insName),\
-            makeNumber(timeHorizon),int(maxIter),float(precision),\
+    [insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,energyBudget] = argList[2:len(argList)]
+    [insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,energyBudget] = [str(insName),\
+            makeNumber(timeHorizon),int(maxIter),int(timeLimit),float(precision),\
             makeNumber(alpha),makeNumber(timeStep),makeNumber(energyBudget)]
-    print("read args: insName,timeHorizon,maxIter,precision,alpha,timeStep,energyBudget")
-    print("values: ",insName,timeHorizon,maxIter,precision,alpha,timeStep,energyBudget)
+    print("read args: insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,energyBudget")
+    print("values: ",insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,energyBudget)
 
     # Find list of paths for each commodity
     # TODO: put data checks
@@ -142,7 +142,7 @@ if __name__ == "__main__":
     tStart = time.time()
     f, alphaIter, absDiffBwFlowsIter, relDiffBwFlowsIter, travelTime, stopStr,\
             alphaStr, qopiIter = fixedPointAlgo(G, pathList, precision, commodities,\
-                    timeHorizon, maxIter, timeStep, alpha, True)
+                    timeHorizon, maxIter, timeLimit, timeStep, alpha, True)
 
     tEnd = time.time()
     print("travelTimes: ", travelTime)
@@ -158,17 +158,19 @@ if __name__ == "__main__":
             print("edge %d: "%id, e, eventualFlow.queues[e])
 
     # alpha and flowDiff
-    ralphaIter = [round(float(b),3) for b in alphaIter]
+    ralphaIter = [round(float(a),4) for a in alphaIter]
+    # ralphaIter = [[round(float(a),3) for a in b] for b in alphaIter]
     rAbsDiffBwFlowsIter = [round(float(b),3) for b in absDiffBwFlowsIter]
     rRelDiffBwFlowsIter = [round(float(b),3) for b in relDiffBwFlowsIter]
     rqopiIter = [round(float(b),3) for b in qopiIter]
-    print("alpha ", ralphaIter)
-    print("absDiffBwFlowsIter ", rAbsDiffBwFlowsIter)
-    print("relDiffBwFlowsIter ", rRelDiffBwFlowsIter)
-    print("qopiIter ", rqopiIter)
+    print("\nalphaMean ", ralphaIter)
+    print("\nabsDiffBwFlowsIter ", rAbsDiffBwFlowsIter)
+    print("\nrelDiffBwFlowsIter ", rRelDiffBwFlowsIter)
+    print("\nqopiIter ", rqopiIter)
 
-    print("Termination message: ", stopStr)
-    print("\nElasped wall time: ", round(tEnd-tStart,4))
+    print("\nTermination message: ", stopStr)
+    print("\nIterations : ", len(ralphaIter))
+    print("Elapsed wall time: ", round(tEnd-tStart,4))
 
     # Save the results to files
     # dirname = os.path.expanduser('./npzfiles')
@@ -178,5 +180,5 @@ if __name__ == "__main__":
             alphaIter=alphaIter,absDiffBwFlowsIter=absDiffBwFlowsIter,\
             relDiffBwFlowsIter=relDiffBwFlowsIter,travelTime=travelTime,\
             stopStr=stopStr,alphaStr=alphaStr,qopiIter=qopiIter)
-    print("output saved to file: %s.npz"%os.path.join(dirname, fname))
+    print("\noutput saved to file: %s.npz"%os.path.join(dirname, fname))
 
