@@ -401,11 +401,11 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
                         # [round(i,4) for i in fval], [round(i,4) for i in qopiTheta])
                     # print('\n')
                     theta = theta + timeStep
-            if verbose: print("Norm of change in flow (abs.) ", round(float(newAbsDiffBwFlows),2),\
-                    " previous change ", round(float(oldAbsDiffBwFlows),2), " alpha ",\
-                    round(float(alpha),2), ' qopi ', round(qopi,2))
-            if verbose: print("Norm of change in flow (rel.) ", round(float(newRelDiffBwFlows),2),\
-                    " previous change ", round(float(oldRelDiffBwFlows),2))
+            if verbose: print("Norm of change in flow (abs.) ", round(float(newAbsDiffBwFlows),4),\
+                    " previous change ", round(float(oldAbsDiffBwFlows),4), " alpha ",\
+                    round(float(alpha),4), ' qopi ', round(qopi,4))
+            if verbose: print("Norm of change in flow (rel.) ", round(float(newRelDiffBwFlows),4),\
+                    " previous change ", round(float(oldRelDiffBwFlows),4))
 
             # alpha = flowVal/tminmin
             # print(flowVal, tminmin, alpha)
@@ -422,7 +422,7 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
         relDiffBwFlowsIter.append(newRelDiffBwFlows)
 
         step += 1
-        print('pathInflows: ', pathInflows)
+        # print('pathInflows: ', pathInflows)
         # print("\nEND OF ITERATION ", step,"\n")
 
     print(stopStr)
