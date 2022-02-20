@@ -167,7 +167,9 @@ for c,p in enumerate(f[()].fPlus):
     # Save figure
     dirname = os.path.expanduser('./figures')
     fname1 = fname + '_comm%d'%c
-    print(fname)
+    # print(fname)
     figname = os.path.join(dirname, fname1)
+    figname += '.png'
     fig.savefig(figname, format='png', dpi=fig.dpi, bbox_inches='tight')
+    print("\noutput saved to file: %s"%figname)
     # exit(0)

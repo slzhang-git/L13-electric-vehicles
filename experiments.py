@@ -98,9 +98,9 @@ if __name__ == "__main__":
     commodities = readCommodities(argList[1])
 
     fname = ""
-    for i in range(2,len(argList)):
+    for i in range(2,len(argList)-1):
         fname += argList[i] + "_"
-    # fname += argList[-1]
+    fname += argList[-1]
 
     # Read arguments into required variables
     [insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,energyBudget] = argList[2:len(argList)]
@@ -175,7 +175,7 @@ if __name__ == "__main__":
     # Save the results to files
     # dirname = os.path.expanduser('./npzfiles')
     dirname = os.path.expanduser('./miscfiles')
-    fname += alphaStr.replace('/','By')
+    # fname += alphaStr.replace('/','By')
     numpy.savez(os.path.join(dirname, fname),G=G,f=f,eventualFlow=eventualFlow,time=tEnd-tStart,\
             alphaIter=alphaIter,absDiffBwFlowsIter=absDiffBwFlowsIter,\
             relDiffBwFlowsIter=relDiffBwFlowsIter,travelTime=travelTime,\
