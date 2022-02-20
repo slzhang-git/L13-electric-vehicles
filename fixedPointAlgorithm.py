@@ -403,7 +403,7 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
                     theta = theta + timeStep
             if verbose: print("Norm of change in flow (abs.) ", round(float(newAbsDiffBwFlows),4),\
                     " previous change ", round(float(oldAbsDiffBwFlows),4), " alpha ",\
-                    round(float(alpha),4), ' qopi ', round(qopi,4))
+                    round(float(alphaList),4), ' qopi ', round(qopi,4))
             if verbose: print("Norm of change in flow (rel.) ", round(float(newRelDiffBwFlows),4),\
                     " previous change ", round(float(oldRelDiffBwFlows),4))
 

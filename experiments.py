@@ -159,10 +159,10 @@ if __name__ == "__main__":
 
     # alpha and flowDiff
     ralphaIter = [round(float(a),4) for a in alphaIter]
-    # ralphaIter = [[round(float(a),3) for a in b] for b in alphaIter]
-    rAbsDiffBwFlowsIter = [round(float(b),3) for b in absDiffBwFlowsIter]
-    rRelDiffBwFlowsIter = [round(float(b),3) for b in relDiffBwFlowsIter]
-    rqopiIter = [round(float(b),3) for b in qopiIter]
+    # ralphaIter = [[round(float(a),4) for a in b] for b in alphaIter]
+    rAbsDiffBwFlowsIter = [round(float(b),4) for b in absDiffBwFlowsIter]
+    rRelDiffBwFlowsIter = [round(float(b),4) for b in relDiffBwFlowsIter]
+    rqopiIter = [round(float(b),4) for b in qopiIter]
     print("\nalphaMean ", ralphaIter)
     print("\nabsDiffBwFlowsIter ", rAbsDiffBwFlowsIter)
     print("\nrelDiffBwFlowsIter ", rRelDiffBwFlowsIter)
@@ -175,7 +175,7 @@ if __name__ == "__main__":
     # Save the results to files
     # dirname = os.path.expanduser('./npzfiles')
     dirname = os.path.expanduser('./miscfiles')
-    fname += alphaStr.replace('/','By')
+    # fname += alphaStr.replace('/','By')
     numpy.savez(os.path.join(dirname, fname),G=G,f=f,eventualFlow=eventualFlow,time=tEnd-tStart,\
             alphaIter=alphaIter,absDiffBwFlowsIter=absDiffBwFlowsIter,\
             relDiffBwFlowsIter=relDiffBwFlowsIter,travelTime=travelTime,\
