@@ -103,7 +103,7 @@ def fixedPointUpdate(currentFlow: PartialFlow, oldPathInflows: PartialFlowPathBa
         meanIter = 0
         # We subdivide the time into intervals of length timestepSize
         k = -1
-        alphaList = []
+        # alphaList = []
         while theta < oldPathInflows.getEndOfInflow(i):
             k += 1
             # For each subinterval i we determine the dual variable v_i
@@ -168,8 +168,9 @@ def fixedPointUpdate(currentFlow: PartialFlow, oldPathInflows: PartialFlowPathBa
                 # timestepSize, ubar), x0=x0, bracket=[bracketLeft, bracketRight],
                 # fprime=dualVarRootFuncGrad, method='newton')
 
-            adjAlpha = [uval/min(travelTime) for j,_ in enumerate(flowValue)]
-            alphaList.append(adjAlpha[0])
+            alpha = uval/min(travelTime)
+            # adjAlpha = [uval/min(travelTime) for j,_ in enumerate(flowValue)]
+            # alphaList.append(adjAlpha[0])
             # print('adjAlpha: ', theta + timestepSize/2, uval, [round(i, 4) for
                 # i in travelTime], [round(i,4) for i in adjAlpha])
             # adjAlpha = [alpha*flowValue[j]/(2*travelTime[j]) for j,_ in enumerate(flowValue)]
@@ -181,8 +182,8 @@ def fixedPointUpdate(currentFlow: PartialFlow, oldPathInflows: PartialFlowPathBa
             # adjAlpha = [adjmax if j == 0 else j for j in adjAlpha]
 
             # Newton's method using a routine that return value and derivative
-            # sol = optimize.root_scalar(dualVarRootFuncComb, (alpha, flowValue, travelTime,
-            sol = optimize.root_scalar(dualVarRootFuncComb, (adjAlpha, flowValue, travelTime,
+            # sol = optimize.root_scalar(dualVarRootFuncComb, (adjAlpha, flowValue, travelTime,
+            sol = optimize.root_scalar(dualVarRootFuncComb, (alpha, flowValue, travelTime,
                 timestepSize, ubar), x0=x0, bracket=[bracketLeft, bracketRight],
                 fprime=True, method='newton')
 
@@ -196,8 +197,8 @@ def fixedPointUpdate(currentFlow: PartialFlow, oldPathInflows: PartialFlowPathBa
                 # print(sol)
             # print("currentFlow ", currentFlow)
             for j,P in enumerate(oldPathInflows.fPlus[i]):
-                # newFlowVal = max(flowValue[j] - alpha*travelTime[j] + sol.root, 0)
-                newFlowVal = max(flowValue[j] - adjAlpha[j]*travelTime[j] + sol.root, 0)
+                newFlowVal = max(flowValue[j] - alpha*travelTime[j] + sol.root, 0)
+                # newFlowVal = max(flowValue[j] - adjAlpha[j]*travelTime[j] + sol.root, 0)
                 # print("newFlowVal ", newFlowVal)
                 newPathInflows.fPlus[i][P].addSegment(makeNumber(theta+timestepSize), makeNumber(newFlowVal))
             # print("newPathInflows: ", newPathInflows)
@@ -210,7 +211,8 @@ def fixedPointUpdate(currentFlow: PartialFlow, oldPathInflows: PartialFlowPathBa
         # print("queue at edge %d: "%id, e, currentFlow.queues[e])
     # print("timeDiff ", timeDiff)
     # print("newPathInflows: ", newPathInflows)
-    return newPathInflows, sum(alphaList)/len(alphaList)
+    # return newPathInflows, sum(alphaList)/len(alphaList)
+    return newPathInflows, alpha
 
 def dualVarRootFunc(x, alpha, flowValue, travelTime, timestepSize, ubar):
     # print("printing args ", round(x,2),alpha,flowValue,travelTime,timestepSize,ubar)
@@ -235,8 +237,8 @@ def dualVarRootFuncComb(x, alpha, flowValue, travelTime, timestepSize, ubar):
     termSum = 0
     gradTermSum = 0
     for j,fv in enumerate(flowValue):
-        # tmp = flowValue[j] - alpha*travelTime[j] + x
-        tmp = flowValue[j] - alpha[j]*travelTime[j] + x
+        tmp = flowValue[j] - alpha*travelTime[j] + x
+        # tmp = flowValue[j] - alpha[j]*travelTime[j] + x
         if tmp > 0:
             termSum += tmp*timestepSize
             gradTermSum += timestepSize
@@ -308,10 +310,11 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
     relDiffBwFlowsIter = []
     travelTime = []
     qopiIter = []  # qualityOfPathInflows
+    qopiMeanIter = []  # mean of qopi
     shouldStop = not (maxSteps is None or step < maxSteps)
 
 
-    alphaStr = ''
+    # alphaStr = ''
     # alphaStr = r'($\gamma$)'
     # alphaStr = r'($\gamma\alpha$)'
     # alphaStr = r'expoSmooth($\gamma$)'
@@ -330,7 +333,7 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
         # newpathInflows = networkLoading(pathInflows,timeHorizon)
         # print("newpathInflows ", newpathInflows)
         tStart = time.time()
-        newpathInflows, alphaList = fixedPointUpdate(iterFlow, pathInflows, timeHorizon, alpha,
+        newpathInflows, alpha = fixedPointUpdate(iterFlow, pathInflows, timeHorizon, alpha,
                 timeStep, commodities, verbose)
         print("\nTime taken in fixedPointUpdate(): ", round(time.time()-tStart,4))
 
@@ -353,6 +356,7 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
             stopStr = "Maximum time limit reached!"
 
         qopi = infinity
+        qopiMean = infinity
         if not shouldStop:
             # Update Alpha
             if newAbsDiffBwFlows == 0:
@@ -379,6 +383,7 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
             print("\nTime taken in networkLoading(): ", round(tEnd-tStart,4))
 
             qopi = 0
+            qopiMean = 0
             for i,comd in enumerate(commodities):
                 tminmin = infinity
                 if False: print('comm ', i)
@@ -390,20 +395,22 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
                         tt[j] = iterFlow.pathArrivalTime(P,theta + timeStep/2) - (theta + timeStep/2)
                     tmin = min(tt)
                     tminmin = min(tminmin, tmin)
-                    qopiTheta = []
+                    # qopiTheta = []
                     fval = []
                     for j,P in enumerate(newpathInflows.fPlus[i]):
                         fval.append(fP[P].getValueAt(theta + timeStep/2))
-                        qopiTheta.append((tt[j] - tmin)*fval[j])
+                        # qopiTheta.append((tt[j] - tmin)*fval[j])
                         qopi += (tt[j] - tmin)*fP[P].getValueAt(theta + timeStep/2)
-                        if False: print(j, tt[j], tmin, fP[P].getValueAt(theta + timeStep/2), qopi)
+                        # if False: print(j, tt[j], tmin, fP[P].getValueAt(theta + timeStep/2), qopi)
                     # print('theta ', theta + timeStep/2, [round(i,4) for i in tt],
                         # [round(i,4) for i in fval], [round(i,4) for i in qopiTheta])
                     # print('\n')
                     theta = theta + timeStep
+                qopiMean += qopi/(pathInflows.getEndOfInflow(i)/timeStep)
             if verbose: print("Norm of change in flow (abs.) ", round(float(newAbsDiffBwFlows),4),\
                     " previous change ", round(float(oldAbsDiffBwFlows),4), " alpha ",\
-                    round(float(alpha),4), ' qopi ', round(qopi,4))
+                    round(float(alpha),4), ' qopi ', round(qopi,4), ' qopiMean ',\
+                    round(qopiMean,4))
             if verbose: print("Norm of change in flow (rel.) ", round(float(newRelDiffBwFlows),4),\
                     " previous change ", round(float(oldRelDiffBwFlows),4))
 
@@ -417,7 +424,9 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
             oldRelDiffBwFlows = newRelDiffBwFlows
 
         qopiIter.append(qopi)
-        alphaIter.append(alphaList)
+        qopiMeanIter.append(qopiMean)
+        # alphaIter.append(alphaList)
+        alphaIter.append(alpha)
         absDiffBwFlowsIter.append(newAbsDiffBwFlows)
         relDiffBwFlowsIter.append(newRelDiffBwFlows)
 
@@ -445,5 +454,5 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
     # print("travelTime", travelTime)
     # print("qopiIter ", qopiIter)
     return pathInflows, alphaIter, absDiffBwFlowsIter, relDiffBwFlowsIter,\
-            travelTime, stopStr, alphaStr, qopiIter
+            travelTime, stopStr, qopiIter, qopiMeanIter
 
