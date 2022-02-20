@@ -141,7 +141,7 @@ if __name__ == "__main__":
     # Start
     tStart = time.time()
     f, alphaIter, absDiffBwFlowsIter, relDiffBwFlowsIter, travelTime, stopStr,\
-            alphaStr, qopiIter = fixedPointAlgo(G, pathList, precision, commodities,\
+            qopiIter, qopiMeanIter = fixedPointAlgo(G, pathList, precision, commodities,\
                     timeHorizon, maxIter, timeLimit, timeStep, alpha, True)
 
     tEnd = time.time()
@@ -163,10 +163,12 @@ if __name__ == "__main__":
     rAbsDiffBwFlowsIter = [round(float(b),4) for b in absDiffBwFlowsIter]
     rRelDiffBwFlowsIter = [round(float(b),4) for b in relDiffBwFlowsIter]
     rqopiIter = [round(float(b),4) for b in qopiIter]
+    rqopiMeanIter = [round(float(b),4) for b in qopiMeanIter]
     print("\nalphaMean ", ralphaIter)
     print("\nabsDiffBwFlowsIter ", rAbsDiffBwFlowsIter)
     print("\nrelDiffBwFlowsIter ", rRelDiffBwFlowsIter)
     print("\nqopiIter ", rqopiIter)
+    print("\nqopiMeanIter ", rqopiMeanIter)
 
     print("\nTermination message: ", stopStr)
     print("\nIterations : ", len(ralphaIter))
@@ -179,6 +181,7 @@ if __name__ == "__main__":
     numpy.savez(os.path.join(dirname, fname),G=G,f=f,eventualFlow=eventualFlow,time=tEnd-tStart,\
             alphaIter=alphaIter,absDiffBwFlowsIter=absDiffBwFlowsIter,\
             relDiffBwFlowsIter=relDiffBwFlowsIter,travelTime=travelTime,\
-            stopStr=stopStr,alphaStr=alphaStr,qopiIter=qopiIter)
+            # stopStr=stopStr,alphaStr=alphaStr,qopiIter=qopiIter,qopiMeanIter=qopiMeanIter)
+            stopStr=stopStr,qopiIter=qopiIter,qopiMeanIter=qopiMeanIter)
     print("\noutput saved to file: %s.npz"%os.path.join(dirname, fname))
 

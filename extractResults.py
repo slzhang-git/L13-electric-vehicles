@@ -66,7 +66,7 @@ for c,p in enumerate(f[()].fPlus):
     # print(plt.rcParams.keys())
     # plt.rc('legend',fontsize=20) # using a size in points
     # plt.rc('legend',fontsize=fontsizes[5]) # using a named size
-    alphaStr = data['alphaStr']
+    # alphaStr = data['alphaStr']
 
     # TODO: Update and check the code to cater to each commodity
     # Final Results
@@ -74,9 +74,10 @@ for c,p in enumerate(f[()].fPlus):
     # Path Inflows
     #-----------------
     fig.suptitle(r'ins=[%s], $T$=[%s], $maxIter$=[%s], $\epsilon$=[%s], $\alpha_0$=[%s],'\
-    # r'timeStep=%s, $\alpha-$update: %s''\n\nPath inflows'%(insName,timeHorizon,maxIter,precision,alpha,\
-    r' timeStep=[%s], $\alpha-$update rule: [%s]''\n runTime=%.2f'%(insName,timeHorizon,maxIter,precision,alpha,\
-    timeStep,alphaStr,runTime), fontsize='xx-large')
+    # r' timeStep=[%s], $\alpha-$update rule: [%s]''\n runTime=%.2f'%(insName,timeHorizon,maxIter,precision,alpha,\
+    # timeStep,alphaStr,runTime), fontsize='xx-large')
+    r' timeStep=[%s], runTime=%.2f'%(insName,timeHorizon,maxIter,precision,alpha,\
+    timeStep,runTime), fontsize='xx-large')
 
     k = -1
     k += 1
@@ -125,6 +126,7 @@ for c,p in enumerate(f[()].fPlus):
     absDiffBwFlowsIter = data['absDiffBwFlowsIter']
     relDiffBwFlowsIter = data['relDiffBwFlowsIter']
     qopiIter = data['qopiIter']
+    qopiMeanIter = data['qopiMeanIter']
     # a,b = [round(float(c),2) for c in alphaIter],[round(float(c),2) for c in diffBwFlowsIter]
     # print(a,b)
     x = [x+1 for x in range(len(alphaIter))]
@@ -145,7 +147,8 @@ for c,p in enumerate(f[()].fPlus):
     axs[k].legend(loc=locs[1], fontsize='x-large')
 
     k += 1
-    axs[k].plot(x,qopiIter,label='qopi', color=colors[3], linestyle=linestyles[1])
+    axs[k].plot(x,qopiIter,label='QoPI', color=colors[3], linestyle=linestyles[1])
+    axs[k].plot(x,qopiMeanIter,label='QoPIMean', color=colors[4], linestyle=linestyles[1])
     axs[k].set_xlabel('iteration', fontsize='xx-large')
     axs[k].legend(fontsize='x-large')
 
