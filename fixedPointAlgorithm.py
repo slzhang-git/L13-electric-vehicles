@@ -104,6 +104,7 @@ def fixedPointUpdate(currentFlow: PartialFlow, oldPathInflows: PartialFlowPathBa
         # We subdivide the time into intervals of length timestepSize
         k = -1
         # alphaList = []
+        # alpha = alphaComm[i]
         while theta < oldPathInflows.getEndOfInflow(i):
             k += 1
             # For each subinterval i we determine the dual variable v_i
@@ -144,9 +145,24 @@ def fixedPointUpdate(currentFlow: PartialFlow, oldPathInflows: PartialFlowPathBa
             # Find integral value, ubar, of (piecewise constant) function u in this
             # subinterval
             ubar = comd[2].integrate(theta, theta + timestepSize)
-            # uval = comd[2].getValueAt(theta + timestepSize/2)
-            uval = ubar/timestepSize
+
+            # For adjusting alpha
+            # uval = ubar/timestepSize
             # alpha = uval/min(travelTime)
+            # alpha = 0.5*uval*(1/min(travelTime) + 1/max(travelTime))
+            # alpha = 0.5*uval*(1/max(travelTime))
+            # alpha = uval/max(travelTime)
+            # adjAlpha = [uval/min(travelTime) for j,_ in enumerate(flowValue)]
+            # alphaList.append(adjAlpha[0])
+            # print('adjAlpha: ', theta + timestepSize/2, uval, [round(i, 4) for
+                # i in travelTime], [round(i,4) for i in adjAlpha])
+            # adjAlpha = [alpha*flowValue[j]/(2*travelTime[j]) for j,_ in enumerate(flowValue)]
+            # adjAlpha = [flowValue[j]/(2*travelTime[j]) for j,_ in enumerate(flowValue)]
+
+            # adjmin = min([i for i in adjAlpha if i > 0])
+            # adjmax = max([i for i in adjAlpha if i > 0])
+            # adjAlpha = [adjmin if j == 0 else j for j in adjAlpha]
+            # adjAlpha = [adjmax if j == 0 else j for j in adjAlpha]
 
             # TODO: Find a good starting point
             # A trivial guess: assume all terms to be positive and solve for the dual variable
@@ -168,19 +184,6 @@ def fixedPointUpdate(currentFlow: PartialFlow, oldPathInflows: PartialFlowPathBa
                 # timestepSize, ubar), x0=x0, bracket=[bracketLeft, bracketRight],
                 # fprime=dualVarRootFuncGrad, method='newton')
 
-            alpha = uval/min(travelTime)
-            # adjAlpha = [uval/min(travelTime) for j,_ in enumerate(flowValue)]
-            # alphaList.append(adjAlpha[0])
-            # print('adjAlpha: ', theta + timestepSize/2, uval, [round(i, 4) for
-                # i in travelTime], [round(i,4) for i in adjAlpha])
-            # adjAlpha = [alpha*flowValue[j]/(2*travelTime[j]) for j,_ in enumerate(flowValue)]
-            # adjAlpha = [flowValue[j]/(2*travelTime[j]) for j,_ in enumerate(flowValue)]
-
-            # adjmin = min([i for i in adjAlpha if i > 0])
-            # adjmax = max([i for i in adjAlpha if i > 0])
-            # adjAlpha = [adjmin if j == 0 else j for j in adjAlpha]
-            # adjAlpha = [adjmax if j == 0 else j for j in adjAlpha]
-
             # Newton's method using a routine that return value and derivative
             # sol = optimize.root_scalar(dualVarRootFuncComb, (adjAlpha, flowValue, travelTime,
             sol = optimize.root_scalar(dualVarRootFuncComb, (alpha, flowValue, travelTime,
@@ -188,10 +191,18 @@ def fixedPointUpdate(currentFlow: PartialFlow, oldPathInflows: PartialFlowPathBa
                 fprime=True, method='newton')
 
             if not sol.converged:
-                print("The optimize.root_scalar() method has failed to converge due\
-                        to the following reason:")
+                print("The optimize.root_scalar() method has failed to converge due to the following reason:")
                 print("\"", sol.flag, "\"")
-                exit(0)
+                alpha = alpha/2 + uval/(2*max(travelTime))
+                sol = optimize.root_scalar(dualVarRootFuncComb, (alpha, flowValue, travelTime,
+                    timestepSize, ubar), x0=x0, bracket=[bracketLeft, bracketRight],
+                    fprime=True, method='newton')
+                if not sol.converged:
+                    print("Adjusted alpha! The optimize.root_scalar() method has still failed to converge because:")
+                    print("\"", sol.flag, "\"")
+                    exit(0)
+                else:
+                    meanIter += sol.iterations
             else:
                 meanIter += sol.iterations
                 # print(sol)
@@ -234,10 +245,12 @@ def dualVarRootFuncGrad(x, alpha, flowValue, travelTime, timestepSize, ubar):
 
 
 def dualVarRootFuncComb(x, alpha, flowValue, travelTime, timestepSize, ubar):
+    # print("printing args ", round(x,2),alpha,flowValue,travelTime,timestepSize,ubar)
     termSum = 0
     gradTermSum = 0
     for j,fv in enumerate(flowValue):
         tmp = flowValue[j] - alpha*travelTime[j] + x
+        # print('tmp %.2f %.2f %.2f %.2f %.2f'%(flowValue[j], alpha, travelTime[j], x, tmp))
         # tmp = flowValue[j] - alpha[j]*travelTime[j] + x
         if tmp > 0:
             termSum += tmp*timestepSize
@@ -292,11 +305,14 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
     pathInflows = PartialFlowPathBased(N, len(commodities))
     # Initial flow: For every commodity, select the shortest s-t path and send
     # all flow along this path (and 0 flow along all other paths)
+    # alpha_0 = []
     for i,(s,t,u) in enumerate(commodities):
         flowlist = [PWConst([0,u.segmentBorders[-1]],[0],0)]*(len(pathList[i])-1)
         flowlist.insert(0,u)
         # print("set ", u, flowlist, pathList[i], pathInflows)
         pathInflows.setPaths(i, pathList[i], flowlist)
+        # alpha_0.append(u.getValueAt(0)/min([p.getFreeFlowTravelTime() for p in
+            # pathList[i]]))
         # print("u ", u)
         # setInitialPathFlows(i, N, s, t, u, zeroflow, pathInflows)
 
@@ -315,9 +331,13 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
 
 
     # alphaStr = ''
+    # alphaStr = 'uByTmin'
+    # alphaStr = 'uBy2Tmin'
+    # alphaStr = 'meanUByTminTmax'
+    # alphaStr = 'uByTmax'
     # alphaStr = r'($\gamma$)'
     # alphaStr = r'($\gamma\alpha$)'
-    # alphaStr = r'expoSmooth($\gamma$)'
+    alphaStr = r'expoSmooth($\gamma$)'
     # alphaStr = r'expoSmooth($\gamma/2$)'
     # alphaStr = r'relExpoSmooth($\gamma/2$)'
     # alphaStr = r'min2ExpoSmooth($\gamma/2$)'
@@ -369,7 +389,7 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
             # oldalpha = alpha
             # alpha = gamma # equal to factor
             # alpha = gamma*alpha # multiplied by factor
-            # alpha = (gamma)*(gamma*alpha) + (1-gamma)*alpha # expo smooth using gamma
+            alpha = (gamma)*(gamma*alpha) + (1-gamma)*alpha # expo smooth using gamma
             # alpha = (0.5*gamma)*(0.5*gamma*alpha) + (1-0.5*gamma)*alpha # expo smooth using gamma/2
             # alpha = max(0.2, (0.5*gamma)*(0.5*gamma*alpha) + (1-0.5*gamma)*alpha) # expo smooth using gamma/2
             # if step > 1 and oldalpha == alpha:
@@ -454,5 +474,5 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
     # print("travelTime", travelTime)
     # print("qopiIter ", qopiIter)
     return pathInflows, alphaIter, absDiffBwFlowsIter, relDiffBwFlowsIter,\
-            travelTime, stopStr, qopiIter, qopiMeanIter
+            travelTime, stopStr, alphaStr, qopiIter, qopiMeanIter
 

@@ -1,7 +1,8 @@
 # Edge list
 # node_from node_to nu tau ec
 s u 2 1 2
-s u 2 2 1
+s u 1 2 1
 u v 1 1 0
 v t 2 1 2
-v t 2 2 1
+v t 1/2 2 1
+v v 10 3/2 -3

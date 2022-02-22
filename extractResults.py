@@ -19,7 +19,7 @@ import re
 data = np.load(sys.argv[1], allow_pickle=True);
 fname = os.path.splitext(os.path.split(sys.argv[1])[1])[0]
 print(re.split('[_]', fname))
-[insName,timeHorizon,maxIter,precision,alpha,timeStep,_,_] = re.split('[_]', fname)
+[insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,energyBudget,alphaStr] = re.split('[_]', fname)
 runTime = round(float(data['time']),2)
 print("Data: ", data.files)
 print("Termination message: ", data['stopStr'])
@@ -46,7 +46,7 @@ f = data['f']
 # TODO: Find the number of paths that have positive inflows etc. to find the exact
 # number of subplots (if required)
 # fig, axs = plt.subplots(len(f[np.newaxis][0].fPlus[0]) + 1)
-print(f[()].fPlus)
+# print(f[()].fPlus)
 for c,p in enumerate(f[()].fPlus):
     # print('comm:%d'%c, f[()].fPlus[c], f[()].getEndOfInflow(c))
     # exit(0)
@@ -66,7 +66,7 @@ for c,p in enumerate(f[()].fPlus):
     # print(plt.rcParams.keys())
     # plt.rc('legend',fontsize=20) # using a size in points
     # plt.rc('legend',fontsize=fontsizes[5]) # using a named size
-    # alphaStr = data['alphaStr']
+    alphaStr = data['alphaStr']
 
     # TODO: Update and check the code to cater to each commodity
     # Final Results
@@ -74,10 +74,10 @@ for c,p in enumerate(f[()].fPlus):
     # Path Inflows
     #-----------------
     fig.suptitle(r'ins=[%s], $T$=[%s], $maxIter$=[%s], $\epsilon$=[%s], $\alpha_0$=[%s],'\
-    # r' timeStep=[%s], $\alpha-$update rule: [%s]''\n runTime=%.2f'%(insName,timeHorizon,maxIter,precision,alpha,\
-    # timeStep,alphaStr,runTime), fontsize='xx-large')
-    r' timeStep=[%s], runTime=%.2f'%(insName,timeHorizon,maxIter,precision,alpha,\
-    timeStep,runTime), fontsize='xx-large')
+    r' timeStep=[%s], $\alpha-$update rule: [%s]''\n runTime=%.2f'%(insName,timeHorizon,maxIter,precision,alpha,\
+    timeStep,alphaStr,runTime), fontsize='xx-large')
+    # r' timeStep=[%s], runTime=%.2f'%(insName,timeHorizon,maxIter,precision,alpha,\
+    # timeStep,runTime), fontsize='xx-large')
 
     k = -1
     k += 1
@@ -102,8 +102,9 @@ for c,p in enumerate(f[()].fPlus):
     # Travel Times
     #-----------------
     tt = data['travelTime']
+    # print(tt)
     # print(tt[0][0], len(tt), len(tt[0]), len(tt[0][0]))
-    print(tt[c], len(tt[c]), len(tt[c][0]))
+    # print(tt[c], len(tt[c]), len(tt[c][0]))
     x = [float(timeStep)/2 + x*float(timeStep) for x in\
         range(int((len(tt[0][0])-0)))]
     # print(timeHorizon, timeStep, x)
@@ -137,7 +138,7 @@ for c,p in enumerate(f[()].fPlus):
     axs2.plot(x,absDiffBwFlowsIter,label=r'$\Delta$ f', color=colors[1], linestyle=linestyles[1])
     axs2.plot(x,relDiffBwFlowsIter,label=r'($\Delta$ f / f)', color=colors[2], linestyle=linestyles[1])
     axs2.plot([1,len(alphaIter)], [float(precision), float(precision)],label=r'$\epsilon$',\
-            color=colors[2], linestyle=linestyles[2])
+            color=colors[3], linestyle=linestyles[2])
     axs2.legend(loc=locs[3], fontsize='x-large')
     # axs[k].set_xlabel('iteration', fontsize='xx-large')
     # axs[k].set_title(r'$\alpha$ and $\Delta f^{k}$', fontsize='xx-large')
@@ -174,5 +175,17 @@ for c,p in enumerate(f[()].fPlus):
     figname = os.path.join(dirname, fname1)
     figname += '.png'
     fig.savefig(figname, format='png', dpi=fig.dpi, bbox_inches='tight')
+
+    print('-------')
+    print('Summary')
+    print('-------')
+    print("Termination message: ", data['stopStr'])
+    print("\nAttained DiffBwFlowsIters (abs.): %.4f"%absDiffBwFlowsIter[-2])
+    print("Attained DiffBwFlowsIters (rel.): %.4f"%relDiffBwFlowsIter[-2])
+    print("\nAttained QoPI (abs.): %.4f"%qopiIter[-2])
+    print("Attained QoPI (mean): %.4f"%qopiMeanIter[-2])
+    print("\nIterations : ", len(alphaIter))
+    print("Elapsed wall time: ", runTime)
+
     print("\noutput saved to file: %s"%figname)
     # exit(0)

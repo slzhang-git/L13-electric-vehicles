@@ -98,9 +98,9 @@ if __name__ == "__main__":
     commodities = readCommodities(argList[1])
 
     fname = ""
-    for i in range(2,len(argList)-1):
+    for i in range(2,len(argList)):
         fname += argList[i] + "_"
-    fname += argList[-1]
+    # fname += argList[-1]
 
     # Read arguments into required variables
     [insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,energyBudget] = argList[2:len(argList)]
@@ -141,11 +141,16 @@ if __name__ == "__main__":
     # Start
     tStart = time.time()
     f, alphaIter, absDiffBwFlowsIter, relDiffBwFlowsIter, travelTime, stopStr,\
-            qopiIter, qopiMeanIter = fixedPointAlgo(G, pathList, precision, commodities,\
-                    timeHorizon, maxIter, timeLimit, timeStep, alpha, True)
+            alphaStr, qopiIter, qopiMeanIter = fixedPointAlgo(G, pathList, precision, commodities,\
+            timeHorizon, maxIter, timeLimit, timeStep, alpha, True)
 
     tEnd = time.time()
-    print("travelTimes: ", travelTime)
+    # print("travelTimes: ", travelTime])
+    print("travelTimes: ")
+    for i,(s,t,u) in enumerate(commodities):
+        print("comm ", i,s,t,u)
+        for tt in travelTime[i]:
+            print([round(float(a),4) for a in tt])
     eventualFlow = networkLoading(f)
     print("eventualFlow: ", eventualFlow)
     print("f: ", f)
@@ -171,17 +176,20 @@ if __name__ == "__main__":
     print("\nqopiMeanIter ", rqopiMeanIter)
 
     print("\nTermination message: ", stopStr)
+    print("\nAttained DiffBwFlowsIters (abs.): ", rAbsDiffBwFlowsIter[-2])
+    print("Attained DiffBwFlowsIters (rel.): ", rRelDiffBwFlowsIter[-2])
+    print("\nAttained QoPI (abs.): ", rqopiIter[-2])
+    print("Attained QoPI (mean): ", rqopiMeanIter[-2])
     print("\nIterations : ", len(ralphaIter))
     print("Elapsed wall time: ", round(tEnd-tStart,4))
 
     # Save the results to files
     # dirname = os.path.expanduser('./npzfiles')
     dirname = os.path.expanduser('./miscfiles')
-    # fname += alphaStr.replace('/','By')
+    fname += alphaStr.replace('/','By')
     numpy.savez(os.path.join(dirname, fname),G=G,f=f,eventualFlow=eventualFlow,time=tEnd-tStart,\
             alphaIter=alphaIter,absDiffBwFlowsIter=absDiffBwFlowsIter,\
             relDiffBwFlowsIter=relDiffBwFlowsIter,travelTime=travelTime,\
-            # stopStr=stopStr,alphaStr=alphaStr,qopiIter=qopiIter,qopiMeanIter=qopiMeanIter)
-            stopStr=stopStr,qopiIter=qopiIter,qopiMeanIter=qopiMeanIter)
+            stopStr=stopStr,alphaStr=alphaStr,qopiIter=qopiIter,qopiMeanIter=qopiMeanIter)
     print("\noutput saved to file: %s.npz"%os.path.join(dirname, fname))
 

@@ -281,7 +281,8 @@ class Network:
             # print('pathsComb: ', *((self.printPathInNetwork(p),p.getEnergyConsump())
                 # for p in self.joinFeasiblePaths(pathsComb, self.findPaths(comb[-1],
                     # dest, EB), EB)), sep='\n')
-        # print('pathsList: ', *((printPathInNetwork(p, self),p.getEnergyConsump()) for p in pathList), sep='\n')
+        print('pathsList: ', *((self.printPathInNetwork(p),p.getEnergyConsump(),\
+                p.getFreeFlowTravelTime()) for p in pathList), sep='\n')
         # exit(0)
         return pathList
 
