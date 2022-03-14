@@ -24,6 +24,12 @@ class ExtendedRational(Fraction):
                 pass
         else:
             cls.isInfinite = False
+            # TODO: Solve the 'infty' case
+            # if numerator == 'infty':
+                # self = super(Fraction, cls).__new__(cls)
+                # self.isInfinite = True
+                # self._numerator = 1
+                # return self
             return Fraction.__new__(cls, numerator, denominator)
 
     def __str__(self):

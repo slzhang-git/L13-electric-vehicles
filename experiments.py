@@ -125,6 +125,7 @@ if __name__ == "__main__":
             exit(0)
         # for p in pathList:
             # print(p)
+    # exit(0)
 
     if True: print('Total number of paths: ', sum(len(x) for x in pathList))
     minTravelTime = infinity
@@ -141,8 +142,10 @@ if __name__ == "__main__":
     # Start
     tStart = time.time()
     f, alphaIter, absDiffBwFlowsIter, relDiffBwFlowsIter, travelTime, stopStr,\
-            alphaStr, qopiIter, qopiMeanIter = fixedPointAlgo(G, pathList, precision, commodities,\
-            timeHorizon, maxIter, timeLimit, timeStep, alpha, True)
+            alphaStr, qopiIter, qopiFlowIter, qopiPathComm =\
+            fixedPointAlgo(G, pathList, precision, commodities, timeHorizon,\
+            maxIter, timeLimit, timeStep, alpha, True)
+            # alphaStr, qopiIter, qopiMeanIter, qopiFlowIter, qopiPathComm =\
 
     tEnd = time.time()
     # print("travelTimes: ", travelTime])
@@ -168,18 +171,21 @@ if __name__ == "__main__":
     rAbsDiffBwFlowsIter = [round(float(b),4) for b in absDiffBwFlowsIter]
     rRelDiffBwFlowsIter = [round(float(b),4) for b in relDiffBwFlowsIter]
     rqopiIter = [round(float(b),4) for b in qopiIter]
-    rqopiMeanIter = [round(float(b),4) for b in qopiMeanIter]
+    # rqopiMeanIter = [round(float(b),4) for b in qopiMeanIter]
+    rqopiFlowIter = [round(float(b),4) for b in qopiFlowIter]
     print("\nalphaMean ", ralphaIter)
     print("\nabsDiffBwFlowsIter ", rAbsDiffBwFlowsIter)
     print("\nrelDiffBwFlowsIter ", rRelDiffBwFlowsIter)
     print("\nqopiIter ", rqopiIter)
-    print("\nqopiMeanIter ", rqopiMeanIter)
+    # print("\nqopiMeanIter ", rqopiMeanIter)
+    print("\nqopiFlowIter ", rqopiFlowIter)
 
     print("\nTermination message: ", stopStr)
-    print("\nAttained DiffBwFlowsIters (abs.): ", rAbsDiffBwFlowsIter[-2])
-    print("Attained DiffBwFlowsIters (rel.): ", rRelDiffBwFlowsIter[-2])
+    print("\nAttained DiffBwFlows (abs.): ", rAbsDiffBwFlowsIter[-2])
+    print("Attained DiffBwFlows (rel.): ", rRelDiffBwFlowsIter[-2])
     print("\nAttained QoPI (abs.): ", rqopiIter[-2])
-    print("Attained QoPI (mean): ", rqopiMeanIter[-2])
+    # print("Attained QoPI (mean): ", rqopiMeanIter[-2])
+    print("Attained QoPI (per unit flow): ", rqopiFlowIter[-2])
     print("\nIterations : ", len(ralphaIter))
     print("Elapsed wall time: ", round(tEnd-tStart,4))
 
@@ -190,6 +196,8 @@ if __name__ == "__main__":
     numpy.savez(os.path.join(dirname, fname),G=G,f=f,eventualFlow=eventualFlow,time=tEnd-tStart,\
             alphaIter=alphaIter,absDiffBwFlowsIter=absDiffBwFlowsIter,\
             relDiffBwFlowsIter=relDiffBwFlowsIter,travelTime=travelTime,\
-            stopStr=stopStr,alphaStr=alphaStr,qopiIter=qopiIter,qopiMeanIter=qopiMeanIter)
+            # stopStr=stopStr,alphaStr=alphaStr,qopiIter=qopiIter,qopiMeanIter=qopiMeanIter,\
+            stopStr=stopStr,alphaStr=alphaStr,qopiIter=qopiIter,\
+            qopiFlowIter=qopiFlowIter,qopiPathComm=qopiPathComm)
     print("\noutput saved to file: %s.npz"%os.path.join(dirname, fname))
 

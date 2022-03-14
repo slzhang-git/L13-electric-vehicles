@@ -327,6 +327,8 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
     travelTime = []
     qopiIter = []  # qualityOfPathInflows
     qopiMeanIter = []  # mean of qopi
+    qopiFlowIter = []  # qopii per unit flow per unit time
+    qopiPathComm = []  # mean of qopi
     shouldStop = not (maxSteps is None or step < maxSteps)
 
 
@@ -377,6 +379,7 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
 
         qopi = infinity
         qopiMean = infinity
+        qopiFlow = infinity
         if not shouldStop:
             # Update Alpha
             if newAbsDiffBwFlows == 0:
@@ -403,34 +406,46 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
             print("\nTime taken in networkLoading(): ", round(tEnd-tStart,4))
 
             qopi = 0
-            qopiMean = 0
+            # qopiMean = 0
+            qopiFlow = 0
+            # totalFlow = 0
             for i,comd in enumerate(commodities):
-                tminmin = infinity
+                qopiInt = 0
+                # tminmin = infinity
                 if False: print('comm ', i)
                 fP = newpathInflows.fPlus[i]
                 theta = zero
+                oldqopi = np.zeros(len(newpathInflows.fPlus[i]))
                 while theta < newpathInflows.getEndOfInflow(i):
                     tt = np.empty(len(newpathInflows.fPlus[i]))
                     for j,P in enumerate(newpathInflows.fPlus[i]):
                         tt[j] = iterFlow.pathArrivalTime(P,theta + timeStep/2) - (theta + timeStep/2)
                     tmin = min(tt)
-                    tminmin = min(tminmin, tmin)
+                    # tminmin = min(tminmin, tmin)
                     # qopiTheta = []
                     fval = []
                     for j,P in enumerate(newpathInflows.fPlus[i]):
-                        fval.append(fP[P].getValueAt(theta + timeStep/2))
+                        val = fP[P].getValueAt(theta + timeStep/2)
+                        fval.append(val)
                         # qopiTheta.append((tt[j] - tmin)*fval[j])
-                        qopi += (tt[j] - tmin)*fP[P].getValueAt(theta + timeStep/2)
+                        newqopi = (tt[j] - tmin)*val
+                        qopi += newqopi
+                        qopiInt += ((newqopi-oldqopi[j])/2 + min(newqopi, oldqopi[j]))*timeStep/tmin
+                        oldqopi[j] = newqopi
                         # if False: print(j, tt[j], tmin, fP[P].getValueAt(theta + timeStep/2), qopi)
                     # print('theta ', theta + timeStep/2, [round(i,4) for i in tt],
                         # [round(i,4) for i in fval], [round(i,4) for i in qopiTheta])
                     # print('\n')
                     theta = theta + timeStep
-                qopiMean += qopi/(pathInflows.getEndOfInflow(i)/timeStep)
+                # qopiMean += qopi/(pathInflows.getEndOfInflow(i)/timeStep)
+                commFlow = comd[2].integrate(comd[2].segmentBorders[0], comd[2].segmentBorders[-1])
+                # totalFlow += commFlow
+                qopiFlow += qopiInt/commFlow
+
             if verbose: print("Norm of change in flow (abs.) ", round(float(newAbsDiffBwFlows),4),\
                     " previous change ", round(float(oldAbsDiffBwFlows),4), " alpha ",\
-                    round(float(alpha),4), ' qopi ', round(qopi,4), ' qopiMean ',\
-                    round(qopiMean,4))
+                    # round(float(alpha),4), ' qopi ', round(qopi,4), ' qopiMean ', round(qopiMean,4))
+                    round(float(alpha),4), ' qopi ', round(qopi,4), ' qopiFlow ', round(qopiFlow,4))
             if verbose: print("Norm of change in flow (rel.) ", round(float(newRelDiffBwFlows),4),\
                     " previous change ", round(float(oldRelDiffBwFlows),4))
 
@@ -445,6 +460,7 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
 
         qopiIter.append(qopi)
         qopiMeanIter.append(qopiMean)
+        qopiFlowIter.append(qopiFlow)
         # alphaIter.append(alphaList)
         alphaIter.append(alpha)
         absDiffBwFlowsIter.append(newAbsDiffBwFlows)
@@ -457,22 +473,36 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
     print(stopStr)
     # Find path travel times for the final flow
     finalFlow = networkLoading(pathInflows, verbose=False)
+    # totalFlow = 0
     for i,comd in enumerate(commodities):
         ttravelTime = np.empty([len(pathInflows.fPlus[i]),\
                 math.ceil(pathInflows.getEndOfInflow(i)/timeStep)])
+        qopiPath = np.empty([len(pathInflows.fPlus[i]),\
+                math.ceil(pathInflows.getEndOfInflow(i)/timeStep)])
         theta = zero
         k = -1
+        commFlow = comd[2].integrate(comd[2].segmentBorders[0], comd[2].segmentBorders[-1])
         while theta < pathInflows.getEndOfInflow(i):
             k += 1
             for j,P in enumerate(pathInflows.fPlus[i]):
                  # fP = pathInflows.fPlus[i][P]
                  ttravelTime[j][k] = finalFlow.pathArrivalTime(P,\
                      theta + timeStep/2) - (theta + timeStep/2)
+            tmin = np.min(ttravelTime[:,k])
+            for j,P in enumerate(pathInflows.fPlus[i]):
+                val = fP[P].getValueAt(theta + timeStep/2)
+                # qopiPath[j][k] = (ttravelTime[j][k] - tmin)*val
+                qopiPath[j][k] = (ttravelTime[j][k] - tmin)*val/(tmin*commFlow)
             theta = theta + timeStep
-        # print("ttravelTime", np.shape(ttravelTime), ttravelTime)
+# print("ttravelTime", np.shape(ttravelTime), ttravelTime)
         travelTime.append(ttravelTime)
+        qopiPathComm.append(qopiPath)
     # print("travelTime", travelTime)
+    # print("qopiPath", qopiPathComm)
+    # exit(0)
     # print("qopiIter ", qopiIter)
     return pathInflows, alphaIter, absDiffBwFlowsIter, relDiffBwFlowsIter,\
-            travelTime, stopStr, alphaStr, qopiIter, qopiMeanIter
+            travelTime, stopStr, alphaStr, qopiIter, qopiFlowIter,\
+            qopiPathComm
+            # travelTime, stopStr, alphaStr, qopiIter, qopiMeanIter, qopiFlowIter,\
 

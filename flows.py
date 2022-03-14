@@ -267,8 +267,9 @@ class PartialFlowPathBased:
                                 self.fPlus[i][P].segmentValues[0] > 0):
                     # show edge ids with paths here
                     s += "    into path P" + str(j) + " " + self.network.printPathInNetwork(P) +\
-                            ": free flow travel time: " +\
-                            str(P.getFreeFlowTravelTime()) + ": \n"
+                            ": energy cons.: " + str(P.getNetEnergyConsump()) +\
+                            ": latency: " + str(P.getFreeFlowTravelTime()) +\
+                            ": \n"
                     s += str(self.fPlus[i][P]) + "\n"
         return s
 

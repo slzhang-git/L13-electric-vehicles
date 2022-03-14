@@ -25,7 +25,7 @@ print("Data: ", data.files)
 print("Termination message: ", data['stopStr'])
 print("Time taken: ", runTime)
 print("Iterations: ", len(data['alphaIter']))
-
+# print("QoPI (per unit flow): ", data['qopiFlowIter'])
 # print(fname,insName,timeHorizon,maxIter,precision,alpha,timeStep)
 # print("f: ", f, type(f), f.size, f.shape, f[()])
 # print("fPlus: ")
@@ -42,11 +42,12 @@ linestyles = ['solid', 'dashed', 'dashdot', 'dotted', '-', '--',\
 locs = ["upper left", "lower left", "center left", "center right", "upper right"]
 
 f = data['f']
+G = data['G']
 
 # TODO: Find the number of paths that have positive inflows etc. to find the exact
 # number of subplots (if required)
 # fig, axs = plt.subplots(len(f[np.newaxis][0].fPlus[0]) + 1)
-# print(f[()].fPlus)
+# print(f[()].fPlus[0])
 for c,p in enumerate(f[()].fPlus):
     # print('comm:%d'%c, f[()].fPlus[c], f[()].getEndOfInflow(c))
     # exit(0)
@@ -81,11 +82,32 @@ for c,p in enumerate(f[()].fPlus):
 
     k = -1
     k += 1
-    for i,p in enumerate(f[()].fPlus[0]):
+    figF, axsF = plt.subplots(1)
+    figB, axsB = plt.subplots(1)
+    u = sum([f[()].fPlus[c][p1].integrate(0,1) for p1 in f[()].fPlus[c]])
+    fmax = 0.2 + u
+    bmax = 1 + max([2*p.getNetEnergyConsump() for p in f[()].fPlus[c]])
+    bmin = min([2*p.getNetEnergyConsump() for p in f[()].fPlus[c]])
+    print('bmin ',bmin)
+    yBsum = []
+    # for p in f[()].fPlus[c]:
+        # fmax += f[()].fPlus[c][p].integrate(0,1)
+    for i,p1 in enumerate(f[()].fPlus[c]):
         # k += 1
         #TODO: Determine the right end of x-axis for plots
         # x,y = f[()].fPlus[0][p].getXandY(0,20)
-        x,y = f[()].fPlus[0][p].getXandY(0,f[()].getEndOfInflow(c))
+        x,y = f[()].fPlus[c][p1].getXandY(0,f[()].getEndOfInflow(c))
+        yB = [p1.getNetEnergyConsump()*2*v/u for v in y]
+        if (len(y) > 2):
+            xB = x
+            # [lambda: value_false, lambda: value_true][<test>]()
+            yBsum = [lambda:yB, lambda:[yBsum[i]+yB[i] for i,_ in enumerate(yB)]][len(yBsum)>0]()
+            axsB.plot(x,yB,label='path%d'%(i), color=colors[i], linestyle=linestyles[1], linewidth=10)
+        # print('i', i)
+        # print('y', len(y), y, p1.getNetEnergyConsump())
+        # print('yB', len(yB), yB)
+        # print('yBsum', len(yBsum), yBsum)
+
         # a,b = [int(c) for c in x],[int(c) for c in y]
         # print("i: ", i,a,b)
         # if max(y)>0:
@@ -94,31 +116,93 @@ for c,p in enumerate(f[()].fPlus):
         # axs[k].legend()
         # else:
             # k -= 1
+        axsF.plot(x,y,label='path%d'%(i), color=colors[i], linestyle=linestyles[1],
+                linewidth=10)
+        # axsB.plot(x,yB,label='Total', color=colors[i], linestyle=linestyles[1],
+                # linewidth=10)
+    # print('yBsum', yBsum)
+    # exit(0)
+    axsB.plot(xB,yBsum,label='Total', color=colors[-3], linestyle=linestyles[2],
+            linewidth=10)
+    axsB.plot(xB,[2*float(energyBudget) for i in xB], label=r'\b_{max}', color=colors[-2], linestyle=linestyles[2],
+            linewidth=10)
     axs[k].legend(loc='upper right')
     axs[k].set_title('Path Inflows', fontsize='xx-large')
     # plt.show()
+    axsF.legend(loc='best', fontsize=80, frameon=False, ncol=2)
+    axsF.set_xlabel(r'time ($\theta$)', fontsize=80)
+    axsB.legend(loc='best', fontsize=80, frameon=False, ncol=2)
+    axsB.set_xlabel(r'time ($\theta$)', fontsize=80)
 
-    #-----------------
-    # Travel Times
-    #-----------------
+    # Temporary: uncomment if y-ticks and y-labels are not needed
+    axsF.set_ylabel(r'Path Inflows ($f^+$)', fontsize=80)
+    axsB.set_ylabel(r'Battery Cons. Per Unit Flow', fontsize=80)
+
+    axsF.set_ylim([0, fmax])
+    axsB.set_ylim([0, bmax])
+
+    plt.setp(axsF.get_xticklabels(), fontsize=80)
+    plt.setp(axsF.get_yticklabels(), fontsize=80)
+
+    plt.setp(axsB.get_xticklabels(), fontsize=80)
+    plt.setp(axsB.get_yticklabels(), fontsize=80)
+
+    #------------------------
+    # Travel Times, QoPI_Path
+    #------------------------
     tt = data['travelTime']
+    qopi = data['qopiPathComm']
+    qopiFlow = data['qopiFlowIter']
     # print(tt)
     # print(tt[0][0], len(tt), len(tt[0]), len(tt[0][0]))
     # print(tt[c], len(tt[c]), len(tt[c][0]))
+
     x = [float(timeStep)/2 + x*float(timeStep) for x in\
         range(int((len(tt[0][0])-0)))]
     # print(timeHorizon, timeStep, x)
     k += 1
     # for i in range(len(tt)):
         # k += 1
+    figtt, axsT = plt.subplots(1)
+    figQ, axsQ = plt.subplots(1)
+    ttmax = np.amax(tt[c]) + 1
+    qmax = np.amax(qopi[c]) + np.amin(qopi[c][np.nonzero(qopi[c])])
+    qmax = 0.001
+
     for p in range(len(tt[c])):
         y = tt[c][p]
+        yQ = qopi[c][p]
+        # print(y)
         axs[k].plot(x,y,label='path%d'%p, color=colors[p], linestyle=linestyles[p])
+
+        axsT.plot(x,y,label='path%d'%(p), color=colors[p], linestyle=linestyles[1],
+                linewidth=10)
+        axsQ.plot(x,yQ,label='path%d'%(p), color=colors[p], linestyle=linestyles[1],
+                linewidth=10)
+
+        axsT.set_ylim([0, ttmax])
+        axsQ.set_ylim([0, qmax])
         # axs[k].plot(x,y,label='path%d'%p, linestyle=linestyles[p])
     axs[k].legend(loc='upper right')
     axs[k].set_xlabel('time', fontsize='xx-large')
     axs[k].set_title('Travel Times', fontsize='xx-large')
     # plt.show()
+
+    axsT.legend(loc='best', fontsize=80, frameon=False, ncol=2)
+    axsT.set_xlabel(r'time ($\theta$)', fontsize=80)
+    axsT.set_ylabel(r'travel time ($\psi$)', fontsize=80)
+
+    axsQ.legend(loc='best', fontsize=80, frameon=False, ncol=2)
+    axsQ.set_xlabel(r'time ($\theta$)', fontsize=80)
+    axsQ.set_ylabel(r'QoPI', fontsize=80)
+    axsQ.ticklabel_format(style='sci',scilimits=(0,0), axis='y')
+    axsQ.yaxis.get_offset_text().set_fontsize(80)
+
+    plt.setp(axsT.get_xticklabels(), fontsize=80)
+    plt.setp(axsT.get_yticklabels(), fontsize=80)
+    plt.setp(axsQ.get_xticklabels(), fontsize=80)
+    plt.setp(axsQ.get_yticklabels(), fontsize=80)
+    # axsT.set_title('Travel Times', fontsize='xx-large')
 
     #-----------------
     # Alpha and FlowDiff per iteration
@@ -127,7 +211,8 @@ for c,p in enumerate(f[()].fPlus):
     absDiffBwFlowsIter = data['absDiffBwFlowsIter']
     relDiffBwFlowsIter = data['relDiffBwFlowsIter']
     qopiIter = data['qopiIter']
-    qopiMeanIter = data['qopiMeanIter']
+    # qopiMeanIter = data['qopiMeanIter']
+    qopiFlowIter = data['qopiFlowIter']
     # a,b = [round(float(c),2) for c in alphaIter],[round(float(c),2) for c in diffBwFlowsIter]
     # print(a,b)
     x = [x+1 for x in range(len(alphaIter))]
@@ -148,8 +233,9 @@ for c,p in enumerate(f[()].fPlus):
     axs[k].legend(loc=locs[1], fontsize='x-large')
 
     k += 1
-    axs[k].plot(x,qopiIter,label='QoPI', color=colors[3], linestyle=linestyles[1])
-    axs[k].plot(x,qopiMeanIter,label='QoPIMean', color=colors[4], linestyle=linestyles[1])
+    # axs[k].plot(x,qopiIter,label='QoPI', color=colors[3], linestyle=linestyles[1])
+    # axs[k].plot(x,qopiMeanIter,label='QoPIMean', color=colors[4], linestyle=linestyles[1])
+    axs[k].plot(x,qopiFlowIter,label='QoPI (per unit flow)', color=colors[4], linestyle=linestyles[1])
     axs[k].set_xlabel('iteration', fontsize='xx-large')
     axs[k].legend(fontsize='x-large')
 
@@ -161,31 +247,51 @@ for c,p in enumerate(f[()].fPlus):
 
     plt.ylim(bottom=0)
 
-    mng = plt.get_current_fig_manager()
-    mng.full_screen_toggle()
-    plt.show()
+    # mng = plt.get_current_fig_manager()
+    # mng.full_screen_toggle()
+    figs = []
+    for i in plt.get_fignums():
+        # print(plt.gcf, plt.fignum_exists(i), i)
+        mng = plt.figure(i).canvas.manager
+        mng.full_screen_toggle()
+        # Save reference to the figures, else they are deleted after plt.show()
+        figs.append(plt.figure(i))
+    # plt.show()
     # plt.show(block=False)
     # plt.pause(.1)
-    plt.close()
-
-    # Save figure
-    dirname = os.path.expanduser('./figures')
-    fname1 = fname + '_comm%d'%c
-    # print(fname)
-    figname = os.path.join(dirname, fname1)
-    figname += '.png'
-    fig.savefig(figname, format='png', dpi=fig.dpi, bbox_inches='tight')
+    # plt.close()
 
     print('-------')
     print('Summary')
     print('-------')
     print("Termination message: ", data['stopStr'])
-    print("\nAttained DiffBwFlowsIters (abs.): %.4f"%absDiffBwFlowsIter[-2])
-    print("Attained DiffBwFlowsIters (rel.): %.4f"%relDiffBwFlowsIter[-2])
+    print("\nAttained DiffBwFlows (abs.): %.4f"%absDiffBwFlowsIter[-2])
+    print("Attained DiffBwFlows (rel.): %.4f"%relDiffBwFlowsIter[-2])
     print("\nAttained QoPI (abs.): %.4f"%qopiIter[-2])
-    print("Attained QoPI (mean): %.4f"%qopiMeanIter[-2])
+    print("Attained QoPI (per unit flow): ", qopiFlowIter[-2])
+    # print("Attained QoPI (mean): %.4f"%qopiMeanIter[-2])
     print("\nIterations : ", len(alphaIter))
     print("Elapsed wall time: ", runTime)
 
-    print("\noutput saved to file: %s"%figname)
-    # exit(0)
+    # print("\noutput saved to file: %s"%figname)
+
+    # Save figures
+    dirname = os.path.expanduser('./figures')
+    fname1 = fname + '_comm%d'%c
+    # print(fname)
+    plt.show()
+    for i,fig in enumerate(figs):
+        figname = os.path.join(dirname, fname1)
+        if i == 1:
+            figname += '_pathFlows'
+        elif i == 2:
+            figname += '_enerProfs'
+        elif i == 3:
+            figname += '_travTimes'
+        elif i == 4:
+            figname += '_qopiPaths'
+        figname += '.png'
+        print("\noutput saved to file: %s"%figname)
+        if i == 4:
+            fig.savefig(figname, format='png', dpi=fig.dpi, bbox_inches='tight')
+    plt.close()
