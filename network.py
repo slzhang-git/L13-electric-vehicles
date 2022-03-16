@@ -15,9 +15,10 @@ class Edge:
     tau: number
     nu: number
     ec: number
+    price: number
 
     def __init__(self, node_from: Node, node_to: Node, capacity: number=1,
-            traveltime: number=1, energyCons: number=0):
+            traveltime: number=1, energyCons: number=0, price: number=0):
         # Creating an edge from node_from to node_to
         self.node_from = node_from
         self.node_to = node_to
@@ -32,6 +33,10 @@ class Edge:
 
         # Energy consumption over this edge (can be negative)
         self.ec = energyCons
+
+        # Price of travelling over this edge
+        assert(price >= 0)
+        self.price = price
 
     def __str__(self):
         return "("+str(self.node_from)+","+str(self.node_to)+")"
@@ -95,10 +100,10 @@ class Network:
         return self.nodes[-1]
 
     def addEdge(self,node_from: Union[str,int,Node], node_to: Union[str,int,Node],
-            nu: number, tau: number, ec: number=zero):
+            nu: number, tau: number, ec: number=zero, price: number=zero):
         v = self.getNode(node_from)
         w = self.getNode(node_to)
-        e = Edge(v, w, nu, tau, ec)
+        e = Edge(v, w, nu, tau, ec, price)
         v.outgoing_edges.append(e)
         w.incoming_edges.append(e)
         self.edges.append(e)
@@ -176,8 +181,8 @@ class Network:
     # args: source (src), destination (dest), energy budget (EB)
     # TODO: Finding paths with cycles in the network
     # This function can find only those paths in which a node is visited just once
-    def findPaths(self, src, dest, EB: number=infinity, excludeSelfLoopNodes:
-            bool=False, verbose: bool=False) -> List[Path]:
+    def findPaths(self, src, dest, EB: number=infinity, PB: number=infinity,
+            excludeSelfLoopNodes: bool=False, verbose: bool=False) -> List[Path]:
         if excludeSelfLoopNodes:
             # Find nodes with self loops
             selfLoopNodes = [e.node_from for e in self.edges if e.node_from == e.node_to]
@@ -228,7 +233,8 @@ class Network:
                 if verbose: print("edge %d" %self.edges.index(e), e,
                         printPathInNetwork(path, self), path.isNodeInPath(e.node_to),
                         path.getEnergyConsump(), e.ec, (path.getEnergyConsump() + e.ec <= EB))
-                if (not path.isNodeInPath(e.node_to)) and (path.getEnergyConsump() + e.ec <= EB):
+                if (not path.isNodeInPath(e.node_to)) and (path.getEnergyConsump() + e.ec <= EB)\
+                        and (path.getPrice() + e.price <= PB):
                     newpath = Path(path.edges)
                     if verbose: print("newpath before append ", printPathInNetwork(newpath,self))
                     newpath.add_edge_at_end(e)
@@ -246,10 +252,11 @@ class Network:
     # destination dest including ones generated using concatenation of subpaths (i)
     # from src to nodes with self-loop (ii) from nodes with self-loop to dest (iii)
     # between nodes with self-loop
-    # args: source (src), destination (dest), energy budget (EB)
-    def findPathsWithLoops(self, src, dest, EB: number=infinity, verbose: bool=False) -> List[Path]:
+    # args: source (src), destination (dest), energy budget (EB), price budget (PB)
+    def findPathsWithLoops(self, src, dest, EB: number=infinity, PB: number=infinity,
+            verbose: bool=False) -> List[Path]:
         # (i) All energy feasible paths from src to dest
-        pathList = self.findPaths(src, dest, EB, excludeSelfLoopNodes=True)
+        pathList = self.findPaths(src, dest, EB, PB, excludeSelfLoopNodes=True)
         # print('paths: ',*(printPathInNetwork(p, self) for p in pathList), sep='\n')
 
         # (ii) All energy feasible paths involving nodes with self loops
@@ -270,20 +277,20 @@ class Network:
             # print('combs:',list(c), sep='\n')
         for comb in allCombs:
             print('comb: ',*(i for i in list(comb)), sep=',')
-            pathsComb = self.findPaths(src, comb[0], EB)
+            pathsComb = self.findPaths(src, comb[0], EB, PB)
             k = 1
             while k < len(comb):
                 pathsComb = self.joinFeasiblePaths(pathsComb,
-                        self.findPaths(comb[k-1], comb[k], EB), EB)
+                        self.findPaths(comb[k-1], comb[k], EB, PB), EB)
                 k += 1
             pathList = [*pathList, *self.joinFeasiblePaths(pathsComb,\
-                    self.findPaths(comb[-1], dest, EB), EB)]
+                    self.findPaths(comb[-1], dest, EB, PB), EB)]
             # print('pathsComb: ', *((self.printPathInNetwork(p),p.getEnergyConsump())
                 # for p in self.joinFeasiblePaths(pathsComb, self.findPaths(comb[-1],
                     # dest, EB), EB)), sep='\n')
-        print('pathsList: ', *((self.printPathInNetwork(p),p.getNetEnergyConsump(),\
-                p.getFreeFlowTravelTime()) for p in pathList), sep='\n')
-        # exit(0)
+        print('pathsList: ', *((self.printPathInNetwork(p), p.getPrice(),
+            p.getNetEnergyConsump(), p.getFreeFlowTravelTime()) for p in pathList),
+            sep='\n')
         return pathList
 
 
@@ -347,6 +354,12 @@ class Path:
         for e in self.edges:
             if not (e.node_from == e.node_to): ec += abs(e.ec)
         return ec
+
+    def getPrice(self):
+        totprice = 0
+        for e in self.edges:
+            totprice += e.price
+        return totprice
 
     def getNodesInPath(self) -> List[Node]:
         nodeList = [self.firstNode]
