@@ -1,0 +1,7 @@
+# Edge list
+# node_from node_to nu tau ec price
+s u 2 1 0 0
+s u 1 2 0 0
+u v 1 1 0 0
+v t 2 1 0 0
+v t 1/2 2 0 0
