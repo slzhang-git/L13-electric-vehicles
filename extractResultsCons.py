@@ -44,17 +44,13 @@ locs = ["upper left", "lower left", "center left", "center right", "upper right"
 f = data['f']
 G = data['G']
 
-# TODO: Find the number of paths that have positive inflows etc. to find the exact
-# number of subplots (if required)
-# fig, axs = plt.subplots(len(f[np.newaxis][0].fPlus[0]) + 1)
-# print(f[()].fPlus[0])
+fig, axs = plt.subplots(3)
 for c,p in enumerate(f[()].fPlus):
     # print('comm:%d'%c, f[()].fPlus[c], f[()].getEndOfInflow(c))
     # exit(0)
     print('Commodity: %d'%c)
 
     # Making figures for each commodity
-    fig, axs = plt.subplots(4)
 
     # Set fontsize
     params = {'legend.fontsize': 'x-large',
@@ -82,7 +78,6 @@ for c,p in enumerate(f[()].fPlus):
 
     k = -1
     k += 1
-    figF, axsF = plt.subplots(1)
     figB, axsB = plt.subplots(1)
     u = sum([f[()].fPlus[c][p1].integrate(0,1) for p1 in f[()].fPlus[c]])
     fmax = 0.2 + u
@@ -116,8 +111,6 @@ for c,p in enumerate(f[()].fPlus):
         # axs[k].legend()
         # else:
             # k -= 1
-        axsF.plot(x,y,label='path%d'%(i), color=colors[i], linestyle=linestyles[1],
-                linewidth=10)
         # axsB.plot(x,yB,label='Total', color=colors[i], linestyle=linestyles[1],
                 # linewidth=10)
     # print('yBsum', yBsum)
@@ -129,26 +122,19 @@ for c,p in enumerate(f[()].fPlus):
     axs[k].legend(loc='upper right')
     axs[k].set_title('Path Inflows', fontsize='xx-large')
     # plt.show()
-    axsF.legend(loc='best', fontsize=80, frameon=False, ncol=2)
-    axsF.set_xlabel(r'time ($\theta$)', fontsize=80)
     axsB.legend(loc='best', fontsize=80, frameon=False, ncol=2)
     axsB.set_xlabel(r'time ($\theta$)', fontsize=80)
 
     # Temporary: uncomment if y-ticks and y-labels are not needed
-    axsF.set_ylabel(r'Path Inflows ($f^+$)', fontsize=80)
     axsB.set_ylabel(r'Battery Cons. Per Unit Flow', fontsize=80)
 
-    axsF.set_ylim([0, fmax])
     axsB.set_ylim([0, bmax])
-
-    plt.setp(axsF.get_xticklabels(), fontsize=80)
-    plt.setp(axsF.get_yticklabels(), fontsize=80)
 
     plt.setp(axsB.get_xticklabels(), fontsize=80)
     plt.setp(axsB.get_yticklabels(), fontsize=80)
 
     #------------------------
-    # Travel Times, QoPI_Path
+    # QoPI
     #------------------------
     tt = data['travelTime']
     qopi = data['qopiPathComm']
@@ -163,8 +149,6 @@ for c,p in enumerate(f[()].fPlus):
     k += 1
     # for i in range(len(tt)):
         # k += 1
-    figtt, axsT = plt.subplots(1)
-    figQ, axsQ = plt.subplots(1)
     ttmax = np.amax(tt[c]) + 1
     qmax = np.amax(qopi[c]) + np.amin(qopi[c][np.nonzero(qopi[c])])
     qmax = 0.001
@@ -175,32 +159,13 @@ for c,p in enumerate(f[()].fPlus):
         # print(y)
         axs[k].plot(x,y,label='path%d'%p, color=colors[p], linestyle=linestyles[p])
 
-        axsT.plot(x,y,label='path%d'%(p), color=colors[p], linestyle=linestyles[1],
-                linewidth=10)
-        axsQ.plot(x,yQ,label='path%d'%(p), color=colors[p], linestyle=linestyles[1],
-                linewidth=10)
-
-        axsT.set_ylim([0, ttmax])
         axsQ.set_ylim([0, qmax])
         # axs[k].plot(x,y,label='path%d'%p, linestyle=linestyles[p])
-    axs[k].legend(loc='upper right')
+    axs[k].legend(loc='best')
     axs[k].set_xlabel('time', fontsize='xx-large')
     axs[k].set_title('Travel Times', fontsize='xx-large')
     # plt.show()
 
-    axsT.legend(loc='best', fontsize=80, frameon=False, ncol=2)
-    axsT.set_xlabel(r'time ($\theta$)', fontsize=80)
-    # axsT.set_ylabel(r'travel time ($\psi$)', fontsize=80)
-    axsT.set_ylabel(r'Aggregation function ($g$)', fontsize=80)
-
-    axsQ.legend(loc='best', fontsize=80, frameon=False, ncol=2)
-    axsQ.set_xlabel(r'time ($\theta$)', fontsize=80)
-    axsQ.set_ylabel(r'QoPI', fontsize=80)
-    axsQ.ticklabel_format(style='sci',scilimits=(0,0), axis='y')
-    axsQ.yaxis.get_offset_text().set_fontsize(80)
-
-    plt.setp(axsT.get_xticklabels(), fontsize=80)
-    plt.setp(axsT.get_yticklabels(), fontsize=80)
     plt.setp(axsQ.get_xticklabels(), fontsize=80)
     plt.setp(axsQ.get_yticklabels(), fontsize=80)
     # axsT.set_title('Travel Times', fontsize='xx-large')
@@ -281,18 +246,18 @@ for c,p in enumerate(f[()].fPlus):
     fname1 = fname + '_comm%d'%c
     # print(fname)
     plt.show()
-    for i,fig in enumerate(figs):
-        figname = os.path.join(dirname, fname1)
-        if i == 1:
-            figname += '_pathFlows'
-        elif i == 2:
-            figname += '_enerProfs'
-        elif i == 3:
-            figname += '_travTimes'
-        elif i == 4:
-            figname += '_qopiPaths'
-        figname += '.png'
-        print("\noutput saved to file: %s"%figname)
-        if i == 3:
-            fig.savefig(figname, format='png', dpi=fig.dpi, bbox_inches='tight')
+    # for i,fig in enumerate(figs):
+        # figname = os.path.join(dirname, fname1)
+        # if i == 1:
+            # figname += '_pathFlows'
+        # elif i == 2:
+            # figname += '_enerProfs'
+        # elif i == 3:
+            # figname += '_travTimes'
+        # elif i == 4:
+            # figname += '_qopiPaths'
+        # figname += '.png'
+        # print("\noutput saved to file: %s"%figname)
+        # if i == 4:
+            # fig.savefig(figname, format='png', dpi=fig.dpi, bbox_inches='tight')
     plt.close()
