@@ -481,6 +481,7 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
     finalFlow = networkLoading(pathInflows, verbose=False)
     # totalFlow = 0
     for i,comd in enumerate(commodities):
+        fP = newpathInflows.fPlus[i]
         ttravelTime = np.empty([len(pathInflows.fPlus[i]),\
                 math.ceil(pathInflows.getEndOfInflow(i)/timeStep)])
         qopiPath = np.empty([len(pathInflows.fPlus[i]),\
