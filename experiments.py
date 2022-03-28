@@ -42,7 +42,8 @@ def readNetwork(edgeList, verbose: bool=False) -> Network:
     # Reading ExtendedRational here to allow input data in fractions (e.g. 5/6)
     Gn = nx.read_edgelist(edgeList, comments='#', nodetype=str,\
             create_using=nx.MultiDiGraph, data=(("nu", ExtendedRational),\
-            ("tau", ExtendedRational), ("ec", ExtendedRational),))
+            ("tau", ExtendedRational), ("ec", ExtendedRational),\
+            ("price", ExtendedRational),))
     if verbose: print('edges: ', list(Gn.edges(data=True)))
     if verbose: print('nodes: ', list(Gn.nodes()))
 
@@ -53,7 +54,7 @@ def readNetwork(edgeList, verbose: bool=False) -> Network:
     # Converting to required data type (ExtendedRational or Float)
     for u,v,data in Gn.edges(data=True):
         G.addEdge(u,v,makeNumber(data['nu']), makeNumber(data['tau']),
-                makeNumber(data['ec']))
+                makeNumber(data['ec']), makeNumber(data['price']))
 
     #TODO: Plot the graph using nx
     return G
@@ -61,6 +62,7 @@ def readNetwork(edgeList, verbose: bool=False) -> Network:
 
 def readCommodities(commList) -> List[Tuple[Node, Node, PWConst]]:
     commodities = []
+    timesStartPos = 4
     with open(commList, 'r') as fobj:
         for line in fobj:
             # print('line ', line)
@@ -70,14 +72,17 @@ def readCommodities(commList) -> List[Tuple[Node, Node, PWConst]]:
                 data = [entry for entry in line.split()]
                 # print('data ', data, len(data)-2, data[2:len(data)-1])
                 # Create the PWConst function for this commodity
-                times = [makeNumber(i) for i in data[2:2+math.ceil(len(data)/2 -1)]]
-                vals = [makeNumber(i) for i in data[2+len(times):len(data)]]
+                # times = [makeNumber(i) for i in data[timesStartPos:timesStartPos+math.ceil(len(data)/2 -1)]]
+                times = [makeNumber(i) for i in data[timesStartPos:timesStartPos +\
+                        math.ceil((len(data)-timesStartPos)/2)]]
+                vals = [makeNumber(i) for i in data[timesStartPos+len(times):len(data)]]
                 # print(times, vals)
                 # The third argument = 0 means that the inflow rate is 0 for the rest of
                 # the real line outside the specified time intervals
                 pwcf = PWConst(times, vals, 0)
                 # print(pwcf)
-                commodities.append((G.getNode(data[0]), G.getNode(data[1]), pwcf))
+                commodities.append((G.getNode(data[0]), G.getNode(data[1]),
+                    makeNumber(data[2]), makeNumber(data[3]), pwcf))
     # print('comm: ', commodities)
     return commodities
 
@@ -90,10 +95,12 @@ if __name__ == "__main__":
     nuMin, nuMax = min([e.nu for e in G.edges]), max([e.nu for e in G.edges])
     tauMin, tauMax = min([e.tau for e in G.edges]), max([e.tau for e in G.edges])
     ecMin, ecMax = min([e.ec for e in G.edges]), max([e.ec for e in G.edges])
-    if True: print('Min.: nu = %.2f, tau = %.2f, ec = %.2f'%(round(float(nuMin),2),
-        round(float(tauMin),2), round(float(ecMin),2)))
-    if True: print('Max.: nu = %.2f, tau = %.2f, ec = %.2f'%(round(float(nuMax),2),
-        round(float(tauMax),2), round(float(ecMax),2)))
+    priceMin, priceMax = min([e.price for e in G.edges]), max([e.price for e in G.edges])
+    print([e.price for e in G.edges])
+    if True: print('Min.: nu = %.2f, tau = %.2f, ec = %.2f, price = %.2f'%(round(float(nuMin),2),
+        round(float(tauMin),2), round(float(ecMin),2), round(float(priceMin),2)))
+    if True: print('Max.: nu = %.2f, tau = %.2f, ec = %.2f, price = %.2f'%(round(float(nuMax),2),
+        round(float(tauMax),2), round(float(ecMax),2), round(float(priceMax),2)))
 
     commodities = readCommodities(argList[1])
 
@@ -103,20 +110,20 @@ if __name__ == "__main__":
     # fname += argList[-1]
 
     # Read arguments into required variables
-    [insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,energyBudget] = argList[2:len(argList)]
-    [insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,energyBudget] = [str(insName),\
+    [insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep] = argList[2:len(argList)]
+    [insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep] = [str(insName),\
             makeNumber(timeHorizon),int(maxIter),int(timeLimit),float(precision),\
-            makeNumber(alpha),makeNumber(timeStep),makeNumber(energyBudget)]
-    print("read args: insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,energyBudget")
-    print("values: ",insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,energyBudget)
+            makeNumber(alpha),makeNumber(timeStep)]
+    print("read args: insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep")
+    print("values: ",insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep)
 
     # Find list of paths for each commodity
     # TODO: put data checks
     pathList = []
-    for i,(s,t,u) in enumerate(commodities):
+    for i,(s,t,energyBudget,priceBudget,u) in enumerate(commodities):
         if False: print("i ", i,s,t,u)
         # pathList.append(G.findPaths(s, t, energyBudget))
-        paths = G.findPathsWithLoops(s, t, energyBudget)
+        paths = G.findPathsWithLoops(s, t, energyBudget, priceBudget)
         # print('len paths: ', len(paths))
         if len(paths) > 0:
             pathList.append(paths)
@@ -125,7 +132,7 @@ if __name__ == "__main__":
             exit(0)
         # for p in pathList:
             # print(p)
-    # exit(0)
+    exit(0)
 
     if True: print('Total number of paths: ', sum(len(x) for x in pathList))
     minTravelTime = infinity

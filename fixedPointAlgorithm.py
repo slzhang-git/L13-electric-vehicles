@@ -185,6 +185,8 @@ def fixedPointUpdate(currentFlow: PartialFlow, oldPathInflows: PartialFlowPathBa
                 # fprime=dualVarRootFuncGrad, method='newton')
 
             # Newton's method using a routine that return value and derivative
+            # TODO: pass an aggregate function value based on travel time and price
+            # of paths
             # sol = optimize.root_scalar(dualVarRootFuncComb, (adjAlpha, flowValue, travelTime,
             sol = optimize.root_scalar(dualVarRootFuncComb, (alpha, flowValue, travelTime,
                 timestepSize, ubar), x0=x0, bracket=[bracketLeft, bracketRight],
@@ -437,6 +439,10 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
                         # [round(i,4) for i in fval], [round(i,4) for i in qopiTheta])
                     # print('\n')
                     theta = theta + timeStep
+                # Integrate also over the interval [finalTheta, T]
+                for j,_ in enumerate(newpathInflows.fPlus[i]):
+                    qopiInt += ((oldqopi[j]-0)/2)*timeStep/tmin
+
                 # qopiMean += qopi/(pathInflows.getEndOfInflow(i)/timeStep)
                 commFlow = comd[2].integrate(comd[2].segmentBorders[0], comd[2].segmentBorders[-1])
                 # totalFlow += commFlow
