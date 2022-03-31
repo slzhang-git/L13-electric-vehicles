@@ -132,7 +132,7 @@ if __name__ == "__main__":
             exit(0)
         # for p in pathList:
             # print(p)
-    exit(0)
+    # exit(0)
 
     if True: print('Total number of paths: ', sum(len(x) for x in pathList))
     minTravelTime = infinity
@@ -157,8 +157,8 @@ if __name__ == "__main__":
     tEnd = time.time()
     # print("travelTimes: ", travelTime])
     print("travelTimes: ")
-    for i,(s,t,u) in enumerate(commodities):
-        print("comm ", i,s,t,u)
+    for i,(s,t,eb,pb,u) in enumerate(commodities):
+        print("comm ", i,s,t,eb,pb,u)
         for tt in travelTime[i]:
             print([round(float(a),4) for a in tt])
     eventualFlow = networkLoading(f)
@@ -200,7 +200,8 @@ if __name__ == "__main__":
     # dirname = os.path.expanduser('./npzfiles')
     dirname = os.path.expanduser('./miscfiles')
     fname += alphaStr.replace('/','By')
-    numpy.savez(os.path.join(dirname, fname),G=G,f=f,eventualFlow=eventualFlow,time=tEnd-tStart,\
+    numpy.savez(os.path.join(dirname, fname),G=G,commodities=commodities,f=f,\
+            eventualFlow=eventualFlow,time=tEnd-tStart,\
             alphaIter=alphaIter,absDiffBwFlowsIter=absDiffBwFlowsIter,\
             relDiffBwFlowsIter=relDiffBwFlowsIter,travelTime=travelTime,\
             # stopStr=stopStr,alphaStr=alphaStr,qopiIter=qopiIter,qopiMeanIter=qopiMeanIter,\

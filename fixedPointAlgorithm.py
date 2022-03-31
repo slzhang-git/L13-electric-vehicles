@@ -144,7 +144,7 @@ def fixedPointUpdate(currentFlow: PartialFlow, oldPathInflows: PartialFlowPathBa
 
             # Find integral value, ubar, of (piecewise constant) function u in this
             # subinterval
-            ubar = comd[2].integrate(theta, theta + timestepSize)
+            ubar = comd[4].integrate(theta, theta + timestepSize)
 
             # For adjusting alpha
             # uval = ubar/timestepSize
@@ -308,7 +308,7 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
     # Initial flow: For every commodity, select the shortest s-t path and send
     # all flow along this path (and 0 flow along all other paths)
     # alpha_0 = []
-    for i,(s,t,u) in enumerate(commodities):
+    for i,(s,t,_,_,u) in enumerate(commodities):
         flowlist = [PWConst([0,u.segmentBorders[-1]],[0],0)]*(len(pathList[i])-1)
         flowlist.insert(0,u)
         # print("set ", u, flowlist, pathList[i], pathInflows)
@@ -444,7 +444,7 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
                     qopiInt += ((oldqopi[j]-0)/2)*timeStep/tmin
 
                 # qopiMean += qopi/(pathInflows.getEndOfInflow(i)/timeStep)
-                commFlow = comd[2].integrate(comd[2].segmentBorders[0], comd[2].segmentBorders[-1])
+                commFlow = comd[4].integrate(comd[4].segmentBorders[0], comd[4].segmentBorders[-1])
                 # totalFlow += commFlow
                 qopiFlow += qopiInt/commFlow
 
@@ -488,7 +488,7 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
                 math.ceil(pathInflows.getEndOfInflow(i)/timeStep)])
         theta = zero
         k = -1
-        commFlow = comd[2].integrate(comd[2].segmentBorders[0], comd[2].segmentBorders[-1])
+        commFlow = comd[4].integrate(comd[4].segmentBorders[0], comd[4].segmentBorders[-1])
         while theta < pathInflows.getEndOfInflow(i):
             k += 1
             for j,P in enumerate(pathInflows.fPlus[i]):

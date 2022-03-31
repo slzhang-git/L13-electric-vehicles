@@ -1,2 +1,2 @@
 # node_from node_to energyBudget priceBudget time_0 time_1 time_2 ... flowValue_0_1 flowValue_1_2 ...
-s t 3 5 0 10 3
+s t 6 6 0 10 3
