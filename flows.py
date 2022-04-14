@@ -242,6 +242,9 @@ class PartialFlowPathBased:
             # print("fp for path: ", i, sep = '', end = ' ')
             # print(str(p), fp)
             # print(printPathInNetwork(p,self.network), fp)
+            if (p in self.fPlus[commodity]):
+                print('p: ',printPathInNetwork(p,self.network))
+                # print('comm: ', self.fPlus[commodity])
             assert (not p in self.fPlus[commodity])
             self.fPlus[commodity][p] = fp
 
@@ -258,6 +261,8 @@ class PartialFlowPathBased:
 
     def __str__(self) -> str:
         s = "Path inflow rates \n"
+        # TODO: Temporary: count of paths with positive flow
+        fPosCount = 0
         for i in range(self.noOfCommodities):
             s += "  of commodity " + str(i) + "\n"
             # print("fplus ", self.fPlus)
@@ -271,6 +276,8 @@ class PartialFlowPathBased:
                             ": latency: " + str(P.getFreeFlowTravelTime()) +\
                             ": \n"
                     s += str(self.fPlus[i][P]) + "\n"
+                    fPosCount += 1
+        print('Number of paths with positive flow: %d'%fPosCount)
         return s
 
 
