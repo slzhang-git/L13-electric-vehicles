@@ -72,7 +72,7 @@ for c,p in enumerate(f[()].fPlus):
     # TODO: Update and check the code to cater to each commodity
     # Final Results
     #-----------------
-    # Path Inflows
+    # Walk Inflows
     #-----------------
     fig.suptitle(r'ins=[%s], $T$=[%s], $maxIter$=[%s], $\epsilon$=[%s], $\alpha_0$=[%s],'\
     r' timeStep=[%s], $\alpha-$update rule: [%s]''\n runTime=%.2f'%(insName,timeHorizon,maxIter,precision,alpha,\
@@ -102,7 +102,7 @@ for c,p in enumerate(f[()].fPlus):
             xB = x
             # [lambda: value_false, lambda: value_true][<test>]()
             yBsum = [lambda:yB, lambda:[yBsum[i]+yB[i] for i,_ in enumerate(yB)]][len(yBsum)>0]()
-            axsB.plot(x,yB,label='path%d'%(i), color=colors[i], linestyle=linestyles[1], linewidth=10)
+            axsB.plot(x,yB,label='w%d'%(i), color=colors[i], linestyle=linestyles[1], linewidth=10)
         # print('i', i)
         # print('y', len(y), y, p1.getNetEnergyConsump())
         # print('yB', len(yB), yB)
@@ -111,12 +111,12 @@ for c,p in enumerate(f[()].fPlus):
         # a,b = [int(c) for c in x],[int(c) for c in y]
         # print("i: ", i,a,b)
         # if max(y)>0:
-        axs[k].plot(x,y,label='path%d'%i, color=colors[i], linestyle=linestyles[i])
-        # axs[k].plot(x,y,label='path%d'%i, linestyle=linestyles[i])
+        axs[k].plot(x,y,label='w%d'%i, color=colors[i], linestyle=linestyles[i])
+        # axs[k].plot(x,y,label='w%d'%i, linestyle=linestyles[i])
         # axs[k].legend()
         # else:
             # k -= 1
-        axsF.plot(x,y,label='path%d'%(i), color=colors[i], linestyle=linestyles[1],
+        axsF.plot(x,y,label='w%d'%(i), color=colors[i], linestyle=linestyles[1],
                 linewidth=10)
         # axsB.plot(x,yB,label='Total', color=colors[i], linestyle=linestyles[1],
                 # linewidth=10)
@@ -124,10 +124,10 @@ for c,p in enumerate(f[()].fPlus):
     # exit(0)
     axsB.plot(xB,yBsum,label='Total', color=colors[-3], linestyle=linestyles[2],
             linewidth=10)
-    axsB.plot(xB,[2*float(energyBudget) for i in xB], label=r'\b_{max}', color=colors[-2], linestyle=linestyles[2],
+    axsB.plot(xB,[2*float(energyBudget) for i in xB], label=r'$b_{max}$', color=colors[-2], linestyle=linestyles[2],
             linewidth=10)
     axs[k].legend(loc='upper right')
-    axs[k].set_title('Path Inflows', fontsize='xx-large')
+    axs[k].set_title('Walk Inflows', fontsize='xx-large')
     # plt.show()
     axsF.legend(loc='best', fontsize=80, frameon=False, ncol=2)
     axsF.set_xlabel(r'time ($\theta$)', fontsize=80)
@@ -135,7 +135,7 @@ for c,p in enumerate(f[()].fPlus):
     axsB.set_xlabel(r'time ($\theta$)', fontsize=80)
 
     # Temporary: uncomment if y-ticks and y-labels are not needed
-    axsF.set_ylabel(r'Path Inflows ($f^+$)', fontsize=80)
+    axsF.set_ylabel(r'Walk Inflows ($h^+$)', fontsize=80)
     axsB.set_ylabel(r'Battery Cons. Per Unit Flow', fontsize=80)
 
     axsF.set_ylim([0, fmax])
@@ -173,16 +173,16 @@ for c,p in enumerate(f[()].fPlus):
         y = tt[c][p]
         yQ = qopi[c][p]
         # print(y)
-        axs[k].plot(x,y,label='path%d'%p, color=colors[p], linestyle=linestyles[p])
+        axs[k].plot(x,y,label='w%d'%p, color=colors[p], linestyle=linestyles[p])
 
-        axsT.plot(x,y,label='path%d'%(p), color=colors[p], linestyle=linestyles[1],
+        axsT.plot(x,y,label='w%d'%(p), color=colors[p], linestyle=linestyles[1],
                 linewidth=10)
-        axsQ.plot(x,yQ,label='path%d'%(p), color=colors[p], linestyle=linestyles[1],
+        axsQ.plot(x,yQ,label='w%d'%(p), color=colors[p], linestyle=linestyles[1],
                 linewidth=10)
 
         axsT.set_ylim([0, ttmax])
         axsQ.set_ylim([0, qmax])
-        # axs[k].plot(x,y,label='path%d'%p, linestyle=linestyles[p])
+        # axs[k].plot(x,y,label='w%d'%p, linestyle=linestyles[p])
     axs[k].legend(loc='upper right')
     axs[k].set_xlabel('time', fontsize='xx-large')
     axs[k].set_title('Travel Times', fontsize='xx-large')
@@ -284,7 +284,7 @@ for c,p in enumerate(f[()].fPlus):
     for i,fig in enumerate(figs):
         figname = os.path.join(dirname, fname1)
         if i == 1:
-            figname += '_pathFlows'
+            figname += '_walkInflows'
         elif i == 2:
             figname += '_enerProfs'
         elif i == 3:
@@ -293,6 +293,6 @@ for c,p in enumerate(f[()].fPlus):
             figname += '_qopiPaths'
         figname += '.png'
         print("\noutput saved to file: %s"%figname)
-        if i == 3:
+        if i == 1 or i == 3 or i==4:
             fig.savefig(figname, format='png', dpi=fig.dpi, bbox_inches='tight')
     plt.close()
