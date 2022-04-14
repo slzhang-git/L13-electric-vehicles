@@ -346,8 +346,11 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
     # alphaStr = r'relExpoSmooth($\gamma/2$)'
     # alphaStr = r'min2ExpoSmooth($\gamma/2$)'
 
+    totDNLTime = 0
+    totFPUTime = 0
     tStart = time.time()
     iterFlow = networkLoading(pathInflows)
+    totDNLTime += time.time()-tStart
     print("\nTime taken in networkLoading(): ", round(time.time()-tStart,4))
 
     # flowVal = commodities[0][2].segmentValues[0]
@@ -359,6 +362,7 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
         tStart = time.time()
         newpathInflows, alpha = fixedPointUpdate(iterFlow, pathInflows, timeHorizon, alpha,
                 timeStep, commodities, verbose)
+        totFPUTime += time.time() - tStart
         print("\nTime taken in fixedPointUpdate(): ", round(time.time()-tStart,4))
 
         newAbsDiffBwFlows = differenceBetweenPathInflows(pathInflows,newpathInflows)
@@ -405,6 +409,7 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
             tStart = time.time()
             iterFlow = networkLoading(newpathInflows)
             tEnd = time.time()
+            totDNLTime += tEnd - tStart
             print("\nTime taken in networkLoading(): ", round(tEnd-tStart,4))
 
             qopi = 0
@@ -510,6 +515,6 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
     # print("qopiIter ", qopiIter)
     return pathInflows, alphaIter, absDiffBwFlowsIter, relDiffBwFlowsIter,\
             travelTime, stopStr, alphaStr, qopiIter, qopiFlowIter,\
-            qopiPathComm
+            qopiPathComm, totDNLTime, totFPUTime
             # travelTime, stopStr, alphaStr, qopiIter, qopiMeanIter, qopiFlowIter,\
 

@@ -96,7 +96,7 @@ if __name__ == "__main__":
     tauMin, tauMax = min([e.tau for e in G.edges]), max([e.tau for e in G.edges])
     ecMin, ecMax = min([e.ec for e in G.edges]), max([e.ec for e in G.edges])
     priceMin, priceMax = min([e.price for e in G.edges]), max([e.price for e in G.edges])
-    print([e.price for e in G.edges])
+    # print([e.price for e in G.edges])
     if True: print('Min.: nu = %.2f, tau = %.2f, ec = %.2f, price = %.2f'%(round(float(nuMin),2),
         round(float(tauMin),2), round(float(ecMin),2), round(float(priceMin),2)))
     if True: print('Max.: nu = %.2f, tau = %.2f, ec = %.2f, price = %.2f'%(round(float(nuMax),2),
@@ -110,29 +110,33 @@ if __name__ == "__main__":
     # fname += argList[-1]
 
     # Read arguments into required variables
-    [insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep] = argList[2:len(argList)]
-    [insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep] = [str(insName),\
+    [insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,numThreads] = argList[2:len(argList)]
+    [insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,numThreads] = [str(insName),\
             makeNumber(timeHorizon),int(maxIter),int(timeLimit),float(precision),\
-            makeNumber(alpha),makeNumber(timeStep)]
-    print("read args: insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep")
-    print("values: ",insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep)
+            makeNumber(alpha),makeNumber(timeStep),int(numThreads)]
+    print("read args: insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,numThreads")
+    print("values: ",insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,numThreads)
 
     # Find list of paths for each commodity
     # TODO: put data checks
     pathList = []
+    tStart = time.time()
     for i,(s,t,energyBudget,priceBudget,u) in enumerate(commodities):
-        if False: print("i ", i,s,t,u)
+        if True: print("\nFinding paths for comm %d: %s-%s"%(i,s,t),energyBudget,priceBudget,u)
         # pathList.append(G.findPaths(s, t, energyBudget))
         paths = G.findPathsWithLoops(s, t, energyBudget, priceBudget)
         # print('len paths: ', len(paths))
         if len(paths) > 0:
             pathList.append(paths)
         else:
-            print('No feasible paths found for comm.: ', i,s,t,u)
+            print('No feasible paths found for comm %d: '%i, s,t,energyBudget,priceBudget,u)
             exit(0)
-        # for p in pathList:
-            # print(p)
+        # for j,P in enumerate(paths):
+            # # print(P)
+             # print("path%d"%j, G.printPathInNetwork(P), ": energy cons.: ",
+                     # P.getNetEnergyConsump(), ": latency: ",P.getFreeFlowTravelTime())
     # exit(0)
+    print("\nTime taken in finding paths: ", round(time.time()-tStart,4))
 
     if True: print('Total number of paths: ', sum(len(x) for x in pathList))
     minTravelTime = infinity
@@ -149,28 +153,30 @@ if __name__ == "__main__":
     # Start
     tStart = time.time()
     f, alphaIter, absDiffBwFlowsIter, relDiffBwFlowsIter, travelTime, stopStr,\
-            alphaStr, qopiIter, qopiFlowIter, qopiPathComm =\
+            alphaStr, qopiIter, qopiFlowIter, qopiPathComm, totDNLTime, totFPUTime =\
             fixedPointAlgo(G, pathList, precision, commodities, timeHorizon,\
             maxIter, timeLimit, timeStep, alpha, True)
             # alphaStr, qopiIter, qopiMeanIter, qopiFlowIter, qopiPathComm =\
 
     tEnd = time.time()
     # print("travelTimes: ", travelTime])
-    print("travelTimes: ")
-    for i,(s,t,eb,pb,u) in enumerate(commodities):
-        print("comm ", i,s,t,eb,pb,u)
-        for tt in travelTime[i]:
-            print([round(float(a),4) for a in tt])
+    # print("travelTimes: ")
+    # for i,(s,t,eb,pb,u) in enumerate(commodities):
+        # print("comm ", i,s,t,eb,pb,u)
+        # for tt in travelTime[i]:
+            # print([round(float(a),4) for a in tt])
     eventualFlow = networkLoading(f)
-    print("eventualFlow: ", eventualFlow)
+    # print("eventualFlow: ", eventualFlow)
+    # print("Number of paths in f: ", sum([len(f.fPlus[i]) for i in
+        # f.noOfCommodities]))
     print("f: ", f)
-    print("queue at: ")
-    for id, e in enumerate(eventualFlow.network.edges):
-        if eventualFlow.queues[e].noOfSegments > 1 or\
-        (eventualFlow.queues[e].noOfSegments == 1 and\
-        (eventualFlow.queues[e].segmentTvalues[0] > 0 or\
-            eventualFlow.queues[e].segmentMvalues[0] > 0)):
-            print("edge %d: "%id, e, eventualFlow.queues[e])
+    # print("queue at: ")
+    # for id, e in enumerate(eventualFlow.network.edges):
+        # if eventualFlow.queues[e].noOfSegments > 1 or\
+        # (eventualFlow.queues[e].noOfSegments == 1 and\
+        # (eventualFlow.queues[e].segmentTvalues[0] > 0 or\
+            # eventualFlow.queues[e].segmentMvalues[0] > 0)):
+            # print("edge %d: "%id, e, eventualFlow.queues[e])
 
     # alpha and flowDiff
     ralphaIter = [round(float(a),4) for a in alphaIter]
@@ -194,7 +200,9 @@ if __name__ == "__main__":
     # print("Attained QoPI (mean): ", rqopiMeanIter[-2])
     print("Attained QoPI (per unit flow): ", rqopiFlowIter[-2])
     print("\nIterations : ", len(ralphaIter))
-    print("Elapsed wall time: ", round(tEnd-tStart,4))
+    print("\nMean time for DNL : ", round(totDNLTime/len(ralphaIter),4))
+    print("Mean time for FP Update : ", round(totFPUTime/len(ralphaIter),4))
+    print("\nElapsed wall time: ", round(tEnd-tStart,4))
 
     # Save the results to files
     # dirname = os.path.expanduser('./npzfiles')

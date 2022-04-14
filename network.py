@@ -7,6 +7,11 @@ from utilities import *
 from collections import deque
 import itertools
 
+# for parallel computations
+from joblib import Parallel, delayed
+import sys
+
+globPathList = []
 # A directed edge (from https://github.com/Schedulaar/predicted-dynamic-flows/blob/main/predictor/src/core/graph.py)
 # with capacity nu, travel time tau, and energy consumption ec
 class Edge:
@@ -162,7 +167,8 @@ class Network:
             return None
 
     # Concatenate two sets of (sub)paths while checking feasibility
-    def joinFeasiblePaths(self, P1: List[Path], P2: List[Path], EB: number=infinity) -> List[Path]:
+    def joinFeasiblePaths(self, P1: List[Path], P2: List[Path], EB: number=infinity,\
+            PB: number=infinity) -> List[Path]:
         pathList = []
         for p1 in P1:
             # print('for p1: ', self.printPathInNetwork(p1))
@@ -172,13 +178,14 @@ class Network:
                     pathList.append(self.joinPaths(p1, p2))
                 # else check feasibility
                 else:
-                    if p1.getEnergyConsump() + p2.getEnergyConsump() <= EB:
+                    if (p1.getEnergyConsump() + p2.getEnergyConsump() <= EB) and \
+                            (p1.getPrice() + p2.getPrice() <= PB):
                         pathList.append(self.joinPaths(p1, p2))
         return pathList
 
     # Find acyclic energy-feasible paths in the network from source src to
     # destination dest with/without excluding nodes with self loop
-    # args: source (src), destination (dest), energy budget (EB)
+    # args: source (src), destination (dest), energy budget (EB), price budget (PB)
     # TODO: Finding paths with cycles in the network
     # This function can find only those paths in which a node is visited just once
     def findPaths(self, src, dest, EB: number=infinity, PB: number=infinity,
@@ -248,6 +255,82 @@ class Network:
                 print(i, len(p), printPathInNetwork(p, self))
         return pathList
 
+    # TODO: Avoid creating duplicate paths (those without recharging edges)
+    # Removes duplicate paths from a list of paths.
+    def removeDuplicatePaths(self, pathList: List[Path]) -> List[Path]:
+        # print('Removing duplicate paths.')
+        noDupSet = set()
+        # dupes = []
+        dupCount = 0
+        for x in pathList:
+            if x not in noDupSet:
+                noDupSet.add(x)
+            else:
+                dupCount += 1
+                # dupes.append(x)
+        # print('duplicate: ', *((self.printPathInNetwork(p), p.getPrice(),
+            # p.getNetEnergyConsump(), p.getFreeFlowTravelTime()) for p in dupes),
+            # sep='\n')
+        print('Removed %d duplicate paths.'%dupCount)
+        return list(dict.fromkeys(noDupSet))
+
+
+    # Check if a path has a subpath in a list
+    def hasSubpath(self, s: Path) -> bool:
+        for p in globPathList:
+            if frozenset(s.edges) > frozenset(p.edges):
+                return True
+        return False
+
+
+    # Removes the dominated paths (ones that will not have positive flows due to
+    # presence of proper subpaths with a lower latency
+    # For full recharging, proper superset paths are dominated
+    def removeDominatedPathsPar(self) -> List[Path]:
+        print('Removing dominated paths in parallel.')
+        results = Parallel(n_jobs=int(sys.argv[10]), require='sharedmem', verbose=1)\
+                (delayed(self.hasSubpath)(s) for s in globPathList)
+        nonDomPathList = [globPathList[i] for i,j in enumerate(results) if not j]
+        print('Number of nondominated paths found: %d'%len(nonDomPathList))
+        return nonDomPathList
+
+
+    # Removes the dominated paths (ones that will not have positive flows due to
+    # presence of proper subpaths with a lower latency
+    # For full recharging, proper superset paths are dominated
+    def removeDominatedPaths(self) -> List[Path]:
+        print('Removing dominated paths.')
+        # pathSet = {frozenset(p.edges) for p in pathList}
+        # pathSet = dict.fromkeys(pathList).keys()
+        nonDomPathList = []
+        # while len(pathList) > 0:
+            # print('len(pathList) ', len(pathList))
+        for p in globPathList:
+            # if any(set(p.edges) > s for s in pathSet):
+                # continue
+            # else:
+                # nonDomPathList.append(p)
+            addToPaths = True
+            for s in globPathList:
+                # if p.edges[0].node_from == s.edges[0].node_from:
+                if frozenset(p.edges) > frozenset(s.edges):
+                    # print('dominated ', self.printPathInNetwork(p), ' by ', self.printPathInNetwork(s))
+                    # pathSet.remove(p)
+                    addToPaths = False
+                    break
+                # else:
+                    # nonDomPathList.append(p)
+                    # print('not dom. ', self.printPathInNetwork(p), ' by ', self.printPathInNetwork(s))
+            if addToPaths:
+                # print('not dom. ', self.printPathInNetwork(p))
+                nonDomPathList.append(p)
+            # pathList.remove(p)
+            # break
+        print('Number of nondominated paths found: %d'%len(nonDomPathList))
+        # exit(0)
+        return nonDomPathList
+
+
     # Find (cyclic) energy-feasible paths in the network from source src to
     # destination dest including ones generated using concatenation of subpaths (i)
     # from src to nodes with self-loop (ii) from nodes with self-loop to dest (iii)
@@ -255,9 +338,11 @@ class Network:
     # args: source (src), destination (dest), energy budget (EB), price budget (PB)
     def findPathsWithLoops(self, src, dest, EB: number=infinity, PB: number=infinity,
             verbose: bool=False) -> List[Path]:
+        global globPathList
         # (i) All energy feasible paths from src to dest
-        pathList = self.findPaths(src, dest, EB, PB, excludeSelfLoopNodes=True)
-        # print('paths: ',*(printPathInNetwork(p, self) for p in pathList), sep='\n')
+        globPathList = self.findPaths(src, dest, EB, PB, excludeSelfLoopNodes=True)
+        if False: print('Number of %s-%s paths with no recharging: '%(src,dest), len(globPathList))
+        # print('paths: ',*(printPathInNetwork(p, self) for p in globPathList), sep='\n')
 
         # (ii) All energy feasible paths involving nodes with self loops
         # Each such path will contain a node with self loop atmost once
@@ -276,22 +361,56 @@ class Network:
             # print('combs:',*(i for i in list(c)), sep='\n')
             # print('combs:',list(c), sep='\n')
         for comb in allCombs:
-            print('comb: ',*(i for i in list(comb)), sep=',')
+            if False: print('\nComb: %s'%src, *(i for i in list(comb)), dest, sep='-')
             pathsComb = self.findPaths(src, comb[0], EB, PB)
+            if False: print('number of subpaths from %s-%s: '%(src,comb[0]), len(pathsComb))
             k = 1
             while k < len(comb):
-                pathsComb = self.joinFeasiblePaths(pathsComb,
-                        self.findPaths(comb[k-1], comb[k], EB, PB), EB)
+                # pathsComb = self.joinFeasiblePaths(pathsComb,
+                        # self.findPaths(comb[k-1], comb[k], EB, PB), EB, PB)
+                pathsTmp = self.findPaths(comb[k-1], comb[k], EB, PB)
+                if False: print('number of subpaths from %s-%s: '%(comb[k-1],comb[k]), len(pathsTmp))
+                pathsComb = self.joinFeasiblePaths(pathsComb, pathsTmp, EB, PB)
+
+                if False: print('number of subpaths from %s--%s: '%(src,comb[k]), len(pathsComb))
                 k += 1
-            pathList = [*pathList, *self.joinFeasiblePaths(pathsComb,\
-                    self.findPaths(comb[-1], dest, EB, PB), EB)]
+            # globPathList = [*globPathList, *self.joinFeasiblePaths(pathsComb,\
+                    # self.findPaths(comb[-1], dest, EB, PB), EB, PB)]
+            pathsTmp = self.findPaths(comb[-1], dest, EB, PB)
+            if False: print('number of subpaths from %s-%s: '%(comb[-1], dest), len(pathsTmp))
+            pathsComb = self.joinFeasiblePaths(pathsComb, pathsTmp, EB, PB) 
+            globPathList = [*globPathList, *pathsComb]
+
             # print('pathsComb: ', *((self.printPathInNetwork(p),p.getEnergyConsump())
                 # for p in self.joinFeasiblePaths(pathsComb, self.findPaths(comb[-1],
                     # dest, EB), EB)), sep='\n')
-        print('pathsList: ', *((self.printPathInNetwork(p), p.getPrice(),
-            p.getNetEnergyConsump(), p.getFreeFlowTravelTime()) for p in pathList),
-            sep='\n')
-        return pathList
+            if False: print('paths added: ', len(globPathList))
+
+            globPathList = self.removeDuplicatePaths(globPathList)
+            print('paths found: %d'%len(globPathList))
+
+            if int(sys.argv[10]) == 1:
+                # globPathList = self.removeDominatedPaths(globPathList)
+                globPathList = self.removeDominatedPaths()
+            elif int(sys.argv[10]) == 0:
+                print('Not removing dominated paths.')
+            else:
+                # globPathList = self.removeDominatedPathsPar(globPathList)
+                globPathList = self.removeDominatedPathsPar()
+
+        print('Number of paths found: %d'%len(globPathList))
+        # print('pathsList: ', *((self.printPathInNetwork(p), p.getPrice(),
+            # p.getNetEnergyConsump(), p.getFreeFlowTravelTime()) for p in globPathList),
+            # sep='\n')
+
+        # globPathList = self.removeDuplicatePaths(globPathList)
+
+        # TODO: Ideally, we should add a path to the globPathList only if a subpath of it
+        # does not exist in the globPathList. The way we are constructing paths right now
+        # is compact code-wise but removing redundant paths later is more expensive
+        # globPathList = self.removeDominatedPaths(globPathList)
+        # exit(0)
+        return globPathList
 
 
 # A directed path
