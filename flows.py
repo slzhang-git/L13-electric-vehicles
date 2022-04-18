@@ -274,6 +274,7 @@ class PartialFlowPathBased:
                     s += "    into path P" + str(j) + " " + self.network.printPathInNetwork(P) +\
                             ": energy cons.: " + str(P.getNetEnergyConsump()) +\
                             ": latency: " + str(P.getFreeFlowTravelTime()) +\
+                            ": price: " + str(P.getPrice()) +\
                             ": \n"
                     s += str(self.fPlus[i][P]) + "\n"
                     fPosCount += 1
