@@ -337,7 +337,7 @@ class Network:
     # between nodes with self-loop
     # args: source (src), destination (dest), energy budget (EB), price budget (PB)
     def findPathsWithLoops(self, src, dest, EB: number=infinity, PB: number=infinity,
-            verbose: bool=False) -> List[Path]:
+            numThreads: number=1, verbose: bool=False) -> List[Path]:
         global globPathList
         # (i) All energy feasible paths from src to dest
         globPathList = self.findPaths(src, dest, EB, PB, excludeSelfLoopNodes=True)
@@ -389,10 +389,10 @@ class Network:
             globPathList = self.removeDuplicatePaths(globPathList)
             print('paths found: %d'%len(globPathList))
 
-            if int(sys.argv[10]) == 1:
+            if numThreads == 1:
                 # globPathList = self.removeDominatedPaths(globPathList)
                 globPathList = self.removeDominatedPaths()
-            elif int(sys.argv[10]) == 0:
+            elif numThreads == 0:
                 print('Not removing dominated paths.')
             else:
                 # globPathList = self.removeDominatedPathsPar(globPathList)

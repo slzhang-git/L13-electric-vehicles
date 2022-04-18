@@ -81,7 +81,8 @@ def findShortestFeasibleSTpath(time: number, s: Node, t: Node, flow:
 
 
 def fixedPointUpdate(currentFlow: PartialFlow, oldPathInflows: PartialFlowPathBased, timeHorizon:
-        number, alpha: float, timestepSize, commodities, verbose: bool) -> PartialFlowPathBased:
+        number, alpha: float, timestepSize, priceToDist: float, commodities, verbose:
+        bool) -> PartialFlowPathBased:
     # currentFlow = networkLoading(oldPathInflows)
 
     newPathInflows = PartialFlowPathBased(oldPathInflows.network, oldPathInflows.getNoOfCommodities())
@@ -95,6 +96,7 @@ def fixedPointUpdate(currentFlow: PartialFlow, oldPathInflows: PartialFlowPathBa
     for i,comd in enumerate(commodities):
         flowValue = [None]*len(oldPathInflows.fPlus[i])
         travelTime = [None]*len(oldPathInflows.fPlus[i])
+        price = [None]*len(oldPathInflows.fPlus[i])
         if False: print("Considering commodity ", i)
         newPathInflows.setPaths(i,[P for P in oldPathInflows.fPlus[i]],[PWConst([zero],[],zero) for P in oldPathInflows.fPlus[i]])
         s = newPathInflows.sources[i]
@@ -122,6 +124,7 @@ def fixedPointUpdate(currentFlow: PartialFlow, oldPathInflows: PartialFlowPathBa
                  travelTime[j] = float(currentFlow.pathArrivalTime(P,\
                      theta + timestepSize/2) - (theta + timestepSize/2))
                  flowValue[j] = float(fP.getValueAt(theta))
+                 price[j] = P.getPrice()
                  # maxTravelTime = max(maxTravelTime, travelTime[j])
                  # print("Path: ",printPathInNetwork(P,currentFlow.network),
                          # "flowValue: ", round(float(flowValue[j]),2), "travelTime: ",\
@@ -185,18 +188,24 @@ def fixedPointUpdate(currentFlow: PartialFlow, oldPathInflows: PartialFlowPathBa
                 # fprime=dualVarRootFuncGrad, method='newton')
 
             # Newton's method using a routine that return value and derivative
-            # TODO: pass an aggregate function value based on travel time and price
+            # TODO: pass an aggregation function value based on travel time and price
             # of paths
             # sol = optimize.root_scalar(dualVarRootFuncComb, (adjAlpha, flowValue, travelTime,
-            sol = optimize.root_scalar(dualVarRootFuncComb, (alpha, flowValue, travelTime,
-                timestepSize, ubar), x0=x0, bracket=[bracketLeft, bracketRight],
-                fprime=True, method='newton')
+            if priceToDist == 0:
+                sol = optimize.root_scalar(dualVarRootFuncComb, (alpha, flowValue, travelTime,
+                    timestepSize, ubar), x0=x0, bracket=[bracketLeft, bracketRight],
+                    fprime=True, method='newton')
+            else:
+                sol = optimize.root_scalar(dualVarRootFuncCombPrice, (alpha, flowValue,
+                    travelTime, priceToDist, price, timestepSize, ubar), x0=x0,
+                    bracket=[bracketLeft, bracketRight], fprime=True,
+                    method='newton')
 
             if not sol.converged:
                 print("The optimize.root_scalar() method has failed to converge due to the following reason:")
                 print("\"", sol.flag, "\"")
                 alpha = alpha/2 + uval/(2*max(travelTime))
-                sol = optimize.root_scalar(dualVarRootFuncComb, (alpha, flowValue, travelTime,
+                sol = optimize.root_scalar(dualVarRootFuncComb, (alpha, flowValue, travelTime, price, priceToDist,
                     timestepSize, ubar), x0=x0, bracket=[bracketLeft, bracketRight],
                     fprime=True, method='newton')
                 if not sol.converged:
@@ -248,10 +257,25 @@ def dualVarRootFuncGrad(x, alpha, flowValue, travelTime, timestepSize, ubar):
 
 def dualVarRootFuncComb(x, alpha, flowValue, travelTime, timestepSize, ubar):
     # print("printing args ", round(x,2),alpha,flowValue,travelTime,timestepSize,ubar)
+    # TODO: Read as input with each commodity
     termSum = 0
     gradTermSum = 0
     for j,fv in enumerate(flowValue):
         tmp = flowValue[j] - alpha*travelTime[j] + x
+        # print('tmp %.2f %.2f %.2f %.2f %.2f'%(flowValue[j], alpha, travelTime[j], x, tmp))
+        # tmp = flowValue[j] - alpha[j]*travelTime[j] + x
+        if tmp > 0:
+            termSum += tmp*timestepSize
+            gradTermSum += timestepSize
+    return float(termSum - ubar), float(gradTermSum)
+
+
+def dualVarRootFuncCombPrice(x, alpha, flowValue, travelTime, priceToDist, price, timestepSize, ubar):
+    # print("printing args ", round(x,2),alpha,flowValue,travelTime,timestepSize,ubar)
+    termSum = 0
+    gradTermSum = 0
+    for j,fv in enumerate(flowValue):
+        tmp = flowValue[j] - alpha*(travelTime[j] + priceToDist*price[j]) + x
         # print('tmp %.2f %.2f %.2f %.2f %.2f'%(flowValue[j], alpha, travelTime[j], x, tmp))
         # tmp = flowValue[j] - alpha[j]*travelTime[j] + x
         if tmp > 0:
@@ -294,7 +318,7 @@ def sumNormOfPathInflows(pathInflows : PartialFlowPathBased) -> number:
 def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commodities :
         List[Tuple[Node, Node, PWConst]], timeHorizon:
         number=infinity, maxSteps: int = None, timeLimit: int = infinity, timeStep: int = None,
-        alpha : float = None, verbose : bool = False) -> PartialFlowPathBased:
+        alpha : float = None, priceToDist : float = None, verbose : bool = False) -> PartialFlowPathBased:
     tStartAbs = time.time()
     step = 0
 
@@ -360,8 +384,9 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
         # newpathInflows = networkLoading(pathInflows,timeHorizon)
         # print("newpathInflows ", newpathInflows)
         tStart = time.time()
+        # TODO: Read priceToDist as input per commodity
         newpathInflows, alpha = fixedPointUpdate(iterFlow, pathInflows, timeHorizon, alpha,
-                timeStep, commodities, verbose)
+                timeStep, priceToDist, commodities, verbose)
         totFPUTime += time.time() - tStart
         print("\nTime taken in fixedPointUpdate(): ", round(time.time()-tStart,4))
 

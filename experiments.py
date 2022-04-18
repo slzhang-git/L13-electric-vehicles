@@ -110,12 +110,12 @@ if __name__ == "__main__":
     # fname += argList[-1]
 
     # Read arguments into required variables
-    [insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,numThreads] = argList[2:len(argList)]
-    [insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,numThreads] = [str(insName),\
+    [insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,priceToDist,numThreads] = argList[2:len(argList)]
+    [insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,priceToDist,numThreads] = [str(insName),\
             makeNumber(timeHorizon),int(maxIter),int(timeLimit),float(precision),\
-            makeNumber(alpha),makeNumber(timeStep),int(numThreads)]
-    print("read args: insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,numThreads")
-    print("values: ",insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,numThreads)
+            makeNumber(alpha),makeNumber(timeStep),makeNumber(priceToDist),int(numThreads)]
+    print("read args: insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,priceToDist,numThreads")
+    print("values: ",insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,priceToDist,numThreads)
 
     # Find list of paths for each commodity
     # TODO: put data checks
@@ -124,7 +124,7 @@ if __name__ == "__main__":
     for i,(s,t,energyBudget,priceBudget,u) in enumerate(commodities):
         if True: print("\nFinding paths for comm %d: %s-%s"%(i,s,t),energyBudget,priceBudget,u)
         # pathList.append(G.findPaths(s, t, energyBudget))
-        paths = G.findPathsWithLoops(s, t, energyBudget, priceBudget)
+        paths = G.findPathsWithLoops(s, t, energyBudget, priceBudget, numThreads)
         # print('len paths: ', len(paths))
         if len(paths) > 0:
             pathList.append(paths)
@@ -155,7 +155,7 @@ if __name__ == "__main__":
     f, alphaIter, absDiffBwFlowsIter, relDiffBwFlowsIter, travelTime, stopStr,\
             alphaStr, qopiIter, qopiFlowIter, qopiPathComm, totDNLTime, totFPUTime =\
             fixedPointAlgo(G, pathList, precision, commodities, timeHorizon,\
-            maxIter, timeLimit, timeStep, alpha, True)
+            maxIter, timeLimit, timeStep, alpha, priceToDist, True)
             # alphaStr, qopiIter, qopiMeanIter, qopiFlowIter, qopiPathComm =\
 
     tEnd = time.time()

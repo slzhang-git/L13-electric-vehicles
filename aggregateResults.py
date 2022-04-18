@@ -21,7 +21,7 @@ import matplotlib.transforms as transforms
 data = np.load(sys.argv[1], allow_pickle=True);
 fname = os.path.splitext(os.path.split(sys.argv[1])[1])[0]
 print(re.split('[_]', fname))
-[insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,alphaStr,numThreads] = re.split('[_]', fname)
+[insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,alphaStr,priceToDist,numThreads] = re.split('[_]', fname)
 runTime = round(float(data['time']),2)
 print("Data: ", data.files)
 print("Termination message: ", data['stopStr'])
@@ -94,7 +94,6 @@ f = data['f']
     # figF, axsF = plt.subplots(1)
     # figB, axsB = plt.subplots(1)
     # u = sum([f[()].fPlus[c][p1].integrate(0,1) for p1 in f[()].fPlus[c]])
-    # fmax = 0.2 + u
     # # bmax = 1 + max([2*p.getNetEnergyConsump() for p in f[()].fPlus[c]])
     # bmax =13
     # bmin = min([p.getNetEnergyConsump() for p in f[()].fPlus[c]])
@@ -410,13 +409,121 @@ lns = l3 + l1 + l2
 labs = [l.get_label() for l in lns]
 axsD.legend(lns, labs, loc='best', fontsize=80, frameon=False)
 
+
+# ENERGY PROFILES
+bmax = 30
+figB, axsB = plt.subplots(1)
+yBsum1 = []
+for c,p in enumerate(f[()].fPlus):
+    u = sum([f[()].fPlus[c][p1].integrate(0,1) for p1 in f[()].fPlus[c]])
+    # bmax = 1 + max([2*p.getNetEnergyConsump() for p in f[()].fPlus[c]])
+    # bmax =13
+    # bmin = min([p.getNetEnergyConsump() for p in f[()].fPlus[c]])
+    # for p in f[()].fPlus[c]:
+      # # print(p, p.getNetEnergyConsump())
+    # print('bmin ',bmin)
+    yBsum = []
+    # yBsum1 = []
+    tt = data['travelTime']
+    xB1 = [float(timeStep)/2 + x*float(timeStep) for x in range(int((len(tt[0][0])-0)))]
+
+    for i,p1 in enumerate(f[()].fPlus[c]):
+      x,y = f[()].fPlus[c][p1].getXandY(0,f[()].getEndOfInflow(c))
+      # yB = [p1.getNetEnergyConsump()*v/u for v in y]
+      y1 = [f[()].fPlus[c][p1].getValueAt(i) for i in xB1]
+      yB1 = [p1.getNetEnergyConsump()*v/u for v in y1]
+      print('x', x)
+      print('y', y)
+      print('xB1', xB1)
+      print('yB1', yB1)
+      # TODO: set a compact logic for the following line
+      if (len(y) > 2) or (len(y) > 1 and y[0]>0):
+          xB = x
+          # [lambda: value_false, lambda: value_true][<test>]()
+          # yBsum = [lambda:yB, lambda:[yBsum[i]+yB[i] for i,_ in enumerate(yB)]][len(yBsum)>0]()
+          yBsum1 = [lambda:yB1, lambda:[yBsum1[i]+yB1[i] for i,_ in enumerate(yB1)]][len(yBsum1)>0]()
+          print('i', i, p1.getNetEnergyConsump())
+          # print(yB)
+          # axsB.plot(x,yB,label='w%d'%(i+1), color=colors[i+1], linestyle=linestyles[1], linewidth=10)
+      # print('i', i)
+      # print('y', len(y), y, p1.getNetEnergyConsump())
+      # print('yB', len(yB), yB)
+      # print('yBsum', len(yBsum), yBsum)
+
+      # a,b = [int(c) for c in x],[int(c) for c in y]
+      # print("i: ", i,a,b)
+      # axsB.plot(x,yB,label='Total', color=colors[i], linestyle=linestyles[1],
+              # linewidth=10)
+print('yBsum1', yBsum1)
+axsB.plot(xB1,yBsum1,label=r'without recharging', color='cyan', linestyle=linestyles[1],
+      linewidth=10)
+axsB.legend(loc='best', fontsize=80, frameon=False)
+axsB.set_xlabel(r'time ($\theta$)', fontsize=80)
+
+# Temporary: uncomment if y-ticks and y-labels are not needed
+# axsB.set_ylabel(r'Battery Consump. / Unit Flow', fontsize=80)
+
+# axsB.set_ylim([0, bmax])
+# axsB.set_ylim(bottom=float(energyBudget))
+
+plt.setp(axsB.get_xticklabels(), fontsize=80)
+plt.setp(axsB.get_yticklabels(), fontsize=80)
+
+### ADDITIONAL ENERGY PROFILES
+# Reading another data file
+if len(sys.argv) > 2:
+    data1 = np.load(sys.argv[2], allow_pickle=True);
+    f1 = data1['f']
+    fname1 = os.path.splitext(os.path.split(sys.argv[2])[1])[0]
+    print(re.split('[_]', fname1))
+    [insName1,timeHorizon1,maxIter1,timeLimit1,precision1,alpha1,timeStep1,alphaStr1,numThreads] = re.split('[_]', fname1)
+
+    yBsum1 = []
+    for c,p in enumerate(f[()].fPlus):
+        u = sum([f[()].fPlus[c][p1].integrate(0,1) for p1 in f[()].fPlus[c]])
+        yBsum = []
+        tt = data1['travelTime']
+        xB1 = [float(timeStep)/2 + x*float(timeStep) for x in range(int((len(tt[0][0])-0)))]
+        for i,p1 in enumerate(f1[()].fPlus[c]):
+            x,y = f1[()].fPlus[c][p1].getXandY(0,f[()].getEndOfInflow(c))
+            y1 = [f1[()].fPlus[c][p1].getValueAt(i) for i in xB1]
+            # yB = [p1.getNetEnergyConsump()*v/u for v in y]
+            yB1 = [p1.getNetEnergyConsump()*v/u for v in y1]
+            print('x', x)
+            print('y', y)
+            print('xB1', xB1)
+            print('yB1', yB1)
+            if (len(y) > 2) or (len(y) > 1 and y[0]>0):
+              xB = x
+              # [lambda: value_false, lambda: value_true][<test>]()
+              yBsum1 = [lambda:yB1, lambda:[yBsum1[i]+yB1[i] for i,_ in
+                  enumerate(yB1)]][len(yBsum1)>0]()
+              print('i', i, p1.getNetEnergyConsump())
+              # print(yB)
+              # axsB.plot(x,yB,label='w%d'%(i+1), color=colors[i+1], linestyle=linestyles[1], linewidth=10)
+    print('yBsum1', yBsum1)
+    axsB.plot(xB1,yBsum1,label=r'with recharging ($p_{i,e} = 0$)', color='darkgreen', linestyle=linestyles[1],
+          linewidth=10)
+    # axsB.plot(xB,[float(energyBudget) for i in xB], label=r'$b^{max}$', color=colors[-2],
+            # linestyle='dotted', linewidth=10)
+    axsB.legend(loc='best', fontsize=80, frameon=False)
+    # axsB.set_xlabel(r'time ($\theta$)', fontsize=80)
+
+    axsB.set_ylabel(r'Battery Consump. / Unit Flow', fontsize=80)
+    # axsB.set_ylim([0, bmax])
+    # axsB.set_ylim(bottom=float(energyBudget))
+    axsB.set_ylim([float(energyBudget), bmax])
+
+    # plt.setp(axsB.get_xticklabels(), fontsize=80)
+    # plt.setp(axsB.get_yticklabels(), fontsize=80)
+
+###############
 figs = []
 for i in plt.get_fignums():
     mng = plt.figure(i).canvas.manager
     mng.full_screen_toggle()
     # Save reference to the figures, else they are deleted after plt.show()
     figs.append(plt.figure(i))
-
 
 print('-------')
 print('Summary')
@@ -430,14 +537,6 @@ print("Attained QoPI (per unit flow): %.5f"%qopiFlowIter[-2])
 print("\nIterations : ", len(alphaIter))
 print("Elapsed wall time: ", runTime)
 
-
-# Energy Profiles
-# Reading another data file
-data1 = np.load(sys.argv[2], allow_pickle=True);
-f1 = data1['f']
-fname1 = os.path.splitext(os.path.split(sys.argv[2])[1])[0]
-print(re.split('[_]', fname1))
-[insName1,timeHorizon1,maxIter1,timeLimit1,precision1,alpha1,timeStep1,alphaStr1] = re.split('[_]', fname1)
 
 # Save figures
 dirname = os.path.expanduser('./figures')
@@ -456,6 +555,6 @@ for i,fig in enumerate(figs):
         # figname += '_qopiWalks'
     figname += '.png'
     print("\noutput saved to file: %s"%figname)
-    if i == 0:
+    if i == -1:
         fig.savefig(figname, format='png', dpi=fig.dpi, bbox_inches='tight')
 plt.close()
