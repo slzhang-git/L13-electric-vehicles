@@ -20,8 +20,14 @@ import matplotlib.transforms as transforms
 # TODO: Use pickle to store class objects
 data = np.load(sys.argv[1], allow_pickle=True);
 fname = os.path.splitext(os.path.split(sys.argv[1])[1])[0]
-print(re.split('[_]', fname))
-[insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,alphaStr,priceToDist,numThreads] = re.split('[_]', fname)
+print(re.split('[_]', fname), len(re.split('[_]', fname)))
+if len(re.split('[_]', fname)) > 9:
+    [insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,priceToTime,numThreads,alphaStr] = re.split('[_]', fname)
+else:
+    if len(re.split('[_]', fname)) > 8:
+        [insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,numThreads,alphaStr] = re.split('[_]', fname)
+    else:
+        [insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,alphaStr] = re.split('[_]', fname)
 runTime = round(float(data['time']),2)
 print("Data: ", data.files)
 print("Termination message: ", data['stopStr'])
@@ -368,6 +374,14 @@ alphaIter = data['alphaIter']
 relDiffBwFlowsIter = data['relDiffBwFlowsIter']
 qopiIter = data['qopiIter']
 
+# Adjust inf
+# if qopiFlowIter[-1] == math.inf:
+    # qopiFlowIter[-1] = qopiFlowIter[-2]
+    # print(qopiFlowIter)
+# else:
+    # print(qopiFlowIter[-1])
+    # exit(0)
+
 prec = float(precision)
 x = [x+1 for x in range(len(alphaIter))]
 
@@ -415,6 +429,7 @@ bmax = 30
 figB, axsB = plt.subplots(1)
 yBsum1 = []
 for c,p in enumerate(f[()].fPlus):
+    print('Comm.',c)
     u = sum([f[()].fPlus[c][p1].integrate(0,1) for p1 in f[()].fPlus[c]])
     # bmax = 1 + max([2*p.getNetEnergyConsump() for p in f[()].fPlus[c]])
     # bmax =13
@@ -428,36 +443,37 @@ for c,p in enumerate(f[()].fPlus):
     xB1 = [float(timeStep)/2 + x*float(timeStep) for x in range(int((len(tt[0][0])-0)))]
 
     for i,p1 in enumerate(f[()].fPlus[c]):
-      x,y = f[()].fPlus[c][p1].getXandY(0,f[()].getEndOfInflow(c))
-      # yB = [p1.getNetEnergyConsump()*v/u for v in y]
-      y1 = [f[()].fPlus[c][p1].getValueAt(i) for i in xB1]
-      yB1 = [p1.getNetEnergyConsump()*v/u for v in y1]
-      print('x', x)
-      print('y', y)
-      print('xB1', xB1)
-      print('yB1', yB1)
-      # TODO: set a compact logic for the following line
-      if (len(y) > 2) or (len(y) > 1 and y[0]>0):
-          xB = x
-          # [lambda: value_false, lambda: value_true][<test>]()
-          # yBsum = [lambda:yB, lambda:[yBsum[i]+yB[i] for i,_ in enumerate(yB)]][len(yBsum)>0]()
-          yBsum1 = [lambda:yB1, lambda:[yBsum1[i]+yB1[i] for i,_ in enumerate(yB1)]][len(yBsum1)>0]()
-          print('i', i, p1.getNetEnergyConsump())
-          # print(yB)
-          # axsB.plot(x,yB,label='w%d'%(i+1), color=colors[i+1], linestyle=linestyles[1], linewidth=10)
-      # print('i', i)
-      # print('y', len(y), y, p1.getNetEnergyConsump())
-      # print('yB', len(yB), yB)
-      # print('yBsum', len(yBsum), yBsum)
+        x,y = f[()].fPlus[c][p1].getXandY(0,f[()].getEndOfInflow(c))
+        # yB = [p1.getNetEnergyConsump()*v/u for v in y]
+        y1 = [f[()].fPlus[c][p1].getValueAt(i) for i in xB1]
+        yB1 = [p1.getNetEnergyConsump()*v/u for v in y1]
+        print('x', x)
+        print('y', y)
+        print('xB1', xB1)
+        print('yB1', yB1)
+        # TODO: set a compact logic for the following line
+        if (len(y) > 2) or (len(y) > 1 and y[0]>0):
+            xB = x
+            # [lambda: value_false, lambda: value_true][<test>]()
+            # yBsum = [lambda:yB, lambda:[yBsum[i]+yB[i] for i,_ in enumerate(yB)]][len(yBsum)>0]()
+            yBsum1 = [lambda:yB1, lambda:[yBsum1[i]+yB1[i] for i,_ in enumerate(yB1)]][len(yBsum1)>0]()
+            print('i', i, p1.getNetEnergyConsump())
+            # print(yB)
+            # axsB.plot(x,yB,label='w%d'%(i+1), color=colors[i+1], linestyle=linestyles[1], linewidth=10)
+        # print('i', i)
+        # print('y', len(y), y, p1.getNetEnergyConsump())
+        # print('yB', len(yB), yB)
+        print('yBsum1', len(yBsum1), yBsum1)
+    print('yBsum1', len(yBsum1), yBsum1)
 
       # a,b = [int(c) for c in x],[int(c) for c in y]
       # print("i: ", i,a,b)
       # axsB.plot(x,yB,label='Total', color=colors[i], linestyle=linestyles[1],
               # linewidth=10)
 print('yBsum1', yBsum1)
-axsB.plot(xB1,yBsum1,label=r'without recharging', color='cyan', linestyle=linestyles[1],
+axsB.plot(xB1,yBsum1,label=r'no r/c', color='cyan', linestyle=linestyles[1],
       linewidth=10)
-axsB.legend(loc='best', fontsize=80, frameon=False)
+# axsB.legend(loc='best', fontsize=80, frameon=False)
 axsB.set_xlabel(r'time ($\theta$)', fontsize=80)
 
 # Temporary: uncomment if y-ticks and y-labels are not needed
@@ -472,52 +488,89 @@ plt.setp(axsB.get_yticklabels(), fontsize=80)
 ### ADDITIONAL ENERGY PROFILES
 # Reading another data file
 if len(sys.argv) > 2:
-    data1 = np.load(sys.argv[2], allow_pickle=True);
-    f1 = data1['f']
-    fname1 = os.path.splitext(os.path.split(sys.argv[2])[1])[0]
-    print(re.split('[_]', fname1))
-    [insName1,timeHorizon1,maxIter1,timeLimit1,precision1,alpha1,timeStep1,alphaStr1,numThreads] = re.split('[_]', fname1)
+    for j in range(len(sys.argv)-2):
+        print('j',j,len(sys.argv))
+        data1 = np.load(sys.argv[2+j], allow_pickle=True);
+        f1 = data1['f']
+        fname1 = os.path.splitext(os.path.split(sys.argv[2+j])[1])[0]
+        print(re.split('[_]', fname1))
+        [insName1,timeHorizon1,maxIter1,timeLimit1,precision1,alpha1,timeStep1,priceToTime,numThreads,alphaStr1] = re.split('[_]', fname1)
 
-    yBsum1 = []
-    for c,p in enumerate(f[()].fPlus):
-        u = sum([f[()].fPlus[c][p1].integrate(0,1) for p1 in f[()].fPlus[c]])
-        yBsum = []
-        tt = data1['travelTime']
-        xB1 = [float(timeStep)/2 + x*float(timeStep) for x in range(int((len(tt[0][0])-0)))]
-        for i,p1 in enumerate(f1[()].fPlus[c]):
-            x,y = f1[()].fPlus[c][p1].getXandY(0,f[()].getEndOfInflow(c))
-            y1 = [f1[()].fPlus[c][p1].getValueAt(i) for i in xB1]
-            # yB = [p1.getNetEnergyConsump()*v/u for v in y]
-            yB1 = [p1.getNetEnergyConsump()*v/u for v in y1]
-            print('x', x)
-            print('y', y)
-            print('xB1', xB1)
-            print('yB1', yB1)
-            if (len(y) > 2) or (len(y) > 1 and y[0]>0):
-              xB = x
-              # [lambda: value_false, lambda: value_true][<test>]()
-              yBsum1 = [lambda:yB1, lambda:[yBsum1[i]+yB1[i] for i,_ in
-                  enumerate(yB1)]][len(yBsum1)>0]()
-              print('i', i, p1.getNetEnergyConsump())
-              # print(yB)
-              # axsB.plot(x,yB,label='w%d'%(i+1), color=colors[i+1], linestyle=linestyles[1], linewidth=10)
-    print('yBsum1', yBsum1)
-    axsB.plot(xB1,yBsum1,label=r'with recharging ($p_{i,e} = 0$)', color='darkgreen', linestyle=linestyles[1],
-          linewidth=10)
-    # axsB.plot(xB,[float(energyBudget) for i in xB], label=r'$b^{max}$', color=colors[-2],
-            # linestyle='dotted', linewidth=10)
-    axsB.legend(loc='best', fontsize=80, frameon=False)
-    # axsB.set_xlabel(r'time ($\theta$)', fontsize=80)
+        yBsum1 = []
+        for c,p in enumerate(f[()].fPlus):
+            u = sum([f[()].fPlus[c][p1].integrate(0,1) for p1 in f[()].fPlus[c]])
+            yBsum = []
+            tt = data1['travelTime']
+            xB1 = [float(timeStep)/2 + x*float(timeStep) for x in range(int((len(tt[0][0])-0)))]
+            for i,p1 in enumerate(f1[()].fPlus[c]):
+                x,y = f1[()].fPlus[c][p1].getXandY(0,f[()].getEndOfInflow(c))
+                y1 = [f1[()].fPlus[c][p1].getValueAt(i) for i in xB1]
+                # yB = [p1.getNetEnergyConsump()*v/u for v in y]
+                yB1 = [p1.getNetEnergyConsump()*v/u for v in y1]
+                print('x', x)
+                print('y', y)
+                print('xB1', xB1)
+                print('yB1', yB1)
+                if (len(y) > 2) or (len(y) > 1 and y[0]>0):
+                  xB = x
+                  # [lambda: value_false, lambda: value_true][<test>]()
+                  yBsum1 = [lambda:yB1, lambda:[yBsum1[i]+yB1[i] for i,_ in
+                      enumerate(yB1)]][len(yBsum1)>0]()
+                  print('i', i, p1.getNetEnergyConsump())
+                  # print(yB)
+                  # axsB.plot(x,yB,label='w%d'%(i+1), color=colors[i+1], linestyle=linestyles[1], linewidth=10)
+        print('yBsum1', yBsum1)
+        axsB.plot(xB1,yBsum1,label=r'$\widetilde{\lambda}_i = %d$'%int(priceToTime), color=colors[j], linestyle=linestyles[1],
+              linewidth=10)
+        # axsB.plot(xB1,yBsum1,label=r'with recharging', color=colors[j], linestyle=linestyles[1],
+              # linewidth=10)
+        # axsB.plot(xB,[float(energyBudget) for i in xB], label=r'$b^{max}$', color=colors[-2],
+                # linestyle='dotted', linewidth=10)
+axsB.legend(loc='best', fontsize=80, frameon=False, ncol=3)
+# axsB.set_xlabel(r'time ($\theta$)', fontsize=80)
 
-    axsB.set_ylabel(r'Battery Consump. / Unit Flow', fontsize=80)
-    # axsB.set_ylim([0, bmax])
-    # axsB.set_ylim(bottom=float(energyBudget))
-    axsB.set_ylim([float(energyBudget), bmax])
+axsB.set_ylabel(r'Battery Consump. / Unit Flow', fontsize=80)
+# axsB.set_ylim([0, bmax])
+# axsB.set_ylim(bottom=float(15),top=float(25))
+axsB.set_ylim([15, 25])
+# axsB.set_ylim(bottom=float(energyBudget))
+# axsB.set_ylim([float(energyBudget), bmax])
 
-    # plt.setp(axsB.get_xticklabels(), fontsize=80)
-    # plt.setp(axsB.get_yticklabels(), fontsize=80)
+# plt.setp(axsB.get_xticklabels(), fontsize=80)
+# plt.setp(axsB.get_yticklabels(), fontsize=80)
 
 ###############
+# TRAVEL TIMES
+# figTC, axsTC = plt.subplots(1)
+# for c,p in enumerate(f[()].fPlus):
+    # print('Comm.',c)
+    # tt = data['travelTime']
+    # # print(tt)
+    # # print(tt[0][0], len(tt), len(tt[0]), len(tt[0][0]))
+    # # print(tt[c], len(tt[c]), len(tt[c][0]))
+
+    # x = [float(timeStep)/2 + x*float(timeStep) for x in\
+        # range(int((len(tt[0][0])-0)))]
+    # ttmax = np.amax(tt[c]) + 1
+    # tmin = []
+    # for p in range(len(tt[c])):
+        # y = tt[c][p]
+        # tmin = [lambda:y, lambda:[min(tmin[i],y[i]) for i,_ in enumerate(y)]][p>0]()
+    # print('\ntmin', tmin)
+    # print('x', x)
+    # # print('len tmin', len(tmin), len(x))
+    # axsTC.plot(x,tmin,label='comm%d'%c, color=colors[c], linestyle=linestyles[1],
+            # linewidth=10)
+    # axsTC.legend(loc='best', fontsize=80, frameon=False)
+    # axsTC.set_xlabel(r'time ($\theta$)', fontsize=80)
+    # axsTC.set_ylabel(r'Min. Travel Time', fontsize=80)
+    # axsTC.set_ylim([400, 2500])
+    # plt.setp(axsTC.get_yticklabels(), fontsize=80)
+    # plt.setp(axsTC.get_xticklabels(), fontsize=80)
+
+
+###############
+
 figs = []
 for i in plt.get_fignums():
     mng = plt.figure(i).canvas.manager
@@ -547,8 +600,10 @@ for i,fig in enumerate(figs):
     figname = os.path.join(dirname, fname)
     if i == 0:
         figname += '_combQoPIFlowDiff'
-    # elif i == 2:
-        # figname += '_enerProfs'
+    elif i == 1:
+        figname += '_combEnerProfs'
+    elif i == 2:
+        figname += '_commTravTimes'
     # elif i == 3:
         # figname += '_travTimes'
     # elif i == 4:
