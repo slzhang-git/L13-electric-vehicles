@@ -131,7 +131,7 @@ if __name__ == "__main__":
         else:
             print('No feasible paths found for comm %d: '%i, s,t,energyBudget,priceBudget,u)
             exit(0)
-        for j,P in enumerate(paths):
+        # for j,P in enumerate(paths):
             # print(P)
              # print("path%d"%j, G.printPathInNetwork(P), ": energy cons.: ",
                      # P.getNetEnergyConsump(), ": latency: ",P.getFreeFlowTravelTime())
