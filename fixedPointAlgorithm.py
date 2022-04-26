@@ -81,7 +81,7 @@ def findShortestFeasibleSTpath(time: number, s: Node, t: Node, flow:
 
 
 def fixedPointUpdate(currentFlow: PartialFlow, oldPathInflows: PartialFlowPathBased, timeHorizon:
-        number, alpha: float, timestepSize, priceToDist: float, commodities, verbose:
+        number, alpha: float, timestepSize, priceToTime: float, commodities, verbose:
         bool) -> PartialFlowPathBased:
     # currentFlow = networkLoading(oldPathInflows)
 
@@ -169,14 +169,20 @@ def fixedPointUpdate(currentFlow: PartialFlow, oldPathInflows: PartialFlowPathBa
 
             # TODO: Find a good starting point
             # A trivial guess: assume all terms to be positive and solve for the dual variable
+            # TODO: adjust for price
             x0 = ((-sum(flowValue) + alpha*sum(travelTime))*timestepSize +
                     ubar)/(len(flowValue)*timestepSize)
             # print("x0 ", round(x0,2))
             # optimize.show_options(solver='root', method='broyden1', disp=True)
             # TODO: Find a way to run optimize.root quietly
             bracketLeft = 0
-            bracketRight = abs(max(list(map(float.__sub__, list(map(lambda x: alpha*x,
-                travelTime)), flowValue)))) + ubar + 1
+            # TODO: adjust for price
+            # bracketRight = abs(max(list(map(float.__sub__, list(map(lambda x: alpha*x,
+                # travelTime)), flowValue)))) + ubar + 1
+            bracketRight = 0
+            for j,_ in enumerate(travelTime):
+                bracketRight += max(bracketRight, -flowValue[j] +
+                        alpha*(travelTime[j] + priceToTime*price[j] )) + ubar + 1
 
             # Default (brentq) method using bracket
             # sol = optimize.root_scalar(dualVarRootFunc, (alpha, flowValue, travelTime,
@@ -191,21 +197,22 @@ def fixedPointUpdate(currentFlow: PartialFlow, oldPathInflows: PartialFlowPathBa
             # TODO: pass an aggregation function value based on travel time and price
             # of paths
             # sol = optimize.root_scalar(dualVarRootFuncComb, (adjAlpha, flowValue, travelTime,
-            if priceToDist == 0:
+            if priceToTime == 0:
                 sol = optimize.root_scalar(dualVarRootFuncComb, (alpha, flowValue, travelTime,
                     timestepSize, ubar), x0=x0, bracket=[bracketLeft, bracketRight],
                     fprime=True, method='newton')
             else:
                 sol = optimize.root_scalar(dualVarRootFuncCombPrice, (alpha, flowValue,
-                    travelTime, priceToDist, price, timestepSize, ubar), x0=x0,
+                    travelTime, priceToTime, price, timestepSize, ubar), x0=x0,
                     bracket=[bracketLeft, bracketRight], fprime=True,
                     method='newton')
 
             if not sol.converged:
                 print("The optimize.root_scalar() method has failed to converge due to the following reason:")
                 print("\"", sol.flag, "\"")
-                alpha = alpha/2 + uval/(2*max(travelTime))
-                sol = optimize.root_scalar(dualVarRootFuncComb, (alpha, flowValue, travelTime, price, priceToDist,
+                exit(0)
+                # alpha = alpha/2 + uval/(2*max(travelTime))
+                sol = optimize.root_scalar(dualVarRootFuncComb, (alpha, flowValue, travelTime, price, priceToTime,
                     timestepSize, ubar), x0=x0, bracket=[bracketLeft, bracketRight],
                     fprime=True, method='newton')
                 if not sol.converged:
@@ -219,7 +226,9 @@ def fixedPointUpdate(currentFlow: PartialFlow, oldPathInflows: PartialFlowPathBa
                 # print(sol)
             # print("currentFlow ", currentFlow)
             for j,P in enumerate(oldPathInflows.fPlus[i]):
-                newFlowVal = max(flowValue[j] - alpha*travelTime[j] + sol.root, 0)
+                # CAUTION: Price term to be included here
+                # newFlowVal = max(flowValue[j] - alpha*travelTime[j] + sol.root, 0)
+                newFlowVal = max(flowValue[j] - alpha*(travelTime[j] + priceToTime*price[j]) + sol.root, 0)
                 # newFlowVal = max(flowValue[j] - adjAlpha[j]*travelTime[j] + sol.root, 0)
                 # print("newFlowVal ", newFlowVal)
                 newPathInflows.fPlus[i][P].addSegment(makeNumber(theta+timestepSize), makeNumber(newFlowVal))
@@ -256,6 +265,7 @@ def dualVarRootFuncGrad(x, alpha, flowValue, travelTime, timestepSize, ubar):
 
 
 def dualVarRootFuncComb(x, alpha, flowValue, travelTime, timestepSize, ubar):
+    # print("printing args: x,alpha,flowValue,travelTime,timestepSize,ubar")
     # print("printing args ", round(x,2),alpha,flowValue,travelTime,timestepSize,ubar)
     # TODO: Read as input with each commodity
     termSum = 0
@@ -267,20 +277,23 @@ def dualVarRootFuncComb(x, alpha, flowValue, travelTime, timestepSize, ubar):
         if tmp > 0:
             termSum += tmp*timestepSize
             gradTermSum += timestepSize
+    # print('return',float(termSum - ubar), float(gradTermSum))
     return float(termSum - ubar), float(gradTermSum)
 
 
-def dualVarRootFuncCombPrice(x, alpha, flowValue, travelTime, priceToDist, price, timestepSize, ubar):
-    # print("printing args ", round(x,2),alpha,flowValue,travelTime,timestepSize,ubar)
+def dualVarRootFuncCombPrice(x, alpha, flowValue, travelTime, priceToTime, price, timestepSize, ubar):
+    # print("printing args: x,alpha,flowValue,travelTime,priceToTime,price,timestepSize,ubar")
+    # print("printing args ", round(x,2),alpha,flowValue,travelTime,priceToTime,price,timestepSize,ubar)
     termSum = 0
     gradTermSum = 0
     for j,fv in enumerate(flowValue):
-        tmp = flowValue[j] - alpha*(travelTime[j] + priceToDist*price[j]) + x
-        # print('tmp %.2f %.2f %.2f %.2f %.2f'%(flowValue[j], alpha, travelTime[j], x, tmp))
+        tmp = flowValue[j] - alpha*(travelTime[j] + priceToTime*price[j]) + x
+        # print('tmp %d %.2f %.2f %.2f %.2f %.2f %.2f %.2f'%(j, flowValue[j], alpha, travelTime[j], priceToTime, price[j], x, tmp))
         # tmp = flowValue[j] - alpha[j]*travelTime[j] + x
         if tmp > 0:
             termSum += tmp*timestepSize
             gradTermSum += timestepSize
+    # print('return',float(termSum - ubar), float(gradTermSum))
     return float(termSum - ubar), float(gradTermSum)
 
 
@@ -318,7 +331,7 @@ def sumNormOfPathInflows(pathInflows : PartialFlowPathBased) -> number:
 def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commodities :
         List[Tuple[Node, Node, PWConst]], timeHorizon:
         number=infinity, maxSteps: int = None, timeLimit: int = infinity, timeStep: int = None,
-        alpha : float = None, priceToDist : float = None, verbose : bool = False) -> PartialFlowPathBased:
+        alpha : float = None, priceToTime : float = None, verbose : bool = False) -> PartialFlowPathBased:
     tStartAbs = time.time()
     step = 0
 
@@ -384,9 +397,9 @@ def fixedPointAlgo(N : Network, pathList : List[Path], precision : float, commod
         # newpathInflows = networkLoading(pathInflows,timeHorizon)
         # print("newpathInflows ", newpathInflows)
         tStart = time.time()
-        # TODO: Read priceToDist as input per commodity
+        # TODO: Read priceToTime as input per commodity
         newpathInflows, alpha = fixedPointUpdate(iterFlow, pathInflows, timeHorizon, alpha,
-                timeStep, priceToDist, commodities, verbose)
+                timeStep, priceToTime, commodities, verbose)
         totFPUTime += time.time() - tStart
         print("\nTime taken in fixedPointUpdate(): ", round(time.time()-tStart,4))
 

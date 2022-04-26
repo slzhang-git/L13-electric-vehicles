@@ -110,12 +110,12 @@ if __name__ == "__main__":
     # fname += argList[-1]
 
     # Read arguments into required variables
-    [insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,priceToDist,numThreads] = argList[2:len(argList)]
-    [insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,priceToDist,numThreads] = [str(insName),\
+    [insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,priceToTime,numThreads] = argList[2:len(argList)]
+    [insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,priceToTime,numThreads] = [str(insName),\
             makeNumber(timeHorizon),int(maxIter),int(timeLimit),float(precision),\
-            makeNumber(alpha),makeNumber(timeStep),makeNumber(priceToDist),int(numThreads)]
-    print("read args: insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,priceToDist,numThreads")
-    print("values: ",insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,priceToDist,numThreads)
+            makeNumber(alpha),makeNumber(timeStep),makeNumber(priceToTime),int(numThreads)]
+    print("read args: insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,priceToTime,numThreads")
+    print("values: ",insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,priceToTime,numThreads)
 
     # Find list of paths for each commodity
     # TODO: put data checks
@@ -131,14 +131,15 @@ if __name__ == "__main__":
         else:
             print('No feasible paths found for comm %d: '%i, s,t,energyBudget,priceBudget,u)
             exit(0)
-        # for j,P in enumerate(paths):
-            # # print(P)
+        for j,P in enumerate(paths):
+            # print(P)
              # print("path%d"%j, G.printPathInNetwork(P), ": energy cons.: ",
                      # P.getNetEnergyConsump(), ": latency: ",P.getFreeFlowTravelTime())
-    # exit(0)
+        # exit(0)
     print("\nTime taken in finding paths: ", round(time.time()-tStart,4))
 
     if True: print('Total number of paths: ', sum(len(x) for x in pathList))
+    # exit(0)
     minTravelTime = infinity
     maxTravelTime = infinity*(-1)
     for p in pathList:
@@ -155,7 +156,7 @@ if __name__ == "__main__":
     f, alphaIter, absDiffBwFlowsIter, relDiffBwFlowsIter, travelTime, stopStr,\
             alphaStr, qopiIter, qopiFlowIter, qopiPathComm, totDNLTime, totFPUTime =\
             fixedPointAlgo(G, pathList, precision, commodities, timeHorizon,\
-            maxIter, timeLimit, timeStep, alpha, priceToDist, True)
+            maxIter, timeLimit, timeStep, alpha, priceToTime, True)
             # alphaStr, qopiIter, qopiMeanIter, qopiFlowIter, qopiPathComm =\
 
     tEnd = time.time()
