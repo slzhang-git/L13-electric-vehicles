@@ -663,6 +663,7 @@ if len(sys.argv) > 2:
         print('\ntmin', tmin)
         print('tsum', tsum)
         print('tmean', tmean)
+        # print('x', x)
 
 ###############
 
