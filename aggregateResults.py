@@ -41,8 +41,8 @@ energyBudget = commodities[0][2]
 # print("f: ", f, type(f), f.size, f.shape, f[()])
 # print("fPlus: ")
 
-colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'orange',
-        'darkviolet','magenta','darkorchid','darkgreen']
+colors = ['b', 'g', 'r', 'm', 'y', 'k', 'orange',
+        'darkviolet','magenta','darkorchid','darkgreen', 'c']
 # linestyles = ['solid', 'dashed', 'dashdot', 'dotted', 'offset',\
         # 'on-off-dash-seq', '-' , '--' , '-.' , ':' , 'None' ,\
         # ' ' , '']
@@ -364,9 +364,8 @@ f = data['f']
 #-----------------
 # QoPI and FlowDiff per iteration
 #-----------------
-# figQ, axsQ = plt.subplots(1)
-figD, axsD = plt.subplots(1)
-axsQ = axsD.twinx()
+# figD, axsD = plt.subplots(1)
+# axsQ = axsD.twinx()
 
 absDiffBwFlowsIter = data['absDiffBwFlowsIter']
 qopiFlowIter = data['qopiFlowIter']
@@ -374,54 +373,54 @@ alphaIter = data['alphaIter']
 relDiffBwFlowsIter = data['relDiffBwFlowsIter']
 qopiIter = data['qopiIter']
 
-# Adjust inf
-# if qopiFlowIter[-1] == math.inf:
-    # qopiFlowIter[-1] = qopiFlowIter[-2]
-    # print(qopiFlowIter)
-# else:
-    # print(qopiFlowIter[-1])
-    # exit(0)
+# # Adjust inf
+# # if qopiFlowIter[-1] == math.inf:
+    # # qopiFlowIter[-1] = qopiFlowIter[-2]
+    # # print(qopiFlowIter)
+# # else:
+    # # print(qopiFlowIter[-1])
+    # # exit(0)
 
-prec = float(precision)
-x = [x+1 for x in range(len(alphaIter))]
+# prec = float(precision)
+# x = [x+1 for x in range(len(alphaIter))]
 
-l1 = axsD.plot(x,absDiffBwFlowsIter, color=colors[1], linewidth=10, linestyle=linestyles[1], label=r'$\Delta$h')
-l2 = axsD.plot([1,len(alphaIter)], [float(precision), float(precision)],label=r'$\epsilon$',\
-            color='red', linewidth=10, linestyle=linestyles[2])
-# axsD.axhline(prec, xmin=0.05, xmax=0.95, label=r'$\epsilon$', color='red', linewidth=10, linestyle=linestyles[2])
-l3 = axsQ.plot(x,qopiFlowIter, color=colors[4], linewidth=10, linestyle=linestyles[1], label='QoPI')
-trans = transforms.blended_transform_factory(
-            axsD.get_yticklabels()[0].get_transform(), axsD.transData)
-# axsD.text(0,float(precision), "{:.2f}".format(prec), color="red", transform=trans, 
-                # ha="right", va="center", fontsize=80)
-# axsD.text(1, float(precision), r'$\epsilon$', color="red", transform=trans, 
-                # ha="right", va="center", fontsize=80)
-# axsD.legend(loc='best', fontsize=80, frameon=False)
-# axsQ.legend(loc='center right', fontsize=80, frameon=False)
-# axsD.annotate(r'\epsilon', xy=[0,0.01], xytext=(-1,0.01),textcoords='test')
+# l1 = axsD.plot(x,absDiffBwFlowsIter, color=colors[1], linewidth=10, linestyle=linestyles[1], label=r'$\Delta$h')
+# l2 = axsD.plot([1,len(alphaIter)], [float(precision), float(precision)],label=r'$\epsilon$',\
+            # color='red', linewidth=10, linestyle=linestyles[2])
+# # axsD.axhline(prec, xmin=0.05, xmax=0.95, label=r'$\epsilon$', color='red', linewidth=10, linestyle=linestyles[2])
+# l3 = axsQ.plot(x,qopiFlowIter, color=colors[4], linewidth=10, linestyle=linestyles[1], label='QoPI')
+# trans = transforms.blended_transform_factory(
+            # axsD.get_yticklabels()[0].get_transform(), axsD.transData)
+# # axsD.text(0,float(precision), "{:.2f}".format(prec), color="red", transform=trans,
+                # # ha="right", va="center", fontsize=80)
+# # axsD.text(1, float(precision), r'$\epsilon$', color="red", transform=trans,
+                # # ha="right", va="center", fontsize=80)
+# # axsD.legend(loc='best', fontsize=80, frameon=False)
+# # axsQ.legend(loc='center right', fontsize=80, frameon=False)
+# # axsD.annotate(r'\epsilon', xy=[0,0.01], xytext=(-1,0.01),textcoords='test')
 
-axsD.set_xlabel(r'iteration', fontsize=80)
-axsD.set_ylabel(r'$\Delta$h', fontsize=80)
+# axsD.set_xlabel(r'iteration', fontsize=80)
+# axsD.set_ylabel(r'$\Delta$h', fontsize=80)
 
-# axsQ.legend(loc='best', fontsize=80, frameon=False)
-# axsQ.set_xlabel(r'iteration', fontsize=80)
-axsQ.set_ylabel(r'QoPI', fontsize=80)
+# # axsQ.legend(loc='best', fontsize=80, frameon=False)
+# # axsQ.set_xlabel(r'iteration', fontsize=80)
+# axsQ.set_ylabel(r'QoPI', fontsize=80)
 
-axsD.set_xscale('log', basex=2)
-axsD.xaxis.set_tick_params(pad=20)
-axsD.set_xscale('log', basex=2)
-axsD.xaxis.set_tick_params(pad=20)
+# axsD.set_xscale('log', basex=2)
+# axsD.xaxis.set_tick_params(pad=20)
+# axsD.set_xscale('log', basex=2)
+# axsD.xaxis.set_tick_params(pad=20)
 
-plt.setp(axsD.get_xticklabels(), fontsize=80)
-plt.setp(axsD.get_yticklabels(), fontsize=80)
-plt.setp(axsQ.get_xticklabels(), fontsize=80)
-plt.setp(axsQ.get_yticklabels(), fontsize=80)
+# plt.setp(axsD.get_xticklabels(), fontsize=80)
+# plt.setp(axsD.get_yticklabels(), fontsize=80)
+# plt.setp(axsQ.get_xticklabels(), fontsize=80)
+# plt.setp(axsQ.get_yticklabels(), fontsize=80)
 
-# plt.legend(loc='best', fontsize=80, frameon=False)
-# For a common legend
-lns = l3 + l1 + l2
-labs = [l.get_label() for l in lns]
-axsD.legend(lns, labs, loc='best', fontsize=80, frameon=False)
+# # plt.legend(loc='best', fontsize=80, frameon=False)
+# # For a common legend
+# lns = l3 + l1 + l2
+# labs = [l.get_label() for l in lns]
+# axsD.legend(lns, labs, loc='best', fontsize=80, frameon=False)
 
 
 # ENERGY PROFILES
@@ -447,17 +446,17 @@ for c,p in enumerate(f[()].fPlus):
         # yB = [p1.getNetEnergyConsump()*v/u for v in y]
         y1 = [f[()].fPlus[c][p1].getValueAt(i) for i in xB1]
         yB1 = [p1.getNetEnergyConsump()*v/u for v in y1]
-        print('x', x)
-        print('y', y)
-        print('xB1', xB1)
-        print('yB1', yB1)
+        # print('x', x)
+        # print('y', y)
+        # print('xB1', xB1)
+        # print('yB1', yB1)
         # TODO: set a compact logic for the following line
         if (len(y) > 2) or (len(y) > 1 and y[0]>0):
             xB = x
             # [lambda: value_false, lambda: value_true][<test>]()
             # yBsum = [lambda:yB, lambda:[yBsum[i]+yB[i] for i,_ in enumerate(yB)]][len(yBsum)>0]()
             yBsum1 = [lambda:yB1, lambda:[yBsum1[i]+yB1[i] for i,_ in enumerate(yB1)]][len(yBsum1)>0]()
-            print('i', i, p1.getNetEnergyConsump())
+            # print('i', i, p1.getNetEnergyConsump())
             # print(yB)
             # axsB.plot(x,yB,label='w%d'%(i+1), color=colors[i+1], linestyle=linestyles[1], linewidth=10)
         # print('i', i)
@@ -489,7 +488,7 @@ plt.setp(axsB.get_yticklabels(), fontsize=80)
 # Reading another data file
 if len(sys.argv) > 2:
     for j in range(len(sys.argv)-2):
-        print('j',j,len(sys.argv))
+        # print('j',j,len(sys.argv))
         data1 = np.load(sys.argv[2+j], allow_pickle=True);
         f1 = data1['f']
         fname1 = os.path.splitext(os.path.split(sys.argv[2+j])[1])[0]
@@ -507,16 +506,16 @@ if len(sys.argv) > 2:
                 y1 = [f1[()].fPlus[c][p1].getValueAt(i) for i in xB1]
                 # yB = [p1.getNetEnergyConsump()*v/u for v in y]
                 yB1 = [p1.getNetEnergyConsump()*v/u for v in y1]
-                print('x', x)
-                print('y', y)
-                print('xB1', xB1)
-                print('yB1', yB1)
+                # print('x', x)
+                # print('y', y)
+                # print('xB1', xB1)
+                # print('yB1', yB1)
                 if (len(y) > 2) or (len(y) > 1 and y[0]>0):
                   xB = x
                   # [lambda: value_false, lambda: value_true][<test>]()
                   yBsum1 = [lambda:yB1, lambda:[yBsum1[i]+yB1[i] for i,_ in
                       enumerate(yB1)]][len(yBsum1)>0]()
-                  print('i', i, p1.getNetEnergyConsump())
+                  # print('i', i, p1.getNetEnergyConsump())
                   # print(yB)
                   # axsB.plot(x,yB,label='w%d'%(i+1), color=colors[i+1], linestyle=linestyles[1], linewidth=10)
         print('yBsum1', yBsum1)
@@ -532,15 +531,16 @@ axsB.legend(loc='best', fontsize=80, frameon=False, ncol=3)
 axsB.set_ylabel(r'Battery Consump. / Unit Flow', fontsize=80)
 # axsB.set_ylim([0, bmax])
 # axsB.set_ylim(bottom=float(15),top=float(25))
-axsB.set_ylim([15, 25])
+# axsB.set_ylim([4, 5.5])
+axsB.set_ylim([11, 25])
 # axsB.set_ylim(bottom=float(energyBudget))
 # axsB.set_ylim([float(energyBudget), bmax])
 
 # plt.setp(axsB.get_xticklabels(), fontsize=80)
 # plt.setp(axsB.get_yticklabels(), fontsize=80)
 
-###############
-# TRAVEL TIMES
+##################################
+# MIN. TRAVEL TIMES PER COMMODITY
 # figTC, axsTC = plt.subplots(1)
 # for c,p in enumerate(f[()].fPlus):
     # print('Comm.',c)
@@ -567,7 +567,105 @@ axsB.set_ylim([15, 25])
     # axsTC.set_ylim([400, 2500])
     # plt.setp(axsTC.get_yticklabels(), fontsize=80)
     # plt.setp(axsTC.get_xticklabels(), fontsize=80)
+##################################
+##################################
+# MIN./MEAN TRAVEL TIMES
+figTC, axsTC = plt.subplots(1)
+tmin = []
+tsum = []
+for c,p in enumerate(f[()].fPlus):
+    # print('Comm.',c)
+    tt = data['travelTime']
+    # print(tt)
+    # print(tt[0][0], len(tt), len(tt[0]), len(tt[0][0]))
+    # print(tt[c], len(tt[c]), len(tt[c][0]))
 
+    x = [float(timeStep)/2 + x*float(timeStep) for x in\
+        range(int((len(tt[0][0])-0)))]
+    # ttmax = np.amax(tt[c]) + 1
+    tminc = []
+    for p in range(len(tt[c])):
+        y = tt[c][p]
+        tminc = [lambda:y, lambda:[min(tminc[i],y[i]) for i,_ in enumerate(y)]][p>0]()
+    # print('\ntmin', tmin)
+    # print('x', x)
+    # print('len tmin', len(tmin), len(x))
+    tmin = [lambda:y, lambda:[min(tmin[i],tminc[i]) for i,_ in enumerate(tminc)]][c>0]()
+    tsum = [lambda:y, lambda:[(tsum[i] + tminc[i]) for i,_ in enumerate(y)]][c>0]()
+# Mean (over commodities) min. travel times
+tmean = [t/(c+1) for t in tsum]
+
+# axsTC.plot(x,tmin,label='comm%d'%c, color=colors[c], linestyle=linestyles[1],
+        # linewidth=10)
+axsTC.plot(x,tmin,label=r'no r/c', color='cyan', linestyle=linestyles[1],
+        linewidth=10)
+# axsTC.plot(x,tmean,label=r'no r/c', color='cyan', linestyle=linestyles[1],
+        # linewidth=10)
+# axsTC.legend(loc='best', fontsize=80, frameon=False)
+# axsTC.set_xlabel(r'time ($\theta$)', fontsize=80)
+# axsTC.set_ylabel(r'Min. Travel Time', fontsize=80)
+# axsTC.set_ylim([400, 2500])
+# plt.setp(axsTC.get_yticklabels(), fontsize=80)
+# plt.setp(axsTC.get_xticklabels(), fontsize=80)
+print('\ntmin', tmin)
+print('tsum', tsum)
+print('tmean', tmean)
+# print('x', x)
+##################################
+
+### ADDITIONAL TIME PROFILES
+if len(sys.argv) > 2:
+    for j in range(len(sys.argv)-2):
+        # print('j',j,len(sys.argv))
+        data1 = np.load(sys.argv[2+j], allow_pickle=True);
+        f1 = data1['f']
+        fname1 = os.path.splitext(os.path.split(sys.argv[2+j])[1])[0]
+        print('\n',re.split('[_]', fname1))
+        [insName1,timeHorizon1,maxIter1,timeLimit1,precision1,alpha1,timeStep1,priceToTime,numThreads,alphaStr1] = re.split('[_]', fname1)
+
+        tmin = []
+        tsum = []
+        for c,p in enumerate(f[()].fPlus):
+            # print('Comm.',c)
+            tt = data1['travelTime']
+            # print(tt)
+            # print(tt[0][0], len(tt), len(tt[0]), len(tt[0][0]))
+            # print(tt[c], len(tt[c]), len(tt[c][0]))
+
+            x = [float(timeStep)/2 + x*float(timeStep) for x in\
+                range(int((len(tt[0][0])-0)))]
+            # ttmax = np.amax(tt[c]) + 1
+            tminc = []
+            for p in range(len(tt[c])):
+                y = tt[c][p]
+                tminc = [lambda:y, lambda:[min(tminc[i],y[i]) for i,_ in enumerate(y)]][p>0]()
+            # print('\ntmin', tmin)
+            # print('x', x)
+            # print('len tmin', len(tmin), len(x))
+            tmin = [lambda:y, lambda:[min(tmin[i],tminc[i]) for i,_ in enumerate(tminc)]][c>0]()
+            tsum = [lambda:y, lambda:[(tsum[i] + tminc[i]) for i,_ in enumerate(y)]][c>0]()
+        # Mean (over commodities) min. travel times
+        tmean = [t/(c+1) for t in tsum]
+        # print('tmean', tmean)
+
+        axsTC.plot(x,tmin,label=r'$\widetilde{\lambda}_i = %d$'%int(priceToTime), color=colors[j], linestyle=linestyles[1],
+                linewidth=10)
+        axsTC.set_ylabel(r'Min. Travel Time', fontsize=80)
+        # axsTC.plot(x,tmean,label=r'$\widetilde{\lambda}_i = %d$'%int(priceToTime), color=colors[j], linestyle=linestyles[1],
+                # linewidth=10)
+        # axsTC.set_ylabel(r'Mean Min. Travel Time', fontsize=80)
+        axsTC.legend(loc='best', fontsize=80, frameon=False, ncol=3)
+        axsTC.set_xlabel(r'time ($\theta$)', fontsize=80)
+        axsTC.set_ylim([400, 2500])
+        plt.setp(axsTC.get_yticklabels(), fontsize=80)
+        plt.setp(axsTC.get_xticklabels(), fontsize=80)
+
+        print('\ntmin', tmin)
+        print('tsum', tsum)
+        print('tmean', tmean)
+        # print('x', x)
+
+###############
 
 ###############
 
@@ -600,9 +698,9 @@ for i,fig in enumerate(figs):
     figname = os.path.join(dirname, fname)
     if i == 0:
         figname += '_combQoPIFlowDiff'
-    elif i == 1:
+    elif i == 0:
         figname += '_combEnerProfs'
-    elif i == 2:
+    elif i == 1:
         figname += '_commTravTimes'
     # elif i == 3:
         # figname += '_travTimes'
@@ -610,6 +708,7 @@ for i,fig in enumerate(figs):
         # figname += '_qopiWalks'
     figname += '.png'
     print("\noutput saved to file: %s"%figname)
+    # if i == 0 or i == 1:
     if i == -1:
         fig.savefig(figname, format='png', dpi=fig.dpi, bbox_inches='tight')
 plt.close()
