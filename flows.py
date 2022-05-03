@@ -4,6 +4,8 @@ from typing import Dict, List
 from network import *
 from utilities import *
 
+import json
+
 # A partial feasible flow with in-/outflow rates for every edges and commodity and queues for every edge
 # Feasibility is not checked automatically but a check can be initiated by calling .checkFeasibility
 class PartialFlow:
@@ -202,6 +204,51 @@ class PartialFlow:
                 s += "f_" + str(e) + ": " + str(self.fMinus[(e,i)]) + "\n"
             s += "----------------------------------------------------------\n"
         return s
+
+    # Creates a json file for use in Michael's visualization tool:
+    # https://github.com/ArbeitsgruppeTobiasHarks/dynamic-prediction-equilibria/tree/main/visualization
+    # Similar to https://github.com/ArbeitsgruppeTobiasHarks/dynamic-prediction-equilibria/tree/main/predictor/src/visualization
+    def to_json(self, filename:str):
+        with open(filename, "w") as file:
+            json.dump({
+                "network": {
+                    "nodes": [{"id": v.name, "x": 0, "y": 0} for v in self.network.nodes],
+                    "edges": [{"id": id,
+                               "from": e.node_from.name,
+                               "to": e.node_to.name,
+                               "capacity": e.nu,
+                               "transitTime": e.tau}
+                              for (id,e) in enumerate(self.network.edges)],
+                    "commodities": [{ "id": id, "color": "dodgerblue"} for id in range(self.noOfCommodities)]
+                },
+                "flow": {
+                    "inflow": [
+                        [
+                            {"times": [theta for theta in self.fPlus[(e,i)].segmentBorders[:-1]],
+                             "values": [val for val in self.fPlus[(e,i)].segmentValues],
+                             "domain": [0.0, "Infinity"]}
+                            for i in range(self.noOfCommodities)
+                        ]
+                        for e in self.network.edges
+                    ],
+                    "outflow": [
+                        [
+                            {"times": [theta for theta in self.fMinus[(e,i)].segmentBorders[:-1]],
+                             "values": [val for val in self.fMinus[(e,i)].segmentValues],
+                             "domain": [0.0, "Infinity"]}
+                            for i in range(self.noOfCommodities)
+                        ]
+                        for e in self.network.edges
+                    ],
+                    "queues": [
+                        {"times": [theta for theta in self.queues[e].segmentBorders[:-1]],
+                         "values": [self.queues[e].getValueAt(theta) for theta in self.queues[e].segmentBorders[:-1]],
+                         "domain": ["-Infinity", "Infinity"], "lastSlope": 0.0, "firstSlope": 0.0
+                        }
+                        for e in self.network.edges
+                    ]
+                }
+            },file)
 
 
 # A path based description of feasible flows:
