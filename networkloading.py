@@ -57,6 +57,8 @@ class EventQueue:
 #   its source, sink, network inflow rate and a list of tuples (path p, inflow rate into path p)
 # - timeHorizon (optional): the flow will be determined for the time interval [0,timeHorizon]; default is infinity
 # - verbose: If True, more information is printed during the network loading procedure; default is False
+# TODO: Currently, this procedure relies on the fact that a final interval of value zero in a piecewise-constant
+#   function does not get removed by the simplifying procedure
 def networkLoading(pathBasedFlows : PartialFlowPathBased, timeHorizon: number=infinity, verbose:bool=False) -> PartialFlow:
     network = pathBasedFlows.network
 
@@ -95,10 +97,8 @@ def networkLoading(pathBasedFlows : PartialFlowPathBased, timeHorizon: number=in
     for v in network.nodes:
         eventQueue.pushEvent(zero,v,"first flow")
 
-    flowTerminated = False  # TODO: Das als Abbruchbedingung einbauen
-
     # While there are events left to handle
-    while not eventQueue.isEmpty():
+    while not (eventQueue.isEmpty() or flow.hasTerminated()):
         event = eventQueue.popEvent()
         if verbose: print("Handling ", event)
         v = event.v
@@ -180,21 +180,12 @@ def networkLoading(pathBasedFlows : PartialFlowPathBased, timeHorizon: number=in
                         outflowRate = partialPathFlows[i].fPlus[j].getValueAt(theta) / flowTo[e] * min(flowTo[e], e.nu)
                     else:
                         outflowRate = 0
-                    if outflowRate > 0:
-                        # Since the default value of the flow rates is zero, we do not have to add a new segment
-                        # if the flowrate over the next segment would be zero.
-                        # This is important because otherwise the network loading will run forever
-                        # TODO: Is this true? Explain better!
 
-                        # Add a segment of zero flow until the start of the current extension phase
-                        # This is important since we do not add segments of zero outflow at the time of the flow distribution
-                        # Note, that PWconst is implemented in such a way that no segment is added if the flowrate
-                        # already extended to T(e, theta)
-                        partialPathFlows[i].fMinus[j].addSegment(flow.T(e, theta), zero)
-                        if nextTheta < infinity:
-                            partialPathFlows[i].fMinus[j].addSegment(flow.T(e, nextTheta), outflowRate)
-                        else:
-                            partialPathFlows[i].fMinus[j].addSegment(infinity, outflowRate)
+                    # Extend the edge outflow rate:
+                    if nextTheta < infinity:
+                        partialPathFlows[i].fMinus[j].addSegment(flow.T(e, nextTheta), outflowRate)
+                    else:
+                        partialPathFlows[i].fMinus[j].addSegment(infinity, outflowRate)
 
             # Now we convert the path flows into the actual edge in- and outflow rates
             # i.e. if an edge occurs multiple times on a commodity's path we add up the corresponding rates from the path flow
