@@ -4,20 +4,33 @@ from typing import Dict, List
 from network import *
 from utilities import *
 
+import json
+
 # A partial feasible flow with in-/outflow rates for every edges and commodity and queues for every edge
 # Feasibility is not checked automatically but a check can be initiated by calling .checkFeasibility
 class PartialFlow:
+    # The network the flow lives in:
     network: Network
+    # Stores for every node until which time the flow has been calculated:
     upToAt: Dict[Node, number]
+    # TODO: Currently the user has to make sure the values of upToAt are kept up to date
+    #   It would be better if this is done within this class!
+    #   This would require to only allow changes of the flow via class-methods
+    #   Is it possible to enforce this in python (i.e. are there private methods?)
+    # The edge inflow rates (commodity specific)
     fPlus: Dict[(Edge,int), PWConst]
+    # The edge outflow rates (commodity specific)
     fMinus: Dict[(Edge,int), PWConst]
+    # The queues
     queues: Dict[Edge, PWLin]
+    # The sources (one for each commodity)
     sources: List[Node]
+    # The sinks (one for each commodity)
     sinks: List[Node]
+    # The network inflow rates (one for each commodity)
     u: List[PWConst]
+    # The number of commodities
     noOfCommodities: int
-
-    # TODO: Add a flag for terminating flow?
 
     def __init__(self, network: Network, numberOfCommodities: int):
         self.network = network
@@ -60,9 +73,17 @@ class PartialFlow:
     # The travel time over an edge e at time theta
     def c(self, e:Edge, theta:number) -> number:
         # the queue on edge e has to be known up to at least time theta
-        # print("segborder, theta: ", self.queues[e].segmentBorders[-1], theta)
-        assert (self.queues[e].segmentBorders[-1] >= theta)
-        return self.queues[e].getValueAt(theta)/e.nu + e.tau
+        # If the flow has terminated then we can assume that all queues are empty after the
+        # interval they are defined on
+        # TODO: This should somehow happen automatically!
+        if self.hasTerminated():
+            if self.queues[e].segmentBorders[-1] >= theta:
+                return self.queues[e].getValueAt(theta)/e.nu + e.tau
+            else:
+                return zero
+        else:
+            assert (self.queues[e].segmentBorders[-1] >= theta)
+            return self.queues[e].getValueAt(theta)/e.nu + e.tau
 
     # The arrival time at the end of edge e if entering at time theta
     def T(self, e:Edge, theta:number) -> number:
@@ -77,6 +98,39 @@ class PartialFlow:
             firstEdge = p.edges[0]
             # print("theta ", theta)
             return self.pathArrivalTime(Path(p.edges[1:],firstEdge.node_to),self.T(firstEdge,theta))
+
+    def hasTerminated(self) -> bool:
+        # Checks whether the flow has terminated, i.e. whether
+        # all (non-zero) node inflow has been distributed to outgoing edges
+
+        # TODO: It would be more efficient to not always do all these calculations from ground up
+        #   but instead update some state variables whenever the flow changes
+        #   However, this would require that the flow is only changed via class-methods
+
+        for v in self.network.nodes:
+            # Determine the last time with node inflow
+            lastInflowTime = zero
+            for i in range(self.noOfCommodities):
+                if self.sources[i] == v:
+                    lastInflowTime = max(lastInflowTime,self.u[i].segmentBorders[-1])
+                for e in v.incoming_edges:
+                    fPei = self.fMinus[(e,i)]
+                    # The following case distinction is necessary as the last inflow interval
+                    # might be an interval with zero inflow (but not more than one as two adjacent
+                    # intervals with zero flow would get unified to one by PWConst)
+                    # If we change PWConst so that ending intervals of zero-value get deleted
+                    # (since the default value is zero anyway), this would become unnecessary
+                    if len(fPei.segmentValues) > 0 and fPei.segmentValues[-1] == 0:
+                        lastInflowTime = max(lastInflowTime,fPei.segmentBorders[-2])
+                    else:
+                        lastInflowTime = max(lastInflowTime, fPei.segmentBorders[-1])
+
+            if self.upToAt[v] < lastInflowTime:
+                # There is still future inflow at node v which has not been redistributed
+                return False
+
+        # No nodes have any future inflow which still has to be redistributed
+        return True
 
     def checkFlowConservation(self,v: Node,upTo: number,commodity: int) -> bool:
         # Checks whether flow conservation holds at node v during the interval [0,upTo]
@@ -180,6 +234,9 @@ class PartialFlow:
     def checkFeasibility(self,upTo: number) -> bool:
         # Does not check FIFO (TODO)
         # Does not check non-negativity (TODO?)
+        # Does not check whether the edge outflow rates are determined as ar as possible
+        # (i.e. up to time e.T(theta) if theta is the time up to which the inflow is given)
+        # We implicitely assume that this is the case, but currently the user is responible for ensuring this (TODO)
         feasible = True
         for i in range(self.noOfCommodities):
             for v in self.network.nodes:
@@ -202,6 +259,52 @@ class PartialFlow:
                 s += "f_" + str(e) + ": " + str(self.fMinus[(e,i)]) + "\n"
             s += "----------------------------------------------------------\n"
         return s
+
+    # Creates a json file for use in Michael's visualization tool:
+    # https://github.com/ArbeitsgruppeTobiasHarks/dynamic-prediction-equilibria/tree/main/visualization
+    # Similar to https://github.com/ArbeitsgruppeTobiasHarks/dynamic-prediction-equilibria/tree/main/predictor/src/visualization
+    # Does not set meaningful coordinates for nodes and sets all commodity's colors to DodgerBlue
+    def to_json(self, filename:str):
+        with open(filename, "w") as file:
+            json.dump({
+                "network": {
+                    "nodes": [{"id": v.name, "x": 0, "y": 0} for v in self.network.nodes],
+                    "edges": [{"id": id,
+                               "from": e.node_from.name,
+                               "to": e.node_to.name,
+                               "capacity": e.nu,
+                               "transitTime": e.tau}
+                              for (id,e) in enumerate(self.network.edges)],
+                    "commodities": [{ "id": id, "color": "dodgerblue"} for id in range(self.noOfCommodities)]
+                },
+                "flow": {
+                    "inflow": [
+                        [
+                            {"times": [theta for theta in self.fPlus[(e,i)].segmentBorders[:-1]],
+                             "values": [val for val in self.fPlus[(e,i)].segmentValues],
+                             "domain": [0.0, "Infinity"]}
+                            for i in range(self.noOfCommodities)
+                        ]
+                        for e in self.network.edges
+                    ],
+                    "outflow": [
+                        [
+                            {"times": [theta for theta in self.fMinus[(e,i)].segmentBorders[:-1]],
+                             "values": [val for val in self.fMinus[(e,i)].segmentValues],
+                             "domain": [0.0, "Infinity"]}
+                            for i in range(self.noOfCommodities)
+                        ]
+                        for e in self.network.edges
+                    ],
+                    "queues": [
+                        {"times": [theta for theta in self.queues[e].segmentBorders[:-1]],
+                         "values": [self.queues[e].getValueAt(theta) for theta in self.queues[e].segmentBorders[:-1]],
+                         "domain": ["-Infinity", "Infinity"], "lastSlope": 0.0, "firstSlope": 0.0
+                        }
+                        for e in self.network.edges
+                    ]
+                }
+            },file)
 
 
 # A path based description of feasible flows:
