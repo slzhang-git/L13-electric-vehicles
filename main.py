@@ -13,25 +13,15 @@ def readArgs(argv):
     print("\nName of script:", sys.argv[0])
     n = len(sys.argv)
     print("Total arguments passed:", n)
-    # print("\nArguments passed:", end = " ")
-    # for i in range(1, n):
-        # print(sys.argv[i], end = " ")
-    # print()
     print(sys.argv)
 
     # Read the instance name
     insName = argv[0]
 
-    # arglist.append(argv[i] for i in range(1,n))
     # exclude = {","," ","[","]"}
     argList = []
     for i in range(1,n):
         argList.append(argv[i])
-        # print(i,arglist[i-1])
-    # for i in range(len(arglist)):
-        # if arglist[i] not in exclude:
-            # args.append(arglist[i])
-            # print(i,arglist[i])
     return argList
 
 
@@ -70,20 +60,15 @@ def readCommodities(commList) -> List[Tuple[Node, Node, PWConst]]:
             line = line.rstrip()
             if line:
                 data = [entry for entry in line.split()]
-                # print('data ', data, len(data)-2, data[2:len(data)-1])
                 # Create the PWConst function for this commodity
-                # times = [makeNumber(i) for i in data[timesStartPos:timesStartPos+math.ceil(len(data)/2 -1)]]
                 times = [makeNumber(i) for i in data[timesStartPos:timesStartPos +\
                         math.ceil((len(data)-timesStartPos)/2)]]
                 vals = [makeNumber(i) for i in data[timesStartPos+len(times):len(data)]]
-                # print(times, vals)
                 # The third argument = 0 means that the inflow rate is 0 for the rest of
                 # the real line outside the specified time intervals
                 pwcf = PWConst(times, vals, 0)
-                # print(pwcf)
                 commodities.append((G.getNode(data[0]), G.getNode(data[1]),
                     makeNumber(data[2]), makeNumber(data[3]), pwcf))
-    # print('comm: ', commodities)
     return commodities
 
 
@@ -96,7 +81,6 @@ if __name__ == "__main__":
     tauMin, tauMax = min([e.tau for e in G.edges]), max([e.tau for e in G.edges])
     ecMin, ecMax = min([e.ec for e in G.edges]), max([e.ec for e in G.edges])
     priceMin, priceMax = min([e.price for e in G.edges]), max([e.price for e in G.edges])
-    # print([e.price for e in G.edges])
     if True: print('Min.: nu = %.2f, tau = %.2f, ec = %.2f, price = %.2f'%(round(float(nuMin),2),
         round(float(tauMin),2), round(float(ecMin),2), round(float(priceMin),2)))
     if True: print('Max.: nu = %.2f, tau = %.2f, ec = %.2f, price = %.2f'%(round(float(nuMax),2),
@@ -107,7 +91,6 @@ if __name__ == "__main__":
     fname = ""
     for i in range(2,len(argList)):
         fname += argList[i] + "_"
-    # fname += argList[-1]
 
     # Read arguments into required variables
     [insName,timeHorizon,maxIter,timeLimit,precision,alpha,timeStep,priceToTime,numThreads] = argList[2:len(argList)]
@@ -125,7 +108,6 @@ if __name__ == "__main__":
         if True: print("\nFinding paths for comm %d: %s-%s"%(i,s,t),energyBudget,priceBudget,u)
         # pathList.append(G.findPaths(s, t, energyBudget))
         paths = G.findPathsWithLoops(s, t, energyBudget, priceBudget, numThreads)
-        # print('len paths: ', len(paths))
         if len(paths) > 0:
             pathList.append(paths)
         else:
@@ -135,11 +117,9 @@ if __name__ == "__main__":
             # print(P)
              # print("path%d"%j, G.printPathInNetwork(P), ": energy cons.: ",
                      # P.getNetEnergyConsump(), ": latency: ",P.getFreeFlowTravelTime())
-        # exit(0)
     print("\nTime taken in finding paths: ", round(time.time()-tStart,4))
 
     if True: print('Total number of paths: ', sum(len(x) for x in pathList))
-    # exit(0)
     minTravelTime = infinity
     maxTravelTime = infinity*(-1)
     for p in pathList:
@@ -157,11 +137,8 @@ if __name__ == "__main__":
             alphaStr, qopiIter, qopiFlowIter, qopiPathComm, totDNLTime, totFPUTime =\
             fixedPointAlgo(G, pathList, precision, commodities, timeHorizon,\
             maxIter, timeLimit, timeStep, alpha, priceToTime, True)
-            # alphaStr, qopiIter, qopiMeanIter, qopiFlowIter, qopiPathComm =\
 
     tEnd = time.time()
-    # print("travelTimes: ", travelTime])
-    # print("travelTimes: ")
     # for i,(s,t,eb,pb,u) in enumerate(commodities):
         # print("comm ", i,s,t,eb,pb,u)
         # for tt in travelTime[i]:
@@ -208,7 +185,9 @@ if __name__ == "__main__":
     # Save the results to files
     # dirname = os.path.expanduser('./npzfiles')
     dirname = os.path.expanduser('./miscfiles')
-    fname += alphaStr.replace('/','By')
+    # Uncomment below to include a string indicating the alpha-update strategy
+    # default is alphaSmooth(gamma)
+    # fname += alphaStr.replace('/','By')
     numpy.savez(os.path.join(dirname, fname),G=G,commodities=commodities,f=f,\
             eventualFlow=eventualFlow,time=tEnd-tStart,\
             alphaIter=alphaIter,absDiffBwFlowsIter=absDiffBwFlowsIter,\
