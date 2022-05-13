@@ -1,5 +1,5 @@
 # Edge list
-# node_from node_to nu tau ec price
+# nodeFrom nodeTo edgeCapacity edgeTravelTime edgeResourceConsumption edgePrice
 s u 2 1 4 0
 s u 1 2 2 0
 u v 1 1 0 0
