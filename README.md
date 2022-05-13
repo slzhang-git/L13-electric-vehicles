@@ -26,7 +26,18 @@ and the values of the inflow between consecutive breakpoints (for example, `flow
 in the time interval `[time0, time1)`.
 
 
-# Parameters (passed as arguments)
-The code can be run using the script `main.py` with space separated arguments as follows:
+# Running the Code
+The code can be run using the script `main.py` with parameters passed as space separated arguments as follows:
 
 `python3 main.py <networkFile> <commodityFile> <instanceName> <timeHorizon> <iterationLimit> <timeLimit> <precision> <alpha0> <timeStep> <priceToTime> <numThreads>`
+
+
+# A Toy Example
+
+Consider the following network.
+
+![Toy Example](examples/toyExamples/evExample6.png)
+
+The networkFile for reading this network is [evExample6EdgesWR.txt](examples/toyExamples/evExample6EdgesWR.txt) and an example commodityFiles is 
+[evExample6Comm.txt](examples/toyExamples/evExample6Comm.txt).
+
