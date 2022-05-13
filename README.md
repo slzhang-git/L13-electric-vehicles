@@ -38,6 +38,5 @@ Consider the following network.
 
 ![Toy Example](examples/toyExamples/evExample6.png)
 
-The networkFile for reading this network is [evExample6EdgesWR.txt](examples/toyExamples/evExample6EdgesWR.txt) and an example commodityFiles is 
-[evExample6Comm.txt](examples/toyExamples/evExample6Comm.txt).
+The networkFile for reading this network is [evExample6EdgesWR.txt](examples/toyExamples/evExample6EdgesWR.txt) and an example of a commodityFile for this network is <a href="examples/toyExamples/evExample6Comm.txt" target="_blank"> evExample6Comm.txt</a>.
 
