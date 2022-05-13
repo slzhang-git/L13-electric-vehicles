@@ -62,7 +62,7 @@ Consider the following network.
 
 ![Toy Example](examples/toyExamples/evExample6.png)
 
-The networkFile for reading this network is [evExample6EdgesWR.txt](examples/toyExamples/evExample6EdgesWR.txt). An example of a commodityFile for this network is <a href="examples/toyExamples/evExample6Comm.txt" target="_blank"> evExample6Comm.txt</a>. The lines starting with '#' in the files are ignored by the code.
+The networkFile for reading this network is [evExample6EdgesWR.txt](examples/toyExamples/evExample6EdgesWR.txt). An example of a commodityFile for this network is <a href="examples/toyExamples/evExample6Comm.txt" target="_blank"> evExample6Comm.txt</a>. The lines starting with '#' in the files are ignored by the code. Also, the code can read the values of edge attributes as rationals provided in the form `p/q`.
 
 To find an approximate equilibrium for the above mentioned inputs, we can run the following command:
 
