@@ -6,7 +6,7 @@ the continuous time-scale.
 
 # Installation (Linux)
 * Install Python 3.8 (if not already available) using `sudo apt install python3.8`
-* Install the networkx package using `pip3 install networkx`
+* Install the [NetworkX](https://networkx.org/) package using `pip3 install networkx`
 
 # Preparing Input Files
 * Network
