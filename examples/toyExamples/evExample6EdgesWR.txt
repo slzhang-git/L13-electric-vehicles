@@ -1,4 +1,4 @@
-# Edge list
+# Edge List
 # nodeFrom nodeTo edgeCapacity edgeTravelTime edgeResourceConsumption edgePrice
 s u 2 1 4 0
 s u 1 2 2 0
