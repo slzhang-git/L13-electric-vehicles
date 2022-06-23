@@ -22,6 +22,8 @@ class Event:
         self.v = v
         self.description = desc
 
+    # Events are ordered by their trigger time
+    # (this is used to be able to place events in a FIFO queue)
     def __lt__(self, other):
         return self.time < other.time
 
@@ -79,7 +81,7 @@ def networkLoading(pathBasedFlows : PartialFlowPathBased, timeHorizon: number=in
     flow = PartialFlow(network,noOfCommodities)
 
 
-    # For all commodities (corresponding to one source-sink path each) set source, sink and network inflow rate
+    # For all commodities set source, sink and network inflow rate
     j = 0
     for i in range(pathBasedFlows.getNoOfCommodities()):
         for p in pathBasedFlows.fPlus[i]:
@@ -105,44 +107,47 @@ def networkLoading(pathBasedFlows : PartialFlowPathBased, timeHorizon: number=in
         theta = event.time
         # currently all edge inflow rates for edges leaving v are defined up to time \theta
         assert(flow.upToAt[v] == theta)
-        # We will now extend them for some additional time interval [theta,nextTheta]
+
+        # We will now extend them for some additional time interval [theta,nextTheta]:
 
         # At most, we extend until the given timeHorizon
         nextTheta = timeHorizon
         nextThetaReason = "End of time horizon"
 
-        # For each edge leaving v we will add up (over all commodities) the total volume of flow we have to send over this edge
+        # For each edge leaving v we will add up (over all commodities) the total rate of flow we have to send over
+        # this edge
         flowTo = {e: 0 for e in v.outgoing_edges}
         for i in range(noOfCommodities):
             if flow.sources[i] == v:
-                # If node v is the source of the current commodity i then this commodities network inflow rate u
-                # determines the amount of flow we have to send.
+                # If node v is the source of the current commodity i then this commodity's network inflow rate u
+                # is added to the inflow into the first edge of this commodity's path
+                flowTo[partialPathFlows[i].path.edges[0]] += flow.u[i].getValueAt(theta)
+                # A change in this network inflow rate will require a new flow distribution at v
                 if flow.u[i].getNextStepFrom(theta) < nextTheta:
                     nextTheta = flow.u[i].getNextStepFrom(theta)
                     nextThetaReason = "change in network inflow rate of commodity " + str(i)
                 assert(nextTheta>theta)
-                flowTo[partialPathFlows[i].path.edges[0]] += flow.u[i].getValueAt(theta)
 
             for j in range(len(partialPathFlows[i].path.edges)-1):
-                # Stepping through the current commodities path to check whether node v occurs on it as an edges endnode
-                # (last edge can be ignored as flow leaving this edges leaves the network)
+                # Stepping through the current commodities path to check whether node v occurs on it as any edge's
+                # endnode (the last edge can be ignored as flow leaving this edges leaves the network)
                 if partialPathFlows[i].path.edges[j].node_to == v:
                     # If so, the outflow from this edge will be sent to the next edge on the path
+                    flowTo[partialPathFlows[i].path.edges[j+1]] += partialPathFlows[i].fMinus[j].getValueAt(theta)
+                    # and a change in the edge outflow rate from the previous edge will require a new flow distribution at v
                     if partialPathFlows[i].fMinus[j].getNextStepFrom(theta) < nextTheta:
                         nextTheta = partialPathFlows[i].fMinus[j].getNextStepFrom(theta)
                         nextThetaReason = "change in edge outflow rate of commodity " + str(i) + " from edge " + str(partialPathFlows[i].path.edges[j])
-                        if nextTheta > 10000:
-                            print(partialPathFlows[i].fMinus[j])
                     assert (nextTheta > theta)
-                    flowTo[partialPathFlows[i].path.edges[j+1]] += partialPathFlows[i].fMinus[j].getValueAt(theta)
 
         # Check whether queues on outgoing edges deplete before nextTheta
-        # (and reduce nextTheta in that case)
+        # and reduce nextTheta in that case
         for e in v.outgoing_edges:
             # The queue length at time theta:
             qeAtTheta = flow.queues[e].getValueAt(theta)
+            # Check whether queue is non-empty at \theta and will be shrinking after \theta:
             if qeAtTheta > numPrecision and flowTo[e] < e.nu - numPrecision:
-                # the time at which the queue on e will run empty (if the inflow into e remains constant)
+                # the time at which the queue on e will run empty (assuming the inflow into e remains constant)
                 x = qeAtTheta/(e.nu-flowTo[e])
                 # If this is before the current value of nextTheta we reduce nextTheta to the time the queue runs empty
                 if theta < theta+x < nextTheta:
@@ -151,8 +156,10 @@ def networkLoading(pathBasedFlows : PartialFlowPathBased, timeHorizon: number=in
                 assert (nextTheta > theta)
 
         # Now we have all the information to extend the current flow at node v over the time interval [theta,nextTheta]:
+        # using constant in- and outflows for all edges leaving v
 
         # Determine queues on the interval [theta,nextTheta]
+        # (here we use the fact that nextTheta has been chosen such that no queue leaving v depletes before nextTheta)
         for e in v.outgoing_edges:
             if flow.queues[e].getValueAt(theta) > numPrecision:
                 flow.queues[e].addSegmant(nextTheta,flowTo[e]-e.nu)
@@ -161,34 +168,36 @@ def networkLoading(pathBasedFlows : PartialFlowPathBased, timeHorizon: number=in
 
         # Redistribute the node inflow to outgoing edges
         for i in range(noOfCommodities):
-            # First we determine the values of f^+/f^- in terms of the path flows
+            # First we determine the values of f^+ and f^- in terms of the path flows
+            # (i.e. if an edge occurs multiple times on a path its distinct occurrences are considered as different edges)
             for j in range(len(partialPathFlows[i].path.edges)):
                 if partialPathFlows[i].path.edges[j].node_from == v:
                     e = partialPathFlows[i].path.edges[j]
                     # Determine inflow into edge e
                     if j == 0:
                         # The edge is the first on commodity i's path.
-                        # Thus the inflow into this edge is determined by the network inflow rate u_i
+                        # Thus, the inflow into this edge is determined by the network inflow rate u_i
                         inflow = flow.u[i].getValueAt(theta)
                     else:
                         # Otherwise the inflow is determined by the outflow of the previous edge on i's path
                         inflow = partialPathFlows[i].fMinus[j-1].getValueAt(theta)
-                    # Adjust fPlus of edge e
+                    # Extend fPlus of edge e
                     partialPathFlows[i].fPlus[j].addSegment(nextTheta,inflow)
-                    # Adjust fMinus of edge e
+
+                    # Determine outflow from edge e
                     if flowTo[e] > 0:
                         outflowRate = partialPathFlows[i].fPlus[j].getValueAt(theta) / flowTo[e] * min(flowTo[e], e.nu)
                     else:
                         outflowRate = 0
-
-                    # Extend the edge outflow rate:
+                    # Extend fMinus of edge e
                     if nextTheta < infinity:
                         partialPathFlows[i].fMinus[j].addSegment(flow.T(e, nextTheta), outflowRate)
                     else:
                         partialPathFlows[i].fMinus[j].addSegment(infinity, outflowRate)
 
             # Now we convert the path flows into the actual edge in- and outflow rates
-            # i.e. if an edge occurs multiple times on a commodity's path we add up the corresponding rates from the path flow
+            # (i.e. if an edge occurs multiple times on a commodity's path we add up the corresponding rates
+            # from the path flow)
             for e in v.outgoing_edges:
                 inflowRate = zero
                 outflowRate = zero

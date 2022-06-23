@@ -75,7 +75,6 @@ class PartialFlow:
         # the queue on edge e has to be known up to at least time theta
         # If the flow has terminated then we can assume that all queues are empty after the
         # interval they are defined on
-        # TODO: This should somehow happen automatically!
         if self.hasTerminated():
             if self.queues[e].segmentBorders[-1] >= theta:
                 return self.queues[e].getValueAt(theta)/e.nu + e.tau
@@ -91,12 +90,10 @@ class PartialFlow:
 
     # Determines the arrival time at the end of path p when starting at time theta
     def pathArrivalTime(self,p:Path,theta:number)->number:
-        # TODO: check whether all necessary queues are available
         if len(p) == 0:
             return theta
         else:
             firstEdge = p.edges[0]
-            # print("theta ", theta)
             return self.pathArrivalTime(Path(p.edges[1:],firstEdge.node_to),self.T(firstEdge,theta))
 
     def hasTerminated(self) -> bool:
@@ -161,13 +158,11 @@ class PartialFlow:
             # First, a special case for the sink node
             if v == self.sinks[commodity]:
                 if flow < 0:
-                    # TODO: Fehlermeldung
                     print("Flow conservation does not hold at node ", v, " (sink!) at time ", theta)
                     return False
 
             # Then the case for all other nodes:
             elif flow != 0:
-                # TODO: Fehlermeldung
                 print("Flow conservation does not hold at node ",v," at time ",theta)
                 return False
 
@@ -191,13 +186,11 @@ class PartialFlow:
                 nextTheta = min(nextTheta,self.fMinus[(e,i)].getNextStepFrom(theta+e.tau),self.fPlus[(e,i)].getNextStepFrom(theta))
             if self.queues[e].getValueAt(theta) > 0:
                 if outflow != e.nu:
-                    # TODO: Fehlermeldung
                     print("Queue on edge ",e, " does not operate at capacity at time ", theta)
                     return False
             else:
                 assert(self.queues[e].getValueAt(theta) == 0)
                 if outflow != min(inflow,e.nu):
-                    # TODO: Fehlermeldung
                     print("Queue on edge ", e, " does not operate at capacity at time ", theta)
                     return False
             theta = nextTheta
@@ -210,7 +203,6 @@ class PartialFlow:
         theta = zero
         currentQueue = zero
         if self.queues[e].getValueAt(theta) != 0:
-            # TODO: Fehlermeldung
             print("Queue on edge ", e, " does not start at 0")
             return False
         while theta < upTo:
@@ -223,7 +215,6 @@ class PartialFlow:
                 nextTheta = min(nextTheta,self.fPlus[(e,i)].getNextStepFrom(theta),self.fMinus[(e,i)].getNextStepFrom(theta+e.tau))
             currentQueue += (inflow-outflow)*(nextTheta-theta)
             if nextTheta < infinity and currentQueue != self.queues[e].getValueAt(nextTheta):
-                # TODO: Fehlermeldung
                 print("Queue on edge ", e, " wrong at time ", nextTheta)
                 print("Should be ", currentQueue, " but is ", self.queues[e].getValueAt(nextTheta))
                 return False
@@ -234,9 +225,9 @@ class PartialFlow:
     def checkFeasibility(self,upTo: number) -> bool:
         # Does not check FIFO (TODO)
         # Does not check non-negativity (TODO?)
-        # Does not check whether the edge outflow rates are determined as ar as possible
+        # Does not check whether the edge outflow rates are determined as far as possible
         # (i.e. up to time e.T(theta) if theta is the time up to which the inflow is given)
-        # We implicitely assume that this is the case, but currently the user is responible for ensuring this (TODO)
+        # We implicitely assume that this is the case, but currently the user is responsible for ensuring this (TODO)
         feasible = True
         for i in range(self.noOfCommodities):
             for v in self.network.nodes:
@@ -307,7 +298,9 @@ class PartialFlow:
             },file)
 
 
-# A path based description of feasible flows:
+# A path based description of feasible flows
+# i.e. a network with a set of commodities and for every commodity a dictionary
+# mapping paths of this commodity to path inflow rates
 class PartialFlowPathBased:
     network: Network
     fPlus: List[Dict[Path, PWConst]]
@@ -384,7 +377,7 @@ class PartialFlowPathBased:
         print('Number of paths with positive flow: %d'%fPosCount)
         return s
 
-
+# A partial flow on a path, i.e. a path and for every edge e on this path a tuple of f^+_e and f^-_e
 class PartialPathFlow:
     path: Path
     fPlus: List[PWConst]
