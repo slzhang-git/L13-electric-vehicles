@@ -254,7 +254,7 @@ class PartialFlow:
     # Creates a json file for use in Michael's visualization tool:
     # https://github.com/ArbeitsgruppeTobiasHarks/dynamic-prediction-equilibria/tree/main/visualization
     # Similar to https://github.com/ArbeitsgruppeTobiasHarks/dynamic-prediction-equilibria/tree/main/predictor/src/visualization
-    # Does not set coordinates for nodes and sets all commodities flow colors to DodgerBlue
+    # Does not set meaningful coordinates for nodes and sets all commodity's colors to DodgerBlue
     def to_json(self, filename:str):
         with open(filename, "w") as file:
             json.dump({

@@ -1,0 +1,3 @@
+# Commodity List
+# nodeFrom nodeTo resourceBudget priceBudget time0 time1 time2 ... flowValue0_1 flowValue1_2 ...
+s t 6 6 0 10 3

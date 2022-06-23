@@ -1,0 +1,8 @@
+# Edge List
+# nodeFrom nodeTo edgeCapacity edgeTravelTime edgeResourceConsumption edgePrice
+s u 2 1 4 0
+s u 1 2 2 0
+u v 1 1 0 0
+v t 2 1 4 0
+v t 1/2 2 1 0
+v v 10 3/2 -6 5
