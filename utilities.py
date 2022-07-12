@@ -129,6 +129,19 @@ class PWConst:
 
         return restrictedF
 
+    def isZero(self) -> bool:
+        # Checks whether the function is zero wherever it is defined
+        if self.defaultValue is not None and -infinity < self.segmentBorders[0] \
+                and self.segmentBorders[-1] < infinity and self.defaultValue != zero:
+            # If the default value is not zero, the function is not zero
+            return False
+        for y in self.segmentValues:
+            if y != zero:
+                # If there is one segment where the function is non-zero, the function is not zero
+                # (this assume that there are no zero-length intervals!)
+                return False
+        return True
+
     def __abs__(self) -> PWConst:
         # Creates a new piecewise constant functions |f|
         if self.defaultValue is None:
