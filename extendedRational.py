@@ -4,7 +4,6 @@ import math
 
 from fractions import Fraction
 
-
 # A class for rational numbers including +/- infinity
 # (basically just the class Fraction with +/- infinity)
 class ExtendedRational(Fraction):
@@ -62,7 +61,7 @@ class ExtendedRational(Fraction):
             elif self.numerator < 0 and other.numerator < 0:
                 return ExtendedRational(-1,0)
             else:
-                pass # TODO
+                pass # TODO: Should throw an error as we cannot add +infty and - infty
         elif self.isInfinite:
             return self
         elif isinstance(other, ExtendedRational) and other.isInfinite:
@@ -85,7 +84,7 @@ class ExtendedRational(Fraction):
             elif self < 0:
                 return ExtendedRational(-other.numerator,0)
             else:
-                pass
+                pass # TODO: Should throw an error as we can't multiply 0 and +/-infty
         else:
             return Fraction.__mul__(self,other)
 
