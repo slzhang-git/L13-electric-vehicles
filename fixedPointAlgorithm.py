@@ -62,7 +62,7 @@ def fixedPointUpdate(currentFlow: PartialFlow, oldPathInflows: PartialFlowPathBa
             k += 1
             # For each subinterval i we determine the dual variable v_i
             # (and assume that it will stay constant for the whole interval)
-            if verbose: print("timeinterval [", theta, ",", theta+timestepSize,"]")
+            # if verbose: print("timeinterval [", theta, ",", theta+timestepSize,"]")
 
 	    # Set up the update problem for each subinterval
             # Get path travel times for this subinterval

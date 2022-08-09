@@ -136,7 +136,7 @@ if __name__ == "__main__":
     f, alphaIter, absDiffBwFlowsIter, relDiffBwFlowsIter, travelTime, stopStr,\
             alphaStr, qopiIter, qopiFlowIter, qopiPathComm, totDNLTime, totFPUTime =\
             fixedPointAlgo(G, pathList, precision, commodities, timeHorizon,\
-            maxIter, timeLimit, timeStep, alpha, priceToTime)
+            maxIter, timeLimit, timeStep, alpha, priceToTime, True)
 
     tEnd = time.time()
     # for i,(s,t,eb,pb,u) in enumerate(commodities):
