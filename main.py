@@ -136,7 +136,7 @@ if __name__ == "__main__":
     f, alphaIter, absDiffBwFlowsIter, relDiffBwFlowsIter, travelTime, stopStr,\
             alphaStr, qopiIter, qopiFlowIter, qopiPathComm, totDNLTime, totFPUTime =\
             fixedPointAlgo(G, pathList, precision, commodities, timeHorizon,\
-            maxIter, timeLimit, timeStep, alpha, priceToTime, True)
+            maxIter, timeLimit, timeStep, alpha, priceToTime)
 
     tEnd = time.time()
     # for i,(s,t,eb,pb,u) in enumerate(commodities):
@@ -184,7 +184,7 @@ if __name__ == "__main__":
 
     # Save the results to files
     # dirname = os.path.expanduser('./npzfiles')
-    dirname = os.path.expanduser('./')
+    dirname = os.path.expanduser('./miscfiles')
     # Uncomment below to include a string indicating the alpha-update strategy
     # default is alphaSmooth(gamma)
     # fname += alphaStr.replace('/','By')
