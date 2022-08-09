@@ -184,7 +184,7 @@ if __name__ == "__main__":
 
     # Save the results to files
     # dirname = os.path.expanduser('./npzfiles')
-    dirname = os.path.expanduser('./miscfiles')
+    dirname = os.path.expanduser('./')
     # Uncomment below to include a string indicating the alpha-update strategy
     # default is alphaSmooth(gamma)
     # fname += alphaStr.replace('/','By')
