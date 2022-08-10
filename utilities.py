@@ -36,7 +36,9 @@ class PWConst:
         if self.segmentBorders[-1] - numPrecision < border < self.segmentBorders[-1]+numPrecision:
             return
 
-        if self.autoSimplify and len(self.segmentValues) > 0 and self.segmentValues[-1] == value:
+        # If autoSimplify is active and the new intervals value is the same (up to the given precision) as the one of
+        # the last interval, we extend the last interval instead of creating a new one
+        if self.autoSimplify and len(self.segmentValues) > 0 and value - numPrecision <= self.segmentValues[-1] <= value + numPrecision:
             self.segmentBorders[-1] = border
         else:
             self.segmentBorders.append(border)

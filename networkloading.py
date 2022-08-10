@@ -136,8 +136,11 @@ def networkLoading(pathBasedFlows : PartialFlowPathBased, timeHorizon: number=in
                     flowTo[partialPathFlows[i].path.edges[j+1]] += partialPathFlows[i].fMinus[j].getValueAt(theta)
                     # and a change in the edge outflow rate from the previous edge will require a new flow distribution at v
                     if partialPathFlows[i].fMinus[j].getNextStepFrom(theta) < nextTheta:
-                        nextTheta = partialPathFlows[i].fMinus[j].getNextStepFrom(theta)
-                        nextThetaReason = "change in edge outflow rate of commodity " + str(i) + " from edge " + str(partialPathFlows[i].path.edges[j])
+                        # But only if this change is not just from the end of a final zero-interval
+                        if partialPathFlows[i].fMinus[j].getValueAt(theta) >= numPrecision or \
+                                partialPathFlows[i].fMinus[j].getValueAt(partialPathFlows[i].fMinus[j].getNextStepFrom(theta)) >= numPrecision:
+                                    nextTheta = partialPathFlows[i].fMinus[j].getNextStepFrom(theta)
+                                    nextThetaReason = "change in edge outflow rate of commodity " + str(i) + " from edge " + str(partialPathFlows[i].path.edges[j])
                     assert (nextTheta > theta)
 
         # Check whether queues on outgoing edges deplete before nextTheta
