@@ -136,11 +136,8 @@ def networkLoading(pathBasedFlows : PartialFlowPathBased, timeHorizon: number=in
                     flowTo[partialPathFlows[i].path.edges[j+1]] += partialPathFlows[i].fMinus[j].getValueAt(theta)
                     # and a change in the edge outflow rate from the previous edge will require a new flow distribution at v
                     if partialPathFlows[i].fMinus[j].getNextStepFrom(theta) < nextTheta:
-                        # But only if this change is not just from the end of a final zero-interval
-                        if partialPathFlows[i].fMinus[j].getValueAt(theta) >= numPrecision or \
-                                partialPathFlows[i].fMinus[j].getValueAt(partialPathFlows[i].fMinus[j].getNextStepFrom(theta)) >= numPrecision:
-                                    nextTheta = partialPathFlows[i].fMinus[j].getNextStepFrom(theta)
-                                    nextThetaReason = "change in edge outflow rate of commodity " + str(i) + " from edge " + str(partialPathFlows[i].path.edges[j])
+                        nextTheta = partialPathFlows[i].fMinus[j].getNextStepFrom(theta)
+                        nextThetaReason = "change in edge outflow rate of commodity " + str(i) + " from edge " + str(partialPathFlows[i].path.edges[j])
                     assert (nextTheta > theta)
 
         # Check whether queues on outgoing edges deplete before nextTheta
@@ -206,13 +203,14 @@ def networkLoading(pathBasedFlows : PartialFlowPathBased, timeHorizon: number=in
                 outflowRate = zero
                 for j in range(len(partialPathFlows[i].path.edges)):
                     if partialPathFlows[i].path.edges[j] == e:
-                        inflowRate += partialPathFlows[i].fPlus[j].getValueAt(theta)
-                        outflowRate += partialPathFlows[i].fMinus[j].getValueAt(flow.T(e,theta))
+                        inflowRate += partialPathFlows[i].fPlus[j].segmentValues[-1]
+                        outflowRate += partialPathFlows[i].fMinus[j].segmentValues[-1]
                 flow.fPlus[(e,i)].addSegment(nextTheta,inflowRate)
                 if nextTheta < infinity:
                     flow.fMinus[(e, i)].addSegment(flow.T(e,nextTheta), outflowRate)
                 else:
-                    flow.fMinus[(e, i)].addSegment(infinity, outflowRate)
+                    assert (outflowRate < numPrecision)
+                    flow.fMinus[(e, i)].addSegment(infinity, zero)
 
         # Now the extension at node v is done -> we have a flow up to time nextTheta at node v
         flow.upToAt[v] = nextTheta

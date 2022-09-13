@@ -117,12 +117,12 @@ class PartialFlow:
                     # intervals with zero flow would get unified to one by PWConst)
                     # If we change PWConst so that ending intervals of zero-value get deleted
                     # (since the default value is zero anyway), this would become unnecessary
-                    if len(fPei.segmentValues) > 0 and fPei.segmentValues[-1] == 0:
+                    if len(fPei.segmentValues) > 0 and fPei.segmentValues[-1] <= numPrecision:
                         lastInflowTime = max(lastInflowTime,fPei.segmentBorders[-2])
                     else:
                         lastInflowTime = max(lastInflowTime, fPei.segmentBorders[-1])
 
-            if self.upToAt[v] < lastInflowTime:
+            if self.upToAt[v] < lastInflowTime + numPrecision:
                 # There is still future inflow at node v which has not been redistributed
                 return False
 
