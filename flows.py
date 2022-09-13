@@ -254,8 +254,17 @@ class PartialFlow:
     # Creates a json file for use in Michael's visualization tool:
     # https://github.com/ArbeitsgruppeTobiasHarks/dynamic-prediction-equilibria/tree/main/visualization
     # Similar to https://github.com/ArbeitsgruppeTobiasHarks/dynamic-prediction-equilibria/tree/main/predictor/src/visualization
-    # Does not set meaningful coordinates for nodes and sets all commodity's colors to DodgerBlue
+    # Tries to assign al flow of the same commodity the same color - available colors are currently hard coded
     def to_json(self, filename:str):
+        availableColors = ["DodgerBlue", "green", "red", "purple"]
+        colors = []
+        currentSTpair = (self.sources[0],self.sinks[0])
+        currentColorID = 0
+        for i in range(self.noOfCommodities):
+            if self.sources[i] != currentSTpair[0] or self.sinks[i] != currentSTpair[1]:
+                currentColorID = (currentColorID + 1) % len(availableColors)
+                currentSTpair = (self.sources[i],self.sinks[i])
+            colors.append(availableColors[currentColorID])
         with open(filename, "w") as file:
             json.dump({
                 "network": {
@@ -266,7 +275,7 @@ class PartialFlow:
                                "capacity": e.nu,
                                "transitTime": e.tau}
                               for (id,e) in enumerate(self.network.edges)],
-                    "commodities": [{ "id": id, "color": "dodgerblue"} for id in range(self.noOfCommodities)]
+                    "commodities": [{ "id": id, "color": colors[id]} for id in range(self.noOfCommodities)]
                 },
                 "flow": {
                     "inflow": [
