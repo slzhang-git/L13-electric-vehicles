@@ -187,10 +187,13 @@ if __name__ == "__main__":
     # Save the results to files
     # dirname = os.path.expanduser('./npzfiles')
     dirname=os.getcwd()+'/miscfiles'
+    outputfile=os.path.join(dirname, fname)
+    if not(os.path.exists(outputfile)):
+        os.mkdir(outputfile)
     # Uncomment below to include a string indicating the alpha-update strategy
     # default is alphaSmooth(gamma)
     # fname += alphaStr.replace('/','By')
-    numpy.savez(os.path.join(dirname, fname),G=G,commodities=commodities,f=f,\
+    numpy.savez(outputfile,G=G,commodities=commodities,f=f,\
             eventualFlow=eventualFlow,time=tEnd-tStart,\
             alphaIter=alphaIter,absDiffBwFlowsIter=absDiffBwFlowsIter,\
             relDiffBwFlowsIter=relDiffBwFlowsIter,travelTime=travelTime,\
