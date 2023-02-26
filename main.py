@@ -8,12 +8,14 @@ from fixedPointAlgorithm import *
 # For reading graphs
 import networkx as nx
 
+args_manual=['main.py', 'evExample6EdgesWR.txt', 'evExample6Comm.txt', 'example6', '50', '20000', '3600', '0.001', '0.75', '0.25', '0', '1']
+
 def readArgs(argv):
     # Arguments passed
-    print("\nName of script:", sys.argv[0])
-    n = len(sys.argv)
+    print("\nName of script:", argv[0])
+    n = len(argv)
     print("Total arguments passed:", n)
-    print(sys.argv)
+    print(argv)
 
     # Read the instance name
     insName = argv[0]
@@ -74,7 +76,7 @@ def readCommodities(commList) -> List[Tuple[Node, Node, PWConst]]:
 
 if __name__ == "__main__":
 
-    argList = readArgs(sys.argv)
+    argList = readArgs(args_manual)
 
     G = readNetwork(argList[0])
     nuMin, nuMax = min([e.nu for e in G.edges]), max([e.nu for e in G.edges])
@@ -184,7 +186,7 @@ if __name__ == "__main__":
 
     # Save the results to files
     # dirname = os.path.expanduser('./npzfiles')
-    dirname = os.path.expanduser('./miscfiles')
+    dirname=os.getcwd()+'/miscfiles'
     # Uncomment below to include a string indicating the alpha-update strategy
     # default is alphaSmooth(gamma)
     # fname += alphaStr.replace('/','By')
