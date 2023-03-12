@@ -56,7 +56,7 @@ where,
 `numThreads`: the number of threads to be used in the code (default 1).
 
 
-# A Toy Example
+# A Toy Example (For our experiment, run the "main.py" file directly for this toy example)
 
 Consider the following network.
 
